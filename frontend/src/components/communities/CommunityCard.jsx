@@ -1,13 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Added for navigation
+import { useNavigate } from "react-router-dom";
 import { BASE_W, BASE_H, R } from "/workspaces/Shine/backend/models/commConfig.js";
 
 const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 export default function CommunityCard({ community, feedWidth = BASE_W, onintrestClick }) {
   const navigate = useNavigate();
-  
-  // Destructure dynamic data
+
   const {
     id,
     communityIcon,
@@ -23,7 +22,6 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
     memberReferenceText,
   } = community;
 
-  // Accept interests from any backend naming
   const rawInterests = intrests ?? interests ?? keywords ?? [];
 
   const getFullUrl = (path) => {
@@ -31,22 +29,17 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
     return path.startsWith("http") ? path : `${ASSET_URL}${path}`;
   };
 
-  const width = feedWidth;
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+  const width = isMobile ? Math.min(feedWidth || BASE_W, window.innerWidth - 24) : feedWidth;
   const scale = width / BASE_W;
-  const height = BASE_H * scale;
+  const height = isMobile ? "auto" : BASE_H * scale;
+
   const imageWidthPx = width * R.imageWidthRatio;
   const leftContentWidthPx = width - imageWidthPx;
 
-  const descriptionWidthPx = (R.descriptionWidthPx / BASE_W) * width;
-  const descriptionHeightPx = (R.descriptionHeightPx / BASE_H) * height;
-
-  const descRef = useRef(null);
-  const [descOverflow, setDescOverflow] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [nameFontSize, setNameFontSize] = useState(R.communityNameSizePx * scale);
-  const [membersColor, setMembersColor] = useState("#000");
 
-  // Normalize interests
   const interestList = Array.isArray(rawInterests)
     ? rawInterests
     : typeof rawInterests === "string"
@@ -55,85 +48,18 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
 
   useEffect(() => {
     const fitName = () => {
-      const maxWidth = leftContentWidthPx - R.avatarSizePx * scale - R.avatarTextGapPx * scale;
+      const maxWidth = isMobile ? width * 0.5 : leftContentWidthPx - R.avatarSizePx * scale;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      let fontSize = R.communityNameSizePx * scale;
-      ctx.font = `${fontSize}px sans-serif`;
+      // Use original R scale for mobile to keep it large
+      let fontSize = (isMobile ? R.communityNameSizePx : R.communityNameSizePx) * scale;
+      ctx.font = `bold ${fontSize}px sans-serif`;
       const textWidth = ctx.measureText(communityName || "").width;
-      setNameFontSize(textWidth > maxWidth * 2 ? fontSize * (maxWidth * 2 / textWidth) : fontSize);
+      setNameFontSize(textWidth > maxWidth ? fontSize * (maxWidth / textWidth) : fontSize);
     };
     fitName();
-  }, [communityName, width, leftContentWidthPx, scale]);
+  }, [communityName, width, isMobile, scale, leftContentWidthPx]);
 
-  useEffect(() => {
-    const el = descRef.current;
-    if (!el) return;
-    setDescOverflow(el.scrollHeight > el.clientHeight + 1);
-  }, [descriptionText, width, height]);
-
-  useEffect(() => {
-    const finalUrl = getFullUrl(imageUrl);
-    const img = new Image();
-    img.crossOrigin = "Anonymous"; 
-    img.src = finalUrl;
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 10; canvas.height = 10;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, 10, 10);
-      try {
-        const data = ctx.getImageData(0, 0, 10, 10).data;
-        let r = 0, g = 0, b = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i]; g += data[i+1]; b += data[i+2];
-        }
-        const avg = ((r/25)*299 + (g/25)*587 + (b/25)*114)/1000;
-        setMembersColor(avg < 140 ? "#fff" : "#000");
-      } catch (e) {
-        setMembersColor("#000");
-      }
-    };
-  }, [imageUrl]);
-
-  const renderOverlappingAvatars = () => {
-    const smallAvatarSize = R.smallAvatarPx * scale;
-    const overlapOffset = smallAvatarSize - R.smallAvatarGapPx * scale;
-    return (
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ display: "flex" }}>
-          {imageAvatars.slice(0, 3).map((a, idx) => (
-            <img
-              key={idx}
-              src={getFullUrl(a)}
-              style={{
-                width: smallAvatarSize,
-                height: smallAvatarSize,
-                borderRadius: "50%",
-                border: `1px solid ${membersColor}`,
-                marginLeft: idx === 0 ? 0 : -overlapOffset,
-                objectFit: "cover",
-                background: "#eee"
-              }}
-              alt=""
-            />
-          ))}
-        </div>
-        <div
-          style={{
-            fontSize: 14 * scale,
-            fontWeight: 500,
-            marginLeft: R.smallAvatarTextGapPx * scale,
-            color: membersColor
-          }}
-        >
-          {memberReferenceText}
-        </div>
-      </div>
-    );
-  };
-
-  // Main Navigation Handler
   const handleCardClick = () => {
     navigate(`/community/${id}`);
   };
@@ -145,44 +71,32 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
         width,
         height,
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
         background: "#fff",
-        borderRadius: 12 * scale,
+        borderRadius: isMobile ? "20px" : 12 * scale,
         overflow: "hidden",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-        marginBottom: "24px",
+        boxShadow: isMobile ? "0 10px 30px rgba(0,0,0,0.1)" : "0 4px 20px rgba(0,0,0,0.06)",
+        marginBottom: isMobile ? "20px" : "24px",
         cursor: "pointer",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease"
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 12px 30px rgba(0,0,0,0.12)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
+        transition: "all 0.2s ease",
       }}
     >
-      {/* Left Content Section */}
-      <div
-        style={{
-          width: leftContentWidthPx,
-          padding: `${28 * scale}px ${36 * scale}px`,
-          display: "flex",
-          flexDirection: "column",
+      {/* Mobile Header: Restored Logo size + Members Count (No Dividers) */}
+      {isMobile && (
+        <div style={{ 
+          padding: "20px 20px 10px 20px", 
+          display: "flex", 
+          alignItems: "center", 
           justifyContent: "space-between"
-        }}
-      >
-        <div>
-          {/* Icon + Name */}
-          <div style={{ display: "flex", alignItems: "center", gap: R.avatarTextGapPx * scale }}>
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <img
               src={getFullUrl(communityIcon)}
-              style={{
-                width: R.avatarSizePx * scale,
-                height: R.avatarSizePx * scale,
-                borderRadius: 6 * scale,
-                objectFit: "cover",
-                background: "#f0f0f0"
+              style={{ 
+                width: R.avatarSizePx * scale, 
+                height: R.avatarSizePx * scale, 
+                borderRadius: "10px", 
+                objectFit: "cover" 
               }}
               alt="icon"
             />
@@ -190,129 +104,128 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
               {communityName}
             </div>
           </div>
+          <div style={{ fontSize: "16px", fontWeight: 800, color: "#1C274C" }}>
+            {membersCountText}
+          </div>
+        </div>
+      )}
 
-          {/* Slogan */}
-          <div
-            style={{
-              marginTop: R.nameToTitleGapPx * scale,
-              fontSize: R.titleSizePx * scale,
-              fontWeight: 800,
-              lineHeight: 1.1,
-              color: "#1C274C"
-            }}
-          >
+      {/* Main Content Area */}
+      <div
+        style={{
+          width: isMobile ? "100%" : leftContentWidthPx,
+          padding: isMobile ? "10px 20px 20px 20px" : `${28 * scale}px ${36 * scale}px`,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: isMobile ? "flex-start" : "space-between"
+        }}
+      >
+        <div>
+          {!isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: R.avatarTextGapPx * scale }}>
+              <img
+                src={getFullUrl(communityIcon)}
+                style={{
+                  width: R.avatarSizePx * scale,
+                  height: R.avatarSizePx * scale,
+                  borderRadius: 6 * scale,
+                  objectFit: "cover"
+                }}
+                alt="icon"
+              />
+              <div style={{ fontSize: nameFontSize, fontWeight: 700, color: "#1C274C" }}>
+                {communityName}
+              </div>
+            </div>
+          )}
+
+          <div style={{
+            marginTop: isMobile ? "8px" : R.nameToTitleGapPx * scale,
+            fontSize: isMobile ? "24px" : R.titleSizePx * scale,
+            fontWeight: 800,
+            lineHeight: 1.1,
+            color: "#1C274C"
+          }}>
             {bannerTitle}
           </div>
 
-          {/* Description */}
-          <div style={{ marginTop: R.titleToDescGapPx * scale }}>
-            <div
-              ref={descRef}
-              style={{
-                width: descriptionWidthPx,
-                maxHeight: expanded ? "none" : descriptionHeightPx,
-                overflow: "hidden",
-                fontSize: R.descriptionSizePx * scale,
-                lineHeight: 1.6,
-                color: "#4A5568"
-              }}
-            >
-              {descriptionText}
-            </div>
-
-            {descOverflow && !expanded && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setExpanded(true);
-                }}
-                style={{
-                  marginTop: 8 * scale,
-                  background: "#FFD600",
-                  border: "none",
-                  padding: `${6 * scale}px ${12 * scale}px`,
-                  borderRadius: 6 * scale,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontSize: 13 * scale,
-                  color: "#1C274C"
-                }}
-              >
-                Show More
-              </button>
-            )}
+          <div style={{ 
+            marginTop: "12px",
+            fontSize: isMobile ? "16px" : R.descriptionSizePx * scale,
+            lineHeight: 1.6,
+            color: "#4A5568",
+            display: "-webkit-box",
+            WebkitLineClamp: expanded ? "unset" : "3",
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden"
+          }}>
+            {descriptionText}
           </div>
         </div>
 
-        {/* Interests */}
-        <div
-          style={{
-            display: "flex",
-            gap: 10 * scale,
-            flexWrap: "wrap",
-            marginTop: 20 * scale
-          }}
-        >
+        {/* Mobile Banner: Positioned between Description and Keywords */}
+        {isMobile && (
+          <div style={{ margin: "18px 0", borderRadius: "15px", overflow: "hidden", height: "200px" }}>
+            <img
+              src={getFullUrl(imageUrl)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              alt="banner"
+            />
+          </div>
+        )}
+
+        {/* Keywords: Pill shape, No # prefix, larger mobile font */}
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginTop: isMobile ? "5px" : "20px"
+        }}>
           {interestList.map((interest, idx) => (
-            <button
+            <span
               key={`${id}-int-${idx}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onintrestClick?.(interest);
               }}
               style={{
-                padding: `${8 * scale}px ${16 * scale}px`,
-                background: "#ECF2F6",
-                border: `1.5px solid #1C274C`,
-                borderRadius: "1px",
-                fontSize: 14 * scale,
-                cursor: "pointer",
+                padding: isMobile ? "8px 16px" : `${8 * scale}px ${16 * scale}px`,
+                background: "#F0F4F8",
+                borderRadius: "100px",
+                fontSize: isMobile ? "14px" : 14 * scale,
                 color: "#1C274C",
                 fontWeight: 600,
-                zIndex: 2
+                border: "1px solid #D1D9E0",
+                whiteSpace: "nowrap"
               }}
             >
               {interest}
-            </button>
+            </span>
           ))}
         </div>
       </div>
 
-      {/* Right Banner */}
-      <div style={{ width: imageWidthPx, height, position: "relative" }}>
-        <img
-          src={getFullUrl(imageUrl)}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          alt="banner"
-        />
-
-        <div
-          style={{
+      {/* Desktop Banner: Remains exactly as original design */}
+      {!isMobile && (
+        <div style={{ width: imageWidthPx, height: height, position: "relative" }}>
+          <img
+            src={getFullUrl(imageUrl)}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            alt="banner"
+          />
+          <div style={{
             position: "absolute",
             top: R.membersTextPaddingPx * scale,
             right: R.membersTextPaddingPx * scale,
             fontSize: R.membersCountSizePx * scale,
             fontWeight: 800,
-            color: membersColor,
-            textShadow:
-              membersColor === "#fff"
-                ? "0 2px 8px rgba(0,0,0,0.4)"
-                : "none"
-          }}
-        >
-          {membersCountText}
+            color: "#fff",
+            textShadow: "0 2px 8px rgba(0,0,0,0.4)"
+          }}>
+            {membersCountText}
+          </div>
         </div>
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: R.imageAvatarsBottomPadPx * scale,
-            left: R.imageAvatarsLeftPadPx * scale
-          }}
-        >
-          {renderOverlappingAvatars()}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

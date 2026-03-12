@@ -58,3 +58,10 @@
 .center-column {
   padding-top: 92px;
 }
+
+@media (max-width: 1216px) {
+  .forum-container { padding: 0 12px 20px; height: auto; }
+  .forum-container .left-column,
+  .forum-container .right-column { display: none; }
+  .forum-container .center-column { padding-top: 10px; overflow: visible; }
+}

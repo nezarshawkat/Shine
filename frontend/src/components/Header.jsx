@@ -165,20 +165,26 @@ function Header() {
             style={{ cursor: "pointer" }}
           />
 
-          <img
-            src={getImageUrl(user?.image)}
-            alt="Profile"
-            className="mobile-icon"
-            onError={(e) => {
-              e.target.src = profileDefault;
-            }}
-            onClick={() => user && navigate(`/profile/${user.username}`)}
-            style={{
-              cursor: user ? "pointer" : "default",
-              borderRadius: "50%",
-              objectFit: "cover",
-            }}
-          />
+          {user ? (
+            <img
+              src={getImageUrl(user?.image)}
+              alt="Profile"
+              className="mobile-icon"
+              onError={(e) => {
+                e.target.src = profileDefault;
+              }}
+              onClick={() => navigate(`/profile/${user.username}`)}
+              style={{
+                cursor: "pointer",
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <button className="mobile-login-btn" onClick={() => navigate("/login")}>
+              Login
+            </button>
+          )}
 
           <button
             className="menu-toggle"

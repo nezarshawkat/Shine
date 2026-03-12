@@ -150,18 +150,68 @@ export default function PollCreate() {
   };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh" }}>
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    <div style={{ background: BG, minHeight: "100vh", overflowX: "hidden" }}>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+          .header-container {
+            padding: 20px 20px !important;
+          }
+          .header-inner {
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            gap: 10px !important;
+          }
+          .logo-img {
+            width: 200px !important;
+            margin: 0 auto !important;
+          }
+          .header-divider {
+            display: none !important;
+          }
+          .header-title {
+            font-size: 26px !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+          }
+          .main-layout {
+            flex-direction: column !important;
+          }
+          .editor-column {
+            width: 100% !important;
+            padding: 0 20px !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          .action-sidebar {
+            position: relative !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 20px !important;
+            box-sizing: border-box;
+          }
+        }
+      `}</style>
 
-      <div style={{ display: "flex", alignItems: "center", padding: "24px 40px 50px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img src={Logo} width={220} alt="Logo" />
-          <div style={{ width: 1, height: 40, background: BORDER }}></div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: PRIMARY, margin: 0 }}>Post - Poll</h1>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Header Section */}
+      <div className="header-container" style={{ display: "flex", alignItems: "center", padding: "24px 40px 40px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, width: "100%", flexWrap: "wrap" }} className="header-inner">
+          <img src={Logo} className="logo-img" width={264} alt="Logo" style={{ transition: 'width 0.3s' }} />
+          <div className="header-divider" style={{ width: 1, height: 48, background: BORDER }}></div>
+          <h1 className="header-title" style={{ fontSize: 38, fontWeight: 700, color: PRIMARY, margin: 0 }}>Post - Poll</h1>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", padding: "0 40px", gap: 12 }}>
+      {/* User Info & Audience */}
+      <div style={{ display: "flex", alignItems: "center", padding: "0 40px", gap: 12, marginBottom: 10 }}>
         <img 
           src={profileImg} 
           width={40} 
@@ -172,11 +222,14 @@ export default function PollCreate() {
         <div style={{ fontSize: 14, fontWeight: 600 }}>{user?.name || "Guest"}</div>
 
         <div style={{ position: "relative" }}>
-          <div onClick={() => setShowAudience(!showAudience)} style={{ border: `1px solid ${BORDER}`, padding: "8px 14px", borderRadius: 999, fontSize: 14, cursor: "pointer", background: "#fff" }}>
+          <div 
+            onClick={() => setShowAudience(!showAudience)} 
+            style={{ border: `1px solid ${BORDER}`, padding: "8px 14px", borderRadius: 999, fontSize: 14, cursor: "pointer", background: "#fff" }}
+          >
             {audience.name} ▾
           </div>
           {showAudience && (
-            <div style={{ position: "absolute", top: "110%", left: 0, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 6, zIndex: 1000, minWidth: 150, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <div style={{ position: "absolute", top: "110%", left: 0, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 6, zIndex: 1000, minWidth: 160, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
               <div 
                 style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer", borderBottom: `1px solid ${BG}` }} 
                 onMouseOver={(e) => e.target.style.background = LIGHT}
@@ -201,16 +254,27 @@ export default function PollCreate() {
         </div>
       </div>
 
-      <div style={{ display: "flex", padding: "0 40px" }}>
-        <div style={{ width: 708 }}>
+      <div className="main-layout" style={{ display: "flex" }}>
+        <div 
+          className="hide-scrollbar editor-column" 
+          style={{ 
+            padding: "0 40px", 
+            width: 708, 
+            height: "calc(100vh - 160px)", 
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12
+          }}
+        >
           <textarea
             placeholder="What's your question?"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{ marginTop: 16, width: "100%", height: 120, padding: 15, borderRadius: 12, border: `1px solid ${BORDER}`, resize: "none", fontSize: 16 }}
+            style={{ width: "100%", minHeight: 140, padding: 15, borderRadius: 12, border: `1px solid ${BORDER}`, resize: "none", fontSize: 16 }}
           />
 
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 24, paddingBottom: 120 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
               <strong style={{ color: PRIMARY }}>Poll Choices</strong>
               {choices.length < 5 && (
@@ -237,11 +301,17 @@ export default function PollCreate() {
           </div>
         </div>
 
-        <div style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="action-sidebar" style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
           <button
             disabled={loading}
             onClick={handlePost}
-            style={{ height: 56, fontSize: 18, background: loading ? "#CCC" : ACCENT, borderRadius: 14, border: "none", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", color: PRIMARY, transition: "transform 0.1s" }}
+            style={{ 
+              height: 56, fontSize: 18, 
+              background: loading ? "#CCC" : ACCENT, 
+              borderRadius: 14, border: "none", 
+              fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", 
+              color: PRIMARY, transition: "transform 0.1s" 
+            }}
             onMouseDown={e => !loading && (e.currentTarget.style.transform = "scale(0.98)")}
             onMouseUp={e => !loading && (e.currentTarget.style.transform = "scale(1)")}
           >
@@ -250,7 +320,12 @@ export default function PollCreate() {
 
           <button
             onClick={saveDraft}
-            style={{ height: 56, fontSize: 18, background: "#fff", borderRadius: 14, border: `1px solid ${BORDER}`, fontWeight: 600, cursor: "pointer", color: PRIMARY }}
+            style={{ 
+              height: 56, fontSize: 18, 
+              background: "#fff", 
+              borderRadius: 14, border: `1px solid ${BORDER}`, 
+              fontWeight: 600, cursor: "pointer", color: PRIMARY 
+            }}
           >
             Save Draft
           </button>

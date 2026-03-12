@@ -264,3 +264,133 @@
   color: #888;
   font-size: 1.1rem;
 }
+
+@media (max-width: 1216px) {
+  .profile-page { padding-top: 86px; }
+  .profile-top, .tab-content, .divider-wrapper, .profile-tabs { padding-left: 14px; padding-right: 14px; }
+  .profile-top { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .profile-left { width: 100%; gap: 12px; align-items:flex-start; }
+  .profile-image { width: 92px; height: 92px; }
+  .profile-info { gap: 4px; }
+  .profile-name { font-size: 22px; }
+  .profile-username { font-size: 15px; }
+  .profile-badge { font-size: 14px; padding: 4px 8px; }
+  .profile-follow { font-size: 14px; gap: 14px; margin-top:8px; }
+  .profile-description { max-width: 100%; font-size: 14px; }
+  .profile-tabs { flex-direction: column; align-items: stretch; gap: 10px; }
+  .tabs-left { overflow-x: auto; gap: 14px; }
+  .tab-btn { font-size: 15px; white-space: nowrap; }
+  .tabs-right { justify-content: space-between; }
+
+.menu-container-relative {
+  position: relative;
+}
+
+.profile-mobile-search-slot {
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding-top: 86px;
+  }
+
+  .profile-top,
+  .tab-content,
+  .divider-wrapper,
+  .profile-tabs {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .profile-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profile-left {
+    gap: 12px;
+    width: 100%;
+  }
+
+  .profile-image {
+    width: 96px;
+    height: 96px;
+  }
+
+  .profile-name { font-size: 20px; }
+  .profile-username { font-size: 14px; }
+  .profile-follow { font-size: 14px; gap: 12px; margin-top: 8px; }
+  .profile-badge { font-size: 14px; padding: 4px 8px; }
+  .profile-description { font-size: 14px; max-width: 100%; margin: 0; }
+
+  .mobile-profile-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 6px;
+  }
+
+  .profile-sticky-container {
+    position: sticky;
+    top: 70px;
+  }
+
+  .profile-tabs {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tabs-left {
+    overflow-x: auto;
+    width: 100%;
+    gap: 14px;
+  }
+
+  .tab-btn { font-size: 15px; white-space: nowrap; }
+
+  .tabs-right { display: none; }
+
+  .mobile-floating-menu {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1500;
+  }
+
+  .tab-content {
+    gap: 2px;
+    padding-top: 10px !important;
+  }
+
+  .profile-post-wrapper {
+    width: 100%;
+    margin-bottom: 2px;
+    border-radius: 10px;
+  }
+
+  .menu-btn {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1500;
+    background: #1C274C;
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+  }
+
+  .profile-menu-popup {
+    position: fixed;
+    right: 12px;
+    bottom: 60px;
+    top: auto;
+  }
+}
+}

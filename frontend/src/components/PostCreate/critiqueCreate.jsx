@@ -73,12 +73,10 @@ export default function CritiqueCreate() {
 
   const myCommunities = user?.memberships?.map(m => m.community).filter(Boolean) || [];
 
-  // --- Image Resolution Helper ---
   const profileImg = user?.image 
     ? (user.image.startsWith('http') ? user.image : `${BACKEND_URL}${user.image}`) 
     : profileDefault;
 
-  /* 1. SELECTIVE LOADING */
   useEffect(() => {
     const isReturning = location.state?.replyToId;
     const tempSaved = localStorage.getItem("critique_temp_draft");
@@ -92,9 +90,7 @@ export default function CritiqueCreate() {
         setSources(draft.sources?.length ? draft.sources : [{ name: "", link: "", error: false }]);
         setAudience(draft.audience || { name: "Personally", id: null });
         localStorage.removeItem("critique_temp_draft");
-      } catch (e) {
-        console.error("Failed to parse temp draft", e);
-      }
+      } catch (e) { console.error("Failed to parse temp draft", e); }
     } 
     else if (permanentSaved && !text) {
       try {
@@ -104,13 +100,10 @@ export default function CritiqueCreate() {
         setSources(draft.sources?.length ? draft.sources : [{ name: "", link: "", error: false }]);
         setAudience(draft.audience || { name: "Personally", id: null });
         setSelectedPost(draft.selectedPost || null);
-      } catch (e) {
-        console.error("Failed to parse draft", e);
-      }
+      } catch (e) { console.error("Failed to parse draft", e); }
     }
-  }, [location.state]);
+  }, [location.state, text]);
 
-  /* 2. SET THE SELECTED POST DATA */
   useEffect(() => {
     if (location.state?.replyToId && location.state?.replyToContent) {
       setSelectedPost({
@@ -173,7 +166,6 @@ export default function CritiqueCreate() {
     }
 
     setLoading(true);
-
     const formData = new FormData();
     formData.append("type", "critique");
     formData.append("text", text);
@@ -181,7 +173,6 @@ export default function CritiqueCreate() {
     formData.append("communityId", audience.id || "");
     formData.append("authorId", user?.id || "");
     formData.append("parentId", selectedPost.id);
-    
     formData.append("sources", JSON.stringify(validSourcesList.map(s => ({
       name: s.name.trim(),
       link: s.link.trim()
@@ -198,10 +189,9 @@ export default function CritiqueCreate() {
         showToast("Critique published", "success");
         localStorage.removeItem("critique_draft");
         localStorage.removeItem("critique_temp_draft");
-        setTimeout(() => navigate("/forum"), 1000);
+        setTimeout(() => navigate("/forum"), 1500);
       }
     } catch (err) {
-      console.error(err);
       showToast("Failed to publish critique", "error");
     } finally {
       setLoading(false);
@@ -222,105 +212,68 @@ export default function CritiqueCreate() {
   };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh" }}>
-      <style>
-        {`
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        `}
-      </style>
+    <div style={{ background: BG, minHeight: "100vh", overflowX: "hidden" }}>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @media (max-width: 768px) {
+          .header-container { flex-direction: column !important; padding: 20px !important; text-align: center !important; gap: 10px !important; }
+          .logo-img { width: 180px !important; margin: 0 auto !important; }
+          .header-divider { display: none !important; }
+          .header-title { font-size: 24px !important; margin: 0 auto !important; }
+          .main-layout { flex-direction: column !important; }
+          .editor-column { width: 100% !important; padding: 0 20px !important; height: auto !important; overflow: visible !important; }
+          .action-sidebar { position: relative !important; bottom: 0 !important; right: 0 !important; width: 100% !important; padding: 20px !important; box-sizing: border-box; }
+        }
+      `}</style>
 
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* HEADER */}
-      <div style={{ display: "flex", alignItems: "center", padding: "24px 40px 50px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img src={Logo} width={264} alt="Logo" />
-          <div style={{ width: 1, height: 48, background: BORDER }}></div>
-          <h1 style={{ fontSize: 38, fontWeight: 700, color: PRIMARY, margin: 0 }}>
-            Post - Critique
-          </h1>
+      {/* Header Section */}
+      <div className="header-container" style={{ display: "flex", alignItems: "center", padding: "24px 40px 40px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, width: "100%", flexWrap: "wrap", justifyContent: "inherit" }} className="header-inner">
+          <img src={Logo} className="logo-img" width={264} alt="Logo" style={{ transition: 'width 0.3s' }} />
+          <div className="header-divider" style={{ width: 1, height: 48, background: BORDER }}></div>
+          <h1 className="header-title" style={{ fontSize: 38, fontWeight: 700, color: PRIMARY, margin: 0 }}>Post - Critique</h1>
         </div>
       </div>
 
-      {/* USER & AUDIENCE SELECTOR */}
-      <div style={{ display: "flex", alignItems: "center", padding: "0 40px", gap: 12 }}>
-        <img 
-          src={profileImg} 
-          width={40} 
-          height={40} 
-          style={{ borderRadius: "50%", objectFit: "cover" }} 
-          alt="Profile"
-        />
+      {/* User Info & Audience */}
+      <div style={{ display: "flex", alignItems: "center", padding: "0 40px", gap: 12, marginBottom: 10 }}>
+        <img src={profileImg} width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover" }} alt="Profile" />
         <div style={{ fontSize: 14, fontWeight: 600 }}>{user?.name || "Guest"}</div>
 
         <div style={{ position: "relative" }}>
           <div
             onClick={() => setShowAudience(!showAudience)}
-            style={{
-              border: `1px solid ${BORDER}`,
-              padding: "8px 14px",
-              borderRadius: 999,
-              fontSize: 14,
-              cursor: "pointer",
-              background: "#fff",
-            }}
+            style={{ border: `1px solid ${BORDER}`, padding: "8px 14px", borderRadius: 999, fontSize: 14, cursor: "pointer", background: "#fff" }}
           >
             {audience.name} ▾
           </div>
-
           {showAudience && (
-            <div style={{
-                position: "absolute", top: "110%", left: 0, background: "#fff",
-                border: `1px solid ${BORDER}`, borderRadius: 8, padding: 6,
-                zIndex: 1000, minWidth: 160, boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-            }}>
-              <div
-                style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer", borderBottom: `1px solid ${BG}` }}
-                onMouseOver={(e) => e.target.style.background = LIGHT}
-                onMouseOut={(e) => e.target.style.background = "transparent"}
-                onClick={() => {
-                  setAudience({ name: "Personally", id: null });
-                  setShowAudience(false);
-                }}
-              >
-                Personally
-              </div>
-
+            <div style={{ position: "absolute", top: "110%", left: 0, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 6, zIndex: 1000, minWidth: 160, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              <div style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer", borderBottom: `1px solid ${BG}` }} onMouseOver={(e) => (e.target.style.background = LIGHT)} onMouseOut={(e) => (e.target.style.background = "transparent")} onClick={() => { setAudience({ name: "Personally", id: null }); setShowAudience(false); }}>Personally</div>
               {myCommunities.map((c) => (
-                <div
-                  key={c.id}
-                  style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }}
-                  onMouseOver={(e) => e.target.style.background = LIGHT}
-                  onMouseOut={(e) => e.target.style.background = "transparent"}
-                  onClick={() => {
-                    setAudience({ name: c.name, id: c.id });
-                    setShowAudience(false);
-                  }}
-                >
-                  {c.name}
-                </div>
+                <div key={c.id} style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }} onMouseOver={(e) => (e.target.style.background = LIGHT)} onMouseOut={(e) => (e.target.style.background = "transparent")} onClick={() => { setAudience({ name: c.name, id: c.id }); setShowAudience(false); }}>{c.name}</div>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ display: "flex" }}>
-        <div 
-          className="no-scrollbar"
-          style={{ padding: "0 40px", paddingTop: 2, width: 708, height: "calc(100vh - 115px)", overflowY: "auto" }}
-        >
+      <div className="main-layout" style={{ display: "flex" }}>
+        <div className="hide-scrollbar editor-column" style={{ padding: "0 40px", width: 708, height: "calc(100vh - 160px)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+          
           <textarea
-            placeholder="Type here"
+            placeholder="Type your critique here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            style={{ marginTop: 16, width: "100%", height: 140, padding: 12, borderRadius: 10, border: `1px solid ${BORDER}`, resize: "none", fontSize: 16 }}
+            style={{ width: "100%", minHeight: 140, padding: 15, borderRadius: 12, border: `1px solid ${BORDER}`, resize: "none", fontSize: 16 }}
           />
 
-          {/* KEYWORD TAGS */}
-          <div
-            style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, background: "#fff", marginTop: 12, cursor: "text" }}
+          <div 
+            style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, background: "#fff", cursor: "text" }}
             onClick={() => document.getElementById("tag-input")?.focus()}
           >
             {keywords.map((tag, i) => (
@@ -337,11 +290,11 @@ export default function CritiqueCreate() {
           </div>
 
           {/* CRITIQUE TARGET (REPLY BOX) */}
-          <div style={{ width: "100%", height: 70, marginTop: 16, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", border: `1px solid ${BORDER}`, borderRadius: 10, background: "#fff", boxSizing: "border-box" }}>
+          <div style={{ width: "100%", minHeight: 70, padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", border: `1px solid ${BORDER}`, borderRadius: 10, background: "#fff", boxSizing: "border-box", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 17, overflow: "hidden" }}>
               <img src={ArrowIcon} width={25} height={25} alt="arrow" />
               <span style={{ fontSize: 18, color: PRIMARY, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {selectedPost ? (selectedPost.content?.length > 50 ? selectedPost.content.slice(0, 49) + "..." : selectedPost.content || "Post Selected") : "Reply on a post"}
+                {selectedPost ? (selectedPost.content?.length > 40 ? selectedPost.content.slice(0, 39) + "..." : selectedPost.content || "Post Selected") : "Reply on a post"}
               </span>
             </div>
             <button
@@ -352,34 +305,26 @@ export default function CritiqueCreate() {
             </button>
           </div>
 
-          {/* SOURCES */}
-          <div style={{ marginTop: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
               <strong style={{ color: PRIMARY }}>Your sources</strong>
-              <span 
-                onClick={addSource} 
-                style={{ color: LINK_BLUE, cursor: "pointer", fontWeight: 600, fontSize: 14 }}
-              >
-                + Add source
-              </span>
+              <span onClick={addSource} style={{ color: LINK_BLUE, cursor: "pointer", fontSize: 14, fontWeight: 600 }}>+ Add source</span>
             </div>
             {sources.map((s, i) => (
               <div key={i} style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 13, color: "#666" }}>Source {i + 1}</span>
-                  {sources.length > 1 && <span onClick={() => deleteSource(i)} style={{ fontSize: 12, color: "#FF4C4C", cursor: "pointer" }}>Delete</span>}
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: "#666" }}>Source {i + 1}</span>
+                  {sources.length > 1 && <span onClick={() => deleteSource(i)} style={{ fontSize: 12, color: "#FF4C4C", cursor: "pointer" }}>Remove</span>}
                 </div>
-                <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
-                  <input placeholder="Source name" value={s.name} onChange={(e) => updateSource(i, "name", e.target.value)} style={{ flex: 1, height: 44, padding: 10, borderRadius: 10, border: `1px solid ${BORDER}` }} />
-                  <input placeholder="Source link" value={s.link} onChange={(e) => updateSource(i, "link", e.target.value)} style={{ flex: 1, height: 44, padding: 10, borderRadius: 10, border: s.error ? "1px solid red" : `1px solid ${BORDER}` }} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input placeholder="Source name" value={s.name} onChange={(e) => updateSource(i, "name", e.target.value)} style={{ flex: 1, height: 44, padding: "0 12px", borderRadius: 10, border: `1px solid ${BORDER}` }} />
+                  <input placeholder="Source link" value={s.link} onChange={(e) => updateSource(i, "link", e.target.value)} style={{ flex: 1, height: 44, padding: "0 12px", borderRadius: 10, border: s.error ? "1px solid red" : `1px solid ${BORDER}` }} />
                 </div>
-                {s.error && <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>Enter a valid link address</div>}
               </div>
             ))}
           </div>
 
-          {/* UPLOAD SECTION */}
-          <div style={{ marginTop: 20, paddingBottom: 100 }}>
+          <div style={{ marginTop: 8, paddingBottom: 120 }}>
             <strong style={{ color: PRIMARY }}>Uploads</strong>
             <div style={{ marginTop: 10, width: "100%", height: 120, border: `1px dashed ${BORDER}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff" }}>
               <label style={{ cursor: "pointer", fontSize: 14, textAlign: "center", width: "100%" }}>
@@ -390,39 +335,27 @@ export default function CritiqueCreate() {
           </div>
         </div>
 
-        {/* SIDEBAR ACTION BUTTONS */}
-        <div style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Buttons Sidebar/Bottom bar */}
+        <div className="action-sidebar" style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
           <button 
             disabled={loading}
             onClick={handlePost} 
             style={{ 
-              height: 56, 
-              background: loading ? "#CCC" : ACCENT, 
-              borderRadius: 14, 
-              border: "none", 
-              fontWeight: 700, 
-              fontSize: 18, 
-              cursor: loading ? "not-allowed" : "pointer", 
-              color: PRIMARY,
-              transition: "transform 0.1s"
+                height: 56, fontSize: 18, 
+                background: loading ? "#CCC" : ACCENT, 
+                borderRadius: 14, border: "none", 
+                fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", 
+                color: PRIMARY, transition: "transform 0.1s" 
             }}
             onMouseDown={e => !loading && (e.currentTarget.style.transform = "scale(0.98)")}
             onMouseUp={e => !loading && (e.currentTarget.style.transform = "scale(1)")}
           >
             {loading ? "Publishing..." : "Publish Critique"}
           </button>
+
           <button 
             onClick={saveDraft} 
-            style={{ 
-              height: 56, 
-              background: "#fff", 
-              borderRadius: 14, 
-              border: `1px solid ${BORDER}`, 
-              fontSize: 18, 
-              fontWeight: 600, 
-              cursor: "pointer", 
-              color: PRIMARY 
-            }}
+            style={{ height: 56, fontSize: 18, background: "#fff", borderRadius: 14, border: `1px solid ${BORDER}`, fontWeight: 600, cursor: "pointer", color: PRIMARY }}
           >
             Save Draft
           </button>

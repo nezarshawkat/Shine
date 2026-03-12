@@ -9,13 +9,21 @@ import React, {
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SearchContext } from "../../searchContext.jsx";
+import { AuthContext } from "../AuthProvider.jsx"; 
 import CommunitySidebar from "./CommunitySidebar";
-import CommunitySettings from "./CommunitySettings"; // Imported the settings component
+import CommunitySettings from "./CommunitySettings"; 
 import OpinionPost from "../posts/opinionPost.jsx";
 import CritiquePost from "../posts/critiquePost.jsx";
 import AnalysisPost from "../posts/analysisPost.jsx";
 import PollPost from "../posts/pollPost.jsx";
 import SkeletonPost from "../posts/SkeletonPost.jsx";
+
+// Assets for mobile UI consistency
+import magnifier from "../../assets/magnifier.svg";
+import closeIcon from "../../assets/close.svg";
+import feather from "../../assets/feather.png";
+import MenuIcon from "../../assets/Menu.svg";
+
 import "/workspaces/Shine/frontend/src/styles/Communityprofile.css";
 
 const API_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api";
@@ -24,7 +32,8 @@ const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 export default function CommunityProfile() {
   const { communityId } = useParams();
   const navigate = useNavigate();
-  const { searchQuery } = useContext(SearchContext);
+  const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const { token, userId } = useContext(AuthContext);
   const currentUserId = localStorage.getItem("userId");
 
   const [community, setCommunity] = useState(null);
@@ -34,17 +43,26 @@ export default function CommunityProfile() {
   const [loading, setLoading] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
-  // Overlay States
+  // Overlay & Popup States
   const [showSettingsOverlay, setShowSettingsOverlay] = useState(false);
   const [settingsTab, setSettingsTab] = useState("General");
+  const [showPostPopup, setShowPostPopup] = useState(false);
+  const [showSettingsPopup, setShowSettingsPopup] = useState(false);
 
-  // Edit States (Legacy Inline Editing)
+  // Mobile Join/Trends States
+  const [joining, setJoining] = useState(false);
+  const [loadingTrends, setLoadingTrends] = useState(true);
+  const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
+
+  // Edit States
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [bannerFile, setBannerFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
 
   const observer = useRef();
+  const postPopupRef = useRef(null);
+  const settingsPopupRef = useRef(null);
 
   const getFullUrl = (path, fallback) => {
     if (!path) return fallback;
@@ -62,11 +80,23 @@ export default function CommunityProfile() {
     }
   };
 
+  const fetchTrends = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/posts/trends`);
+      setTrends(res.data);
+    } catch (err) {
+      console.error("Trends error");
+    } finally {
+      setLoadingTrends(false);
+    }
+  };
+
   useEffect(() => {
     setFeed([]);
     setPage(1);
     setHasMore(true);
     fetchCommunity();
+    fetchTrends();
   }, [communityId]);
 
   useEffect(() => {
@@ -97,6 +127,27 @@ export default function CommunityProfile() {
     fetchPosts();
   }, [page, communityId]);
 
+  const handleJoin = async () => {
+    if (!userId || !token) { navigate("/login"); return; }
+    try {
+      setJoining(true);
+      await axios.post(`${API_URL}/communities/${communityId}/join`, { userId }, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      window.location.reload(); 
+    } catch (err) { console.error(err); } finally { setJoining(false); }
+  };
+
+  const handleLeave = async () => {
+    if (!window.confirm("Leave this community?")) return;
+    try {
+      await axios.post(`${API_URL}/communities/${communityId}/leave`, { userId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      window.location.reload();
+    } catch (err) { console.error(err); }
+  };
+
   const handleSave = async () => {
     try {
       const formData = new FormData();
@@ -116,12 +167,13 @@ export default function CommunityProfile() {
     }
   };
 
-  // Roles Calculation
   const roleData = useMemo(() => {
-    if (!community || !currentUserId) return { isMember: false, isAdmin: false, isMainAdmin: false };
+    if (!community || !currentUserId) return { isMember: false, isAdmin: false, isMainAdmin: false, isPending: false };
     const memberRecord = community.communityMembers?.find((m) => m.userId === currentUserId);
+    const isPending = memberRecord?.status === "PENDING"; 
     return {
-      isMember: !!memberRecord,
+      isMember: !!memberRecord && !isPending,
+      isPending: isPending,
       isAdmin: memberRecord?.role === "ADMIN" || memberRecord?.role === "MAIN_ADMIN",
       isMainAdmin: memberRecord?.role === "MAIN_ADMIN",
     };
@@ -143,6 +195,15 @@ export default function CommunityProfile() {
   }, [feed, searchQuery]);
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (postPopupRef.current && !postPopupRef.current.contains(e.target)) setShowPostPopup(false);
+      if (settingsPopupRef.current && !settingsPopupRef.current.contains(e.target)) setShowSettingsPopup(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY;
       if (y > 260 && !isPinned) setIsPinned(true);
@@ -156,6 +217,7 @@ export default function CommunityProfile() {
 
   return (
     <div className="community-page">
+      {/* Banner */}
       <div
         className="community-banner"
         style={{ backgroundImage: `url(${getFullUrl(isEditing ? editData.banner : community.banner, "/images/default-banner.jpg")})` }}
@@ -182,6 +244,7 @@ export default function CommunityProfile() {
         </div>
       </div>
 
+      {/* Header */}
       <div className={`community-profile-header ${isPinned ? "pinned" : ""}`}>
         <div style={{ position: "relative" }}>
           <img
@@ -216,6 +279,8 @@ export default function CommunityProfile() {
 
       <div className="community-container">
         <main className="community-center">
+          
+          {/* 1. DESCRIPTION (Now above buttons on mobile) */}
           <div className="community-description">
             {isEditing ? (
               <textarea 
@@ -227,20 +292,92 @@ export default function CommunityProfile() {
               community.discription
             )}
           </div>
-          {filteredFeed.map((post, index) => {
-            const Component = { opinion: OpinionPost, critique: CritiquePost, analysis: AnalysisPost, poll: PollPost }[post.type];
-            return Component ? (
-              <div key={post.id} ref={filteredFeed.length === index + 1 ? lastPostRef : null} style={{ marginBottom: "12px" }}>
-                <Component postId={post.id} initialData={post} />
+
+          {/* 2. MOBILE-ONLY ACTION BUTTONS & SEARCH */}
+          <div className="mobile-sidebar-replacement">
+            {!roleData.isMember ? (
+              <button 
+                onClick={handleJoin} 
+                disabled={joining || roleData.isPending} 
+                className="mobile-join-btn"
+                style={{ backgroundColor: roleData.isPending ? "#ccc" : "#1C274C", color: roleData.isPending ? "#666" : "#FFC847" }}
+              >
+                {joining ? "Processing..." : roleData.isPending ? "Request Pending" : "Join Community"}
+              </button>
+            ) : (
+              <div style={{ display: "flex", gap: "10px", width: "100%", marginBottom: "20px" }}>
+                <div style={{ flex: 1, position: "relative" }} ref={postPopupRef}>
+                  <button 
+                    onClick={() => setShowPostPopup(!showPostPopup)} 
+                    className="sidebar-post-btn-style"
+                  >
+                    <img src={feather} alt="" style={{ width: 18 }} />
+                    <span style={{ fontSize: "17px", fontWeight: 600, color: "#FFC847" }}>Post</span>
+                  </button>
+                  {showPostPopup && (
+                    <div className="popup-menu mobile-popup">
+                      {["Opinion", "Analysis", "Critique", "Poll"].map((label, i) => (
+                        <button key={i} className="side-menu-item" onClick={() => navigate(`/${label.toLowerCase()}-create`, { state: { preSelectCommunity: community.name } })}>{label}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ position: "relative" }} ref={settingsPopupRef}>
+                  <button onClick={() => setShowSettingsPopup(!showSettingsPopup)} className="sidebar-menu-btn-style">
+                    <img src={MenuIcon} alt="menu" style={{ width: 22 }} />
+                  </button>
+                  {showSettingsPopup && (
+                    <div className="popup-menu settings-menu mobile-popup">
+                      {roleData.isAdmin || roleData.isMainAdmin ? (
+                        <>
+                          <div className="side-menu-item" onClick={() => { setSettingsTab("Members"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Community Manager</div>
+                          <div className="side-menu-item" onClick={() => { setSettingsTab("General"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Settings</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="side-menu-item" onClick={() => alert("Reported")}>Report</div>
+                          <div className="side-menu-item delete" onClick={handleLeave}>Leave Group</div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : null;
-          })}
-          {loading && <SkeletonPost />}
+            )}
+
+            <div className="sidebar-search-container mobile-search-group">
+              <div className="search-bar-mini">
+                {!searchQuery && <img src={magnifier} style={{ width: "1.25rem", marginRight: "0.4rem" }} alt="search" />}
+                <input type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                {searchQuery && <img src={closeIcon} onClick={() => setSearchQuery("")} style={{ width: "1rem", cursor: "pointer" }} alt="clear" />}
+              </div>
+              <div className="trend-tags">
+                {!loadingTrends ? trends.viralKeywords.map((topic, i) => (
+                  <button key={i} onClick={() => setSearchQuery(searchQuery === topic ? "" : topic)} className={searchQuery === topic ? "active" : ""}>{topic}</button>
+                )) : <span>Loading...</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. THE FEED */}
+          <div className="community-feed-list">
+            {filteredFeed.map((post, index) => {
+              const Component = { opinion: OpinionPost, critique: CritiquePost, analysis: AnalysisPost, poll: PollPost }[post.type];
+              return Component ? (
+                <div key={post.id} ref={filteredFeed.length === index + 1 ? lastPostRef : null} style={{ marginBottom: "12px" }}>
+                  <Component postId={post.id} initialData={post} />
+                </div>
+              ) : null;
+            })}
+            {loading && <SkeletonPost />}
+          </div>
         </main>
 
         <div className="community-sidebar">
           <CommunitySidebar 
             isMember={roleData.isMember} 
+            isPending={roleData.isPending}
             isAdmin={roleData.isAdmin} 
             isMainAdmin={roleData.isMainAdmin}
             setIsEditing={setIsEditing} 
@@ -253,26 +390,51 @@ export default function CommunityProfile() {
         </div>
       </div>
 
-      {/* Settings Overlay Layer */}
       {showSettingsOverlay && (
         <CommunitySettings 
           community={community} 
           initialSection={settingsTab}
           onClose={() => setShowSettingsOverlay(false)}
           onUpdate={() => {
-            fetchCommunity(); // Refresh community data
+            fetchCommunity();
             setShowSettingsOverlay(false);
           }}
         />
       )}
       
       <style>{`
-        .community-description { padding: 20px 0; font-size: 15px; color: #333; line-height: 1.5; }
-        .banner-edit-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
-        .change-img-btn { background: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+        .mobile-sidebar-replacement { display: none; }
+
+        @media (max-width: 768px) {
+          .mobile-sidebar-replacement { display: block; width: 100%; margin-bottom: 20px; }
+          .community-sidebar { display: none; }
+          .community-center { width: 100% !important; padding: 0 15px !important; }
+        }
+
+        .sidebar-post-btn-style { width: 100%; height: 57px; borderRadius: 1.4rem; background-color: #1c274c; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; border-radius: 1.4rem; }
+        .sidebar-menu-btn-style { width: 57px; height: 57px; borderRadius: 1.4rem; background-color: #F0F2F5; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 1.4rem; }
+        .mobile-join-btn { width: 100%; height: 61px; border-radius: 19px; font-weight: 600; cursor: pointer; border: none; margin-bottom: 20px; }
+
+        .popup-menu { 
+          position: absolute; top: 65px; left: 0; width: 100%; background: white; border-radius: 15px; 
+          border: 1px solid rgba(28, 39, 76, 0.15); padding: 8px 0; z-index: 100; display: flex; 
+          flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
+        }
+        .settings-menu { right: 0; left: auto; width: 190px; }
+        .side-menu-item { padding: 12px 18px; cursor: pointer; font-size: 15px; color: #1c274c; font-weight: 500; width: 100%; text-align: left; border: none; background: none; }
+        .side-menu-item:hover { background: #f1f3f5; }
+        .side-menu-item.delete { color: #ff4d4f; border-top: 1px solid #eee; margin-top: 4px; padding-top: 12px; }
+
+        .sidebar-search-container { width: 100%; border-radius: 1.4rem; border: 0.5px solid #1C274C; padding: 1.25rem; background: #FFF; }
+        .search-bar-mini { display: flex; align-items: center; background: #FCFCFC; border: 0.2px solid black; border-radius: 0.7rem; padding: 0.5rem; }
+        .search-bar-mini input { flex: 1; border: none; outline: none; background: transparent; padding-left: 5px; }
+        .trend-tags { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .trend-tags button { font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 0.6rem; border: 1px solid #ccc; background: transparent; cursor: pointer; }
+        .trend-tags button.active { background: #ECF2F6; border-color: #1C274C; }
+
+        .community-description { padding: 15px 0; font-size: 15px; color: #333; line-height: 1.5; }
         .edit-save-btn { background: #1C274C; color: #FFC847; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .edit-cancel-btn { background: #eee; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; }
-        .change-icon-btn { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background: #1C274C; color: white; border: none; padding: 2px 8px; font-size: 10px; border-radius: 4px; }
         .edit-title-input, .edit-slogan-input { border: 1px solid #ddd; padding: 5px; border-radius: 4px; width: 100%; }
         .edit-desc-textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: inherit; }
       `}</style>

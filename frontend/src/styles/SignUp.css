@@ -164,3 +164,23 @@
   transform-origin: top left;
   width: 111.111%; /* compensate for scale to avoid cutoff */
 }
+
+
+@media (max-width: 900px) {
+  .signup-container { width: 100% !important; padding: 16px !important; }
+
+@media (max-width: 1024px) {
+  .signup-left-side {
+    width: 100%;
+    padding: 40px 20px;
+  }
+
+  .signup-right-side {
+    display: none;
+  }
+
+  .signup-left-side .logo {
+    width: min(280px, 70vw);
+  }
+}
+}
