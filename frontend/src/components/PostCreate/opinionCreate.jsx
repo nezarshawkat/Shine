@@ -154,30 +154,68 @@ export default function OpinionCreate() {
     showToast("Draft saved locally", "success");
   };
 
-  // --- Image Resolution Helper ---
   const profileImg = user?.image 
     ? (user.image.startsWith('http') ? user.image : `${BACKEND_URL}${user.image}`) 
     : profileDefault;
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", overflow: "hidden" }}>
+    <div style={{ background: BG, minHeight: "100vh", overflowX: "hidden" }}>
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+          .header-container {
+            flex-direction: column !important;
+            padding: 20px 20px !important;
+            text-align: center !important;
+            gap: 10px !important;
+          }
+          .logo-img {
+            width: 180px !important;
+            margin: 0 auto !important;
+          }
+          .header-divider {
+            display: none !important;
+          }
+          .header-title {
+            font-size: 24px !important;
+            margin: 0 auto !important;
+          }
+          .main-layout {
+            flex-direction: column !important;
+          }
+          .editor-column {
+            width: 100% !important;
+            padding: 0 20px !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          .action-sidebar {
+            position: relative !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 20px !important;
+            box-sizing: border-box;
+          }
+        }
       `}</style>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div style={{ display: "flex", alignItems: "center", padding: "24px 40px 40px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img src={Logo} width={264} alt="Logo" />
-          <div style={{ width: 1, height: 48, background: BORDER }}></div>
-          <h1 style={{ fontSize: 38, fontWeight: 700, color: PRIMARY, margin: 0 }}>Post - Opinion</h1>
+      {/* Header Section */}
+      <div className="header-container" style={{ display: "flex", alignItems: "center", padding: "24px 40px 40px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, width: "100%", flexWrap: "wrap", justifyContent: "inherit" }} className="header-inner">
+          <img src={Logo} className="logo-img" width={264} alt="Logo" style={{ transition: 'width 0.3s' }} />
+          <div className="header-divider" style={{ width: 1, height: 48, background: BORDER }}></div>
+          <h1 className="header-title" style={{ fontSize: 38, fontWeight: 700, color: PRIMARY, margin: 0 }}>Post - Opinion</h1>
         </div>
       </div>
 
+      {/* User Info & Audience */}
       <div style={{ display: "flex", alignItems: "center", padding: "0 40px", gap: 12, marginBottom: 10 }}>
-        {/* Updated Image Source */}
         <img src={profileImg} width={40} height={40} style={{ borderRadius: "50%", objectFit: "cover" }} />
         <div style={{ fontSize: 14, fontWeight: 600 }}>{user?.name || "Guest"}</div>
 
@@ -199,8 +237,8 @@ export default function OpinionCreate() {
             }}>
               <div
                 style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer", borderBottom: `1px solid ${BG}` }}
-                onMouseOver={(e) => e.target.style.background = LIGHT}
-                onMouseOut={(e) => e.target.style.background = "transparent"}
+                onMouseOver={(e) => (e.target.style.background = LIGHT)}
+                onMouseOut={(e) => (e.target.style.background = "transparent")}
                 onClick={() => {
                   setAudience({ name: "Personally", id: null });
                   setShowAudience(false);
@@ -213,8 +251,8 @@ export default function OpinionCreate() {
                 <div
                   key={c.id}
                   style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }}
-                  onMouseOver={(e) => e.target.style.background = LIGHT}
-                  onMouseOut={(e) => e.target.style.background = "transparent"}
+                  onMouseOver={(e) => (e.target.style.background = LIGHT)}
+                  onMouseOut={(e) => (e.target.style.background = "transparent")}
                   onClick={() => {
                     setAudience({ name: c.name, id: c.id });
                     setShowAudience(false);
@@ -228,9 +266,9 @@ export default function OpinionCreate() {
         </div>
       </div>
 
-      <div style={{ display: "flex" }}>
+      <div className="main-layout" style={{ display: "flex" }}>
         <div 
-          className="hide-scrollbar" 
+          className="hide-scrollbar editor-column" 
           style={{ 
             padding: "0 40px", 
             width: 708, 
@@ -298,7 +336,8 @@ export default function OpinionCreate() {
           </div>
         </div>
 
-        <div style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Buttons Sidebar/Bottom bar */}
+        <div className="action-sidebar" style={{ width: 300, position: "fixed", bottom: 40, right: 40, display: "flex", flexDirection: "column", gap: 12 }}>
           <button 
             disabled={loading}
             onClick={handlePost} 

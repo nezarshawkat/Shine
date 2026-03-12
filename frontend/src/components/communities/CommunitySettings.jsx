@@ -179,17 +179,17 @@ export default function CommunitySettings({ community, initialSection = "General
       <div className="settings-container">
         <aside className="settings-sidebar">
           <button className="settings-back-btn" onClick={onClose}>
-            <span className="arrow">←</span> Back
+            <span className="arrow">←</span> <span className="btn-text">Back</span>
           </button>
           <nav className="settings-nav">
             <button className={`nav-item ${activeSection === "General" ? "active" : ""}`} onClick={() => setActiveSection("General")}>
-              <span className="nav-icon">⚙️</span> General
+              <span className="nav-icon">⚙️</span> <span className="nav-text">General</span>
             </button>
             <button className={`nav-item ${activeSection === "Members" ? "active" : ""}`} onClick={() => setActiveSection("Members")}>
-              <span className="nav-icon">👥</span> Manager
+              <span className="nav-icon">👥</span> <span className="nav-text">Manager</span>
             </button>
             <button className={`nav-item ${activeSection === "Requests" ? "active" : ""}`} onClick={() => setActiveSection("Requests")}>
-              <span className="nav-icon">📩</span> Requests
+              <span className="nav-icon">📩</span> <span className="nav-text">Requests</span>
             </button>
           </nav>
         </aside>
@@ -350,6 +350,38 @@ export default function CommunitySettings({ community, initialSection = "General
             margin-top: 8px;
         }
         .banner-upload { flex: 1; align-items: flex-start !important; }
+
+        /* Responsive UI Overrides */
+        @media (max-width: 850px) {
+          .settings-container { flex-direction: column; }
+          .settings-sidebar { 
+            width: 100%; 
+            height: auto; 
+            padding: 10px 15px; 
+            flex-direction: row; 
+            align-items: center;
+            border-right: none;
+            border-bottom: 1px solid #eee;
+          }
+          .settings-back-btn { margin-bottom: 0; padding: 8px 15px; }
+          .settings-back-btn .btn-text { display: none; }
+          .settings-nav { 
+            display: flex; 
+            flex: 1; 
+            justify-content: flex-end; 
+            gap: 5px; 
+          }
+          .nav-item { margin-bottom: 0; padding: 10px; width: auto; }
+          .nav-text { display: none; }
+          .nav-icon { margin-right: 0; font-size: 18px; }
+          .settings-main { padding: 20px; }
+          .branding-edit-container { flex-direction: column; align-items: flex-start; }
+          .settings-banner-preview { width: 100%; }
+          .shine-input { max-width: 100%; }
+          .member-manage-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .member-actions { width: 100%; justify-content: space-between; display: flex; }
+          .role-select { flex: 1; }
+        }
       `}</style>
     </div>
   );

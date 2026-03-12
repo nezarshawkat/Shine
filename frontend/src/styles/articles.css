@@ -68,3 +68,9 @@
     order: 1;
   }
 }
+
+@media (max-width: 1216px) {
+  .articles-container { padding: 0 12px 16px; }
+  .articles-container .right-column { display:none; }
+  .articles-container .center-column { padding-top: 8px; }
+}

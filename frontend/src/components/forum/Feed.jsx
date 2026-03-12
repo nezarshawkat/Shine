@@ -60,7 +60,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     [loading, hasMore]
   );
 
-  // 4. FETCH POSTS - FIXED: Removed setFeed from dependencies to prevent loops
+  // 4. FETCH POSTS
   useEffect(() => {
     const fetchFeed = async () => {
       setLoading(true);
@@ -79,12 +79,10 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
           setHasMore(false);
         } else {
           setFeed((prevPosts) => {
-            // Redis sometimes re-orders posts. We MUST filter by ID to prevent duplicates.
             const existingIds = new Set(prevPosts.map((p) => p.id));
             const uniquePosts = newPosts.filter((p) => !existingIds.has(p.id));
             return [...prevPosts, ...uniquePosts];
           });
-          // If we got less than the page size, there are no more posts
           setHasMore(newPosts.length === 10);
         }
       } catch (err) {
@@ -96,9 +94,11 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     };
 
     fetchFeed();
-  }, [page]); // Only trigger when the page number increments
+  }, [page]); 
 
-  // 5. RENDER POST - FIXED: Ensure Component exists before rendering
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+
+  // 5. RENDER POST - FIXED: Added width: 100% to force filling the column
   const renderPost = (post, index) => {
     const isLast = filteredFeed.length === index + 1;
     
@@ -120,7 +120,10 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       <div
         ref={isLast ? lastPostRef : null}
         key={post.id || index}
-        style={{ width: "100%", marginBottom: "12px" }}
+        style={{ 
+          width: "100%", // Force post to fill the center column
+          marginBottom: isMobile ? "2px" : "12px" 
+        }}
       >
         <Component 
           postId={post.id} 
@@ -150,18 +153,31 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       style={{
         width: "100%",
         flex: 1,
-        padding: "20px",
+        padding: isMobile ? "12px" : "20px",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
+        alignItems: "center", // Ensures content stays centered if it hits a max-width
       }}
     >
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px" }}>
+      {/* Container for the list of posts */}
+      <div 
+        style={{ 
+          width: "100%", 
+          display: "flex", 
+          flexDirection: "column", 
+          gap: isMobile ? "2px" : "12px", 
+          alignItems: "center" 
+        }}
+      >
         {filteredFeed.map((post, index) => renderPost(post, index))}
 
         {loading &&
-          Array.from({ length: 3 }).map((_, i) => <SkeletonPost key={i} />)}
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ width: "100%" }}>
+              <SkeletonPost />
+            </div>
+          ))}
       </div>
 
       {!hasMore && filteredFeed.length > 0 && (

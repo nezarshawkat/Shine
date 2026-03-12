@@ -145,7 +145,6 @@ export default function AnalysisPost({ postId, initialData }) {
     return updated - created > 2000;
   };
 
-  // Improved Facebook-style View Logic
   useEffect(() => {
     const currentId = initialData?.id || initialData?._id || postId;
     if (!currentId || hasViewed) return;
@@ -296,6 +295,20 @@ export default function AnalysisPost({ postId, initialData }) {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 600px) {
+          .post-timestamp {
+            display: none !important;
+          }
+          .sources-btn-label {
+            display: none;
+          }
+          .sources-btn-root::after {
+            content: "Sources";
+          }
+        }
+      `}</style>
+
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       {showDeleteModal && <DeleteModal onConfirm={handleDelete} onCancel={() => setShowDeleteModal(false)} />}
       
@@ -385,13 +398,19 @@ export default function AnalysisPost({ postId, initialData }) {
         {!isEditing && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 15 }}>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
+              <div className="post-timestamp" style={{ fontSize: 12, color: "#6b7280" }}>
                 {isPostUpdated() && "(Updated) "}
                 {formattedDate} • {formattedTime}
               </div>
               {sources.length > 0 && (
-                <button onClick={(e) => { e.stopPropagation(); setShowSources(!showSources); }} style={{ background: "transparent", border: "none", color: "#FFC847", fontSize: 16, fontWeight: 500, cursor: "pointer" }}>
-                  {showSources ? "Hide Sources" : "View Sources"}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowSources(!showSources); }} 
+                  className="sources-btn-root"
+                  style={{ background: "transparent", border: "none", color: "#FFC847", fontSize: 16, fontWeight: 500, cursor: "pointer" }}
+                >
+                  <span className="sources-btn-label">
+                    {showSources ? "Hide Sources" : "View Sources"}
+                  </span>
                 </button>
               )}
             </div>

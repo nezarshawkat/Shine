@@ -13,9 +13,10 @@ export default function Forum() {
 
   const [selectedPostId, setSelectedPostId] = useState(postId || null);
   const [feed, setFeed] = useState([]);
-
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const scrollPosRef = useRef(0);
 
+  // Sync state with URL params
   useEffect(() => {
     setSelectedPostId(postId || null);
   }, [postId]);
@@ -43,12 +44,62 @@ export default function Forum() {
     <div className="forum-page">
       <Header />
 
+      {/* Mobile Top Bar */}
+      <div className="forum-mobile-topbar">
+        <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
+          ☰ Menu
+        </button>
+      </div>
+
+      {/* Unified Mobile Sidebar Drawer */}
+      {mobileNavOpen && (
+        <>
+          <div className="mobile-drawer-overlay" onClick={() => setMobileNavOpen(false)} />
+          <aside className="mobile-left-drawer">
+            <button className="mobile-drawer-close" onClick={() => setMobileNavOpen(false)}>✕</button>
+            
+            <div className="mobile-drawer-scroll-area">
+              {/* 1. Post Button (from RightSidebar) */}
+              <RightSidebar showOnly={['postButton']} />
+
+              {/* 2. Events (from RightSidebar) */}
+              <div style={{ marginTop: '15px' }}>
+                 <RightSidebar showOnly={['events']} />
+              </div>
+
+              {/* 3. Trending (from LeftSidebar) */}
+              <div style={{ marginTop: '15px' }}>
+                <LeftSidebar hideSearch={true} showOnly={['trending']} />
+              </div>
+
+              {/* 4. Friends (from RightSidebar) */}
+              <div style={{ marginTop: '15px' }}>
+                <RightSidebar showOnly={['friends']} />
+              </div>
+
+              {/* 5. Messenger Group (from LeftSidebar) */}
+              <div style={{ marginTop: '15px' }}>
+                <LeftSidebar hideSearch={true} showOnly={['messenger']} />
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* Main Forum Layout */}
       <div className="forum-container">
         <aside className="left-column">
           <LeftSidebar />
         </aside>
 
         <main className="center-column">
+          {/* Mobile-only Search Group: Placed before the feed */}
+          {!selectedPostId && (
+            <div className="mobile-search-wrapper">
+              <LeftSidebar onlySearch={true} />
+            </div>
+          )}
+
           {selectedPostId ? (
             <PostView postId={selectedPostId} goBack={handleBack} />
           ) : (

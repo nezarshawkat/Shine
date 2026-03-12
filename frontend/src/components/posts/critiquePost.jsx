@@ -304,6 +304,20 @@ export default function CritiquePost({ postId, initialData }) {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 600px) {
+          .post-timestamp {
+            display: none !important;
+          }
+          .sources-btn-full {
+            display: none !important;
+          }
+          .sources-btn-mobile {
+            display: inline !important;
+          }
+        }
+      `}</style>
+
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       {showDeleteModal && <DeleteModal onConfirm={handleDelete} onCancel={() => setShowDeleteModal(false)} />}
       
@@ -322,11 +336,7 @@ export default function CritiquePost({ postId, initialData }) {
               <img src={authorImage} alt="" style={{ width: 41, height: 41, borderRadius: 999, objectFit: "cover" }} />
               <div>
                 <div style={{ fontSize: 16, fontWeight: 400, color: "#1C274C" }}>{post.author?.name || "User"}</div>
-                {community?.name && (
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>
-                    from <Link to={`/community/${community.id || community._id}`} style={{ textDecoration: "none", fontWeight: "bold", color: "#1C274C" }}>{community.name}</Link>
-                  </div>
-                )}
+                {community?.name && <div style={{ fontSize: 12, color: "#6b7280" }}>from <span style={{ fontWeight: "bold", color: "#1C274C" }}>{community.name}</span></div>}
               </div>
             </Link>
 
@@ -422,13 +432,14 @@ export default function CritiquePost({ postId, initialData }) {
         {!isEditing && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 15 }}>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
+              <div className="post-timestamp" style={{ fontSize: 12, color: "#6b7280" }}>
                 {isPostUpdated() && "(Updated) "}
                 {formattedDate} • {formattedTime}
               </div>
               {sources.length > 0 && (
                 <button onClick={(e) => { e.stopPropagation(); setShowSources(!showSources); }} style={{ background: "transparent", border: "none", color: "#FFC847", fontSize: 16, fontWeight: 500, cursor: "pointer" }}>
-                  {showSources ? "Hide Sources" : "View Sources"}
+                  <span className="sources-btn-full">{showSources ? "Hide Sources" : "View Sources"}</span>
+                  <span className="sources-btn-mobile" style={{ display: "none" }}>Sources</span>
                 </button>
               )}
             </div>

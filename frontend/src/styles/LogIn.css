@@ -110,3 +110,23 @@
   gap: 10px;
   margin-bottom: 10px;
 }
+
+
+@media (max-width: 900px) {
+  .login-container { width: 100% !important; padding: 16px !important; }
+
+@media (max-width: 1024px) {
+  .login-left-side {
+    width: 100%;
+    padding: 40px 20px;
+  }
+
+  .login-right-side {
+    display: none;
+  }
+
+  .login-left-side .logo {
+    width: min(280px, 70vw);
+  }
+}
+}
