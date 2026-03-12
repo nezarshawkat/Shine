@@ -1,0 +1,189 @@
+/* Header container */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+background-color: #ffffff;
+  font-family: "Montserrat", sans-serif;
+}
+
+.header {
+  position: fixed;      /* 🔒 sticks header */
+  top: 0;
+  left: 0;
+  width: 100%;
+
+  z-index: 1000;        /* 🔝 always above content */
+
+  background: white;   /* prevents transparency issues */
+}
+
+
+/* Left side: Logo */
+.header-left .logo {
+  height: 40px;
+  }
+
+/* Main page buttons (Forum, Communities, Articles, Events) */
+.header-button {
+  font-weight: 300; /* light */
+  font-size: 20px;
+  color: #1C274C;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-right: 26px;
+}
+
+.header-button:last-of-type {
+  margin-right: 22px;
+}
+
+/* Donate button styling */
+.donate-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background-color: #FFC847;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 19px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.donate-button img {
+  width: 24px;
+  height: 24px;
+}
+
+
+/* Center: Page buttons + Donate */
+.header-center {
+  display: flex;
+  align-items: center;
+}
+
+/* Right side: Messages + Profile */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+
+
+.icon-button {
+  font-size: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-pic {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.profile-name {
+  font-weight: 300;
+  font-size: 22px;
+  color: #1C274C;
+}
+
+/* Not logged in: Log in + Be a member */
+.login-button {
+  font-weight: 500;
+  font-size: 22px;
+  color: #1C274C;
+  background: transparent;
+  border: none;
+  margin-right: 33px;
+  cursor: pointer;
+}
+
+.be-member-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 207px;
+  height: 45px;
+  border-radius: 7px;
+  background-color: #1C274C;
+  border: none;
+  cursor: pointer;
+}
+
+.be-member-button img {
+  width: 20px;
+  height: 30px;
+}
+
+.be-member-button span {
+  font-weight: 500;
+  font-size: 22px;
+  color: #ffffff;
+}
+.header-button.active-yellow {
+  color: #FFC847;
+  border-radius: 6px;
+  font-weight: 500;
+}
+/* Logged-in profile on far left */
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 20px; /* space from logo */
+  cursor: pointer;
+}
+
+.profile-pic-left {
+  width: 35px;   /* same height as logo */
+  height: 35px;
+  border-radius: 50%;
+}
+
+.profile-name-left {
+  font-weight: 300;
+  font-size: 22px;
+  color: #1C274C;
+}
+/* Profile on far left (next to logo) */
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px; /* space from logo */
+  cursor: pointer;
+}
+
+.profile-pic-left {
+  width: 35px;  /* same as logo height */
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-name-left {
+  font-weight: 300;
+  font-size: 20px;
+  color: #1C274C;
+}
+.header-left a,
+.header-left button {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}

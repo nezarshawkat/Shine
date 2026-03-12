@@ -1,0 +1,91 @@
+.communities-page {
+  background-color: #f7f9fc;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Space between header and content */
+.communities-page .communities-container {
+  display: grid;
+  grid-template-columns: 1fr 2.78fr 1fr; /* left:center:right ratio */
+  column-gap: 20px;
+  justify-content: center;
+  width: 100%;
+  margin: 0; /* spacing from header */
+  padding: 0 24px; /* left & right padding */
+}
+
+/* Each section basic styling */
+.communities-page .left-column,
+.communities-page .center-column,
+.communities-page .right-column {
+  background-color: #f6f8fc;
+  border-radius: 10px;
+  padding-top: 92px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add bottom spacing only for sidebars on Communities page */
+.communities-page .left-column,
+.communities-page .right-column {
+  padding-bottom: 20px; /* spacing from bottom */
+}
+
+/* Center column stretches full width of its grid column */
+.communities-page .center-column {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Center content (Commb + FeedC) stretches fully within center column */
+.communities-page .center-column .center-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* spacing between Commb and FeedC */
+  width: 100%; /* stretch full width of center column */
+}
+
+/* Make Commb and FeedC fill center column */
+.communities-page .center-column .center-content > .commb,
+.communities-page .center-column .center-content > .feedc {
+  width: 100%;
+}
+
+/* Responsive behavior */
+@media (max-width: 1216px) {
+  .communities-page .communities-container {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+
+  .communities-page .center-column .center-content {
+    width: 100%;
+  }
+}
+/* Center column stretches full width of its grid column */
+.communities-page .center-column {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center content horizontally */
+}
+
+/* Center content (Commb + FeedC) stretches fully within center column */
+.communities-page .center-column .center-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* spacing between Commb and FeedC */
+  width: 100%; /* full width of center column */
+  max-width: 100%; 
+  align-items: center; /* center children horizontally */
+}
+
+/* Make Commb and FeedC fill center column but stay centered */
+.communities-page .center-column .center-content > .commb,
+.communities-page .center-column .center-content > .feedc {
+  width: 100%;
+  max-width: 1000px; /* optional: limit max width for nicer center layout */
+}

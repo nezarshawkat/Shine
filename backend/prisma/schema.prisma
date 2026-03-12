@@ -1,0 +1,379 @@
+// ================== DATASOURCE ==================
+datasource db {
+  provider = "postgresql"
+}
+
+// ================== GENERATOR ==================
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ================= ENUMS =================
+enum PostType {
+  poll
+  opinion
+  analysis
+  critique
+}
+
+enum CommunityStatus {
+  PUBLIC
+  PRIVATE
+}
+
+enum MemberRole {
+  MAIN_ADMIN
+  ADMIN
+  MEMBER
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// ================= MODELS =================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  name         String
+  password     String
+  image        String?
+  description  String?
+  isAuthorized Boolean  @default(false)
+  isSupporter  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  roleLevel    String   @default("Starter")
+
+  // Content Relations
+  posts         Post[]
+  articles      Article[]
+  comments      Comment[]
+  likes         Like[]
+  shares        Share[]
+  saves         Save[]
+  flags         Flag[]
+  views         PostView[]
+  media         Media[]
+  notifications Notification[]
+  donations     Donation[]
+
+  // Community Relations
+  createdCommunities Community[]       @relation("Creator")
+  memberships        CommunityMember[]
+  joinRequests       CommunityRequest[]
+
+  // Social Relations
+  following Follows[] @relation("follower")
+  followers Follows[] @relation("following")
+  
+  // Blocking Relations
+  blockedUsers Block[]   @relation("blocker")
+  blockedBy    Block[]   @relation("blocked")
+
+  // Messaging Relations
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  // Interactive Relations
+  votedPolls PollOption[]
+}
+
+model Block {
+  id        String @id @default(uuid())
+  blockerId String
+  blocker   User   @relation("blocker", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User   @relation("blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
+
+model Donation {
+  id              String   @id @default(uuid())
+  amount          Float
+  currency        String   @default("USD")
+  status          String   @default("completed")
+  stripeSessionId String   @unique
+  createdAt       DateTime @default(now())
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  type      PostType
+  text      String
+  keywords  String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id])
+
+  media   Media[]
+  sources Source[]
+
+  parentId   String?
+  parentPost Post?    @relation("CritiqueHistory", fields: [parentId], references: [id])
+  critiques  Post[]   @relation("CritiqueHistory")
+
+  pollOptions PollOption[]
+  likes       Like[]
+  comments    Comment[]
+  shares      Share[]
+  saves       Save[]
+  flags       Flag[]
+  views       PostView[]
+
+  @@index([authorId])
+  @@index([communityId])
+}
+
+model Article {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  media   Media[]
+  likes   Like[]
+  saves   Save[]
+  sources Source[]
+  flags   Flag[]
+  views   PostView[]
+
+  @@index([authorId])
+}
+
+model Source {
+  id    String @id @default(uuid())
+  name  String
+  link  String
+  
+  postId String? 
+  post   Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+  id        String   @id @default(uuid())
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+
+  uploaderId String
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+
+  postId String?
+  post   Post?    @relation(fields: [postId], references: [id])
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id])
+}
+
+model PostView {
+  userId    String
+  postId    String? 
+  viewedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  post Post? @relation(fields: [postId], references: [id])
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id])
+
+  @@id([userId, viewedAt]) 
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  likes     Like[] 
+
+  @@index([postId])
+  @@index([parentId])
+}
+
+model PollOption {
+  id          String @id @default(uuid())
+  text        String
+  votes       Int    @default(0)
+  postId      String
+  post        Post   @relation(fields: [postId], references: [id])
+  votedUsers  User[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  postId    String? 
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, articleId])
+  @@unique([userId, commentId]) 
+}
+
+model Share {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
+}
+
+model Save {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  
+  postId String? 
+  post   Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, articleId])
+}
+
+model Flag {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  reason String
+
+  postId String? 
+  post   Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  articleId String? 
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+model Community {
+  id               String            @id @default(uuid())
+  name             String
+  interests        String[]          @default([])
+  slogan           String?
+  discription      String?
+  icon             String?
+  banner           String?
+  status           CommunityStatus   @default(PUBLIC)
+  creatorId        String
+  creator          User              @relation("Creator", fields: [creatorId], references: [id])
+  posts            Post[]
+  communityMembers CommunityMember[]
+  requests         CommunityRequest[]
+}
+
+model CommunityMember {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  communityId String
+  community   Community  @relation(fields: [communityId], references: [id])
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  @@unique([userId, communityId])
+}
+
+model CommunityRequest {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  communityId String
+  community   Community     @relation(fields: [communityId], references: [id])
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+
+  @@unique([userId, communityId])
+}
+
+model Follows {
+  id          String @id @default(uuid())
+  followerId  String
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followingId String
+  following   User   @relation("following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  text       String?
+  imageUrl   String?
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  
+  // New Fields
+  isRead     Boolean  @default(false)
+  isLiked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  
+  // For deleting messages (soft delete or individual delete)
+  deletedBy  String[] @default([]) 
+
+  @@index([senderId, receiverId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  content   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  image       String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

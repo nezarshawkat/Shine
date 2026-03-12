@@ -1,0 +1,60 @@
+/* PostView.css */
+
+/* Page wrapper */
+.forum-page {
+  background-color: #f7f9fc; /* bluish white background */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main grid container */
+.forum-container {
+  display: grid;
+  grid-template-columns: 1fr 2.78fr 1fr; /* left:center:right ratio like 275:765:275 */
+  column-gap: 20px;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0 24px;
+  height: 100vh; /* full viewport height */
+}
+
+/* Each section basic styling */
+.left-column,
+.center-column,
+.right-column {
+  background-color: #F6F8FC;
+  border-radius: 10px;
+  padding-top: 92px;
+}
+
+/* Center column scrollable, hide scrollbar */
+.center-column {
+  min-height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.center-column::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Responsive behavior */
+@media (max-width: 1216px) {
+  .forum-container {
+    grid-template-columns: 1fr; /* stack columns vertically */
+    row-gap: 20px;
+  }
+  .center-column {
+    min-height: auto;
+    max-height: none;
+  }
+}
+
+/* Optional: padding adjustment for center column */
+.center-column {
+  padding-top: 92px;
+}

@@ -1,0 +1,140 @@
+.community-page {
+  background-color: #f7f9fc;
+  min-height: 100vh;
+}
+
+/* ===== FULL BANNER ===== */
+.community-banner {
+  height: 350px;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.community-banner-members {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  font-weight: 600;
+  color: white;
+  font-size: 16px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+/* ===== BLURRED STRIP INSIDE HEADER ===== */
+.community-banner-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(4px) brightness(1);
+  opacity: 1;          /* full opacity */
+  z-index: -1;         /* behind header content */
+}
+
+/* ===== PROFILE HEADER ===== */
+.community-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  margin-top: -96px;
+  position: relative;
+  z-index: 6;
+  overflow: hidden;    /* clip blur inside */
+  transition: all 0.25s ease;
+
+  /* no border by default */
+  border: none;
+}
+
+/* Sticky pinned header */
+.community-profile-header.pinned {
+  position: sticky;
+  top: 64px;
+  padding: 24px 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+  /* Add 3px black border only when pinned */
+}
+
+/* ===== PROFILE IMAGE ===== */
+.community-profile-image {
+  width: 193px;
+  height: 193px;
+  object-fit: cover;
+  transition: all 0.25s ease;
+  /* no border-radius */
+}
+
+.community-profile-image.small {
+  width: 44px;
+  height: 44px;
+}
+
+/* ===== COMMUNITY NAME ===== */
+.community-name {
+  font-size: 49px;
+  font-weight: 600;
+  color: #1c274c; /* normal color */
+  transition: font-size 0.25s ease, color 0.25s ease;
+}
+
+/* When header is pinned, adapt text to background */
+.community-profile-header.pinned .community-name {
+  font-size: 20px;
+
+  /* adapt to background when pinned */
+  color: white;                 /* fallback */
+  mix-blend-mode: difference;   /* text inverts based on background */
+  text-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
+/* ===== COMMUNITY SLOGAN ===== */
+.community-slogan {
+  font-size: 29px;
+  color: #1c274c;
+}
+
+/* ===== MAIN LAYOUT ===== */
+.community-container {
+  display: grid;
+  grid-template-columns: 2.78fr 1fr;
+  gap: 20px;
+  padding: 0 24px;
+  margin-top: 24px;
+}
+
+.community-description {
+  padding: 24px 8px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1c274c;
+}
+
+/* ===== SIDEBAR ===== */
+.community-sidebar {
+  background-color: #f6f8fc;
+  border-radius: 10px;
+  padding: 20px;
+  height: fit-content;
+  position: sticky;
+  top: 140px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1216px) {
+  .community-container {
+    grid-template-columns: 1fr;
+  }
+
+  .community-sidebar {
+    position: static;
+    margin-top: 20px;
+  }
+  
+}

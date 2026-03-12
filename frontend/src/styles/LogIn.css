@@ -1,0 +1,112 @@
+/* Login Page CSS scoped only to .login-page-container */
+.login-page-container {
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* LEFT SIDE */
+.login-left-side {
+  width: 45%;
+  padding: 60px 70px;
+  background: #ECF2F6;
+  height: 100%;
+  overflow-y: auto;
+  padding-top: 80px;
+}
+
+/* Hide scrollbar but keep scroll */
+.login-left-side {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.login-left-side::-webkit-scrollbar {
+  display: none;
+}
+
+/* Scale content down by 10% */
+.login-left-scale {
+  transform: scale(0.9);
+  transform-origin: top left;
+  width: 111.111%;
+}
+
+/* Logo */
+.login-left-side .logo {
+  width: 350px;
+  height: auto;
+  margin-bottom: 40px;
+}
+
+/* Title */
+.login-left-side .title {
+  font-size: 25px;
+  font-weight: 600;
+  color: #1C274C;
+  margin-bottom: 20px;
+}
+
+/* Form */
+.login-left-side .login-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.login-left-side .login-form input {
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #ECF2F6;
+}
+
+/* Button */
+.login-left-side .login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background-color: #FFC847;
+  color: #1C274C;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+/* Bottom text */
+.login-left-side .signin-text {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.login-left-side .signin-text span {
+  color: #FFC847;
+  cursor: pointer;
+}
+
+/* RIGHT SIDE */
+.login-right-side {
+  width: 55%;
+  background: #1C274C;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.login-left-side .google-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 30px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}

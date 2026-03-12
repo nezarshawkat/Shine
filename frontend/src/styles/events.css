@@ -1,0 +1,203 @@
+/* ============================
+   PAGE
+============================ */
+.events-page {
+  width: 100%;
+  overflow-x: hidden;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ============================
+   INTRO TEXT
+============================ */
+.events-intro {
+  padding-bottom: 60px;
+  padding-top: 90px;
+  padding-left: 24px;
+}
+
+.events-intro h1 {
+  font-size: 42px;
+  font-weight: 1000;
+  color: #000;
+}
+
+.events-intro p {
+  margin-top: 13px;
+  font-size: 23px;
+  font-weight: 500;
+  color: #000;
+  max-width: 700px;
+}
+
+/* ============================
+   BANNER
+============================ */
+.event-banner {
+  position: relative;
+  width: 100%;
+  height: 90vh;
+  background-size: cover;
+  background-position: center;
+}
+
+/* ============================
+   EVENT TEXT
+============================ */
+.event-content {
+  position: absolute;
+  bottom: 213px;
+  left: 24px;
+  max-width: 900px;
+}
+
+.event-content h2 {
+  font-size: 73px;
+  font-weight: 600;
+}
+
+.event-content p {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.read-more-inline {
+  font-weight: 500;
+  color: #ffc847;
+  cursor: pointer;
+}
+
+/* ============================
+   FOOTER
+============================ */
+.event-footer {
+  position: absolute;
+  bottom: 52px;
+  left: 24px;
+  right: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-text {
+  font-size: 22px;
+  font-weight: 400;
+}
+
+/* ============================
+   ACTIONS
+============================ */
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  padding: 12px 50px;
+  font-size: 23px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background-color: #ffc847;
+  color: #1c274c;
+  border-radius: 14px;
+}
+
+.btn-secondary {
+  background: none;
+  border: none;
+  font-size: 23px;
+  font-weight: 500;
+  color: #ffc847;
+  cursor: pointer;
+}
+
+.contact-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1c274c;
+}
+
+/* ============================
+   DOTS
+============================ */
+.event-dots-vertical {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 1px solid #1c274c;
+  cursor: pointer;
+}
+
+.dot.active {
+  background-color: #ffc847;
+  border: none;
+}
+
+/* ============================
+   TEXT COLOR MODES
+============================ */
+.dark-text h2,
+.dark-text p {
+  color: #000;
+}
+
+.light-text h2,
+.light-text p {
+  color: #fff;
+}
+
+/* ============================
+   PLAY / PAUSE
+============================ */
+.slideshow-toggle {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 28px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 20;
+  transition: background 0.2s;
+}
+
+.slideshow-toggle:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ============================
+   EMPTY STATE (FIXED)
+============================ */
+.events-empty-wrapper {
+  width: 100%;
+  height: 70vh; /* Proper vertical centering */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.events-empty-text {
+  font-weight: 300;
+  opacity: 0.5;
+  font-size: 20px;
+}
