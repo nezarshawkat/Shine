@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useCallback, useContext } from "rea
 import axios from "axios";
 import Post from "./Post";
 import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 const FeedA = () => {
   const [articles, setArticles] = useState([]);

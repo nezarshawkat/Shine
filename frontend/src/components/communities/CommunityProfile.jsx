@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useContext,
 } from "react";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SearchContext } from "../../searchContext.jsx";
@@ -26,8 +27,8 @@ import MenuIcon from "../../assets/Menu.svg";
 
 import "/workspaces/Shine/frontend/src/styles/Communityprofile.css";
 
-const API_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api";
-const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
+const API_URL = API_BASE_URL;
+const ASSET_URL = BACKEND_URL;
 
 export default function CommunityProfile() {
   const { communityId } = useParams();

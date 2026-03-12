@@ -2,9 +2,10 @@ import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../AuthProvider.jsx";
 import "/workspaces/Shine/frontend/src/styles/CommunitySettings.css";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const API_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api";
-const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
+const API_URL = API_BASE_URL;
+const ASSET_URL = BACKEND_URL;
 
 // --- TOAST COMPONENT (Shine Design) ---
 function Toast({ message, type = "success", action, onClose }) {

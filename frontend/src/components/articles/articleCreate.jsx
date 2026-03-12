@@ -1,8 +1,8 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../AuthProvider.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 const ArticleForm = () => {
   const { user } = useContext(AuthContext);

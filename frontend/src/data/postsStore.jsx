@@ -1,8 +1,7 @@
 // src/data/postsStore.js
 
 import axios from "axios";
-
-const API_BASE = "http://localhost:5000/api"; // adjust if your backend URL is different
+import { API_BASE_URL } from "../api";
 
 /**
  * Create a new post via backend API
@@ -10,7 +9,7 @@ const API_BASE = "http://localhost:5000/api"; // adjust if your backend URL is d
  */
 export async function createPost(post) {
   try {
-    const response = await axios.post(`${API_BASE}/posts`, post);
+    const response = await axios.post(`${API_BASE_URL}/posts`, post);
     console.log("Post created:", response.data);
     return response.data; // return the created post
   } catch (error) {

@@ -3,6 +3,7 @@ import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx"
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import axios from "axios";
+import { API_BASE_URL } from "../../api";
 
 const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }) => {
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
@@ -11,7 +12,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const [systemNotif, setSystemNotif] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api";
+  const API_BASE = API_BASE_URL;
 
   useEffect(() => {
     const fetchAllSidebarData = async () => {
@@ -41,20 +42,17 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
     };
 
     fetchAllSidebarData();
-  }, []);
+  }, [API_BASE]);
 
-  // Helper to check if a section should be visible based on the showOnly prop
   const shouldShow = (section) => !showOnly || showOnly.includes(section);
-
-  // Logic for the Messenger unread status
   const unreadCount = inbox.filter(chat => chat.unread === true || chat.isRead === false).length;
 
   const handleTopicClick = (topic) => {
     setSearchQuery(searchQuery === topic ? "" : topic);
   };
 
-  // Reusable Search Card Component
-  const SearchCard = (
+  // Refactored to a Component to prevent focus loss and render issues
+  const SearchSection = () => (
     <div className="forum-search-card" style={{ 
       width: "100%", borderRadius: "1.4rem", 
       border: "0.5px solid #1C274C", padding: "1.25rem", 
@@ -76,8 +74,12 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           }}
         />
         {searchQuery && (
-          <img src={closeIcon} alt="clear" onClick={() => setSearchQuery("")} 
-               style={{ width: "1rem", cursor: "pointer", marginLeft: "0.4rem" }} />
+          <img 
+            src={closeIcon} 
+            alt="clear" 
+            onClick={() => setSearchQuery("")} 
+            style={{ width: "1rem", cursor: "pointer", marginLeft: "0.4rem" }} 
+          />
         )}
       </div>
 
@@ -108,14 +110,13 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
     </div>
   );
 
-  // Return only the search component if explicitly requested
-  if (onlySearch) return SearchCard;
+  if (onlySearch) return <SearchSection />;
 
   return (
     <div className="forum-left-sidebar" style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       
       {/* Search Card Section */}
-      {!hideSearch && shouldShow('search') && SearchCard}
+      {!hideSearch && shouldShow('search') && <SearchSection />}
 
       {/* Group 2: Trending Hashtags */}
       {shouldShow('trending') && (
@@ -168,7 +169,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
             
-            {/* System Notification */}
             <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: "#FFFBF2", border: "0.5px solid #FFE4A3" }}>
               <div style={{ fontSize: "0.65rem", fontWeight: "800", color: "#FFC847", textTransform: "uppercase" }}>System</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
@@ -176,7 +176,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               </div>
             </div>
 
-            {/* New Messages Status */}
             <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: "#E0F2FE", border: "0.5px solid #7DD3FC" }}>
               <div style={{ fontSize: "0.65rem", fontWeight: "800", color: "#0284C7", textTransform: "uppercase" }}>Activity</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
@@ -184,7 +183,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               </div>
             </div>
 
-            {/* Mini Inbox List */}
             {!loading && inbox.length > 0 && inbox.map((chat, idx) => (
               <div 
                 key={idx} 

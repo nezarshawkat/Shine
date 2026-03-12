@@ -7,8 +7,8 @@ import closeIcon from "../../assets/close.svg";
 import feather from "../../assets/feather.png";
 import MenuIcon from "../../assets/Menu.svg";
 import axios from "axios";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 const CommunitySidebar = ({ 
   isMember, 

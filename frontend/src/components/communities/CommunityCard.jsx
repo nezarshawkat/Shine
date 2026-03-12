@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_W, BASE_H, R } from "/workspaces/Shine/backend/models/commConfig.js";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
+const ASSET_URL = BACKEND_URL;
 
 export default function CommunityCard({ community, feedWidth = BASE_W, onintrestClick }) {
   const navigate = useNavigate();

@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { getCommunityById } from "/workspaces/Shine/frontend/src/utlis/getCommunity.js";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx"; 
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Icons
 import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
@@ -17,7 +18,6 @@ import HeartClickedIcon from "/workspaces/Shine/frontend/src/assets/HeartC.svg";
 import MenuIcon from "/workspaces/Shine/frontend/src/assets/Menu.svg"; 
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 // --- Sub-components ---
 
