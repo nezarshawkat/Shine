@@ -1,0 +1,156 @@
+.donate-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100px 24px;
+  background-color: #f7f9fc; /* Matching your forum background */
+  min-height: calc(100vh - 80px); /* Adjust based on header height */
+  color: #1C274C;
+  font-family: 'Inter', sans-serif;
+}
+
+.donate-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+/* The Donation Card */
+.donation-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 500px;
+  padding: 32px;
+  border-radius: 1.4rem;
+  border: 0.5px solid #1C274C;
+  box-shadow: 0 4px 15px rgba(28, 39, 76, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.donation-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* Preset Buttons Grid */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.preset-grid button {
+  padding: 12px 0;
+  border-radius: 0.7rem;
+  border: 1px solid #1C274C;
+  background-color: transparent;
+  color: #1C274C;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-grid button:hover {
+  background-color: #f0f4f8;
+}
+
+.preset-grid button.active {
+  background-color: #1C274C;
+  color: #ffffff;
+}
+
+/* Custom Amount Input */
+.donation-card input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 0.7rem;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.donation-card input:focus {
+  border-color: #1C274C;
+}
+
+/* Main Call to Action */
+.confirm-button {
+  width: 100%;
+  padding: 16px;
+  border-radius: 0.7rem;
+  border: none;
+  background-color: #FFC847; /* Your active yellow/accent color */
+  color: #1C274C;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.confirm-button:hover {
+  background-color: #e6b43f;
+  transform: translateY(-2px);
+}
+
+.confirm-button:active {
+  transform: translateY(0);
+}
+
+.security-note {
+  font-size: 0.85rem;
+  text-align: center;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Impact Section Below the Card */
+.impact-section {
+  max-width: 500px;
+  width: 100%;
+  margin-top: 40px;
+  padding: 24px;
+}
+
+.impact-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.impact-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.impact-section li {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.impact-section li::before {
+  content: "✓";
+  color: #28a745;
+  font-weight: bold;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

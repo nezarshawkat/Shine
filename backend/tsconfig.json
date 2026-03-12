@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    /* Target & Module System */
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext"],
+    "types": ["node"],
+
+    /* File Layout */
+    "rootDir": "./",
+    "outDir": "./dist",
+    "baseUrl": ".",
+
+    /* Interop & Safety */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+
+    /* React Support (If needed for shared types) */
+    "jsx": "react-jsx"
+  ,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "prisma.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

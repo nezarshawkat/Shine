@@ -1,0 +1,82 @@
+.follow-page {
+  max-width: 720px;
+  margin: 120px auto;
+  padding: 0 20px;
+}
+
+.follow-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.back-btn {
+  border: none;
+  background: #f3f3f3;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  background: #e7e7e7;
+}
+
+.follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.follow-card {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.follow-card:hover {
+  background: #fafafa;
+}
+
+.follow-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  margin-right: 14px;
+}
+
+.follow-info {
+  flex: 1;
+}
+
+.follow-name {
+  font-weight: 600;
+}
+
+.follow-username {
+  font-size: 13px;
+  color: #666;
+}
+
+.follow-action {
+  border: none;
+  background: black;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.follow-empty {
+  text-align: center;
+  color: #777;
+  margin-top: 40px;
+}

@@ -1,0 +1,266 @@
+/* --------------------------------------------------
+   PAGE LAYOUT
+-------------------------------------------------- */
+.profile-page {
+  /* Removed 80px horizontal padding to allow sticky bg to touch screen edges */
+  padding: 110px 0 0; 
+}
+
+/* Apply the 80px padding to individual content blocks to keep them centered */
+.profile-top,
+.tab-content,
+.divider-wrapper {
+  padding-left: 80px;
+  padding-right: 80px;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------
+   TOP SECTION
+-------------------------------------------------- */
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.profile-image {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ✅ FIX ADDED HERE — Logo fits not fills */
+.profile-image.small {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;   /* ✅ prevents stretching */
+  border-radius: 50%;
+  background: white;      /* optional but improves logo look */
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profile-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1c274c;
+}
+
+.profile-username {
+  font-size: 23px;
+  font-weight: 500;
+  color: rgba(28, 39, 76, 0.5);
+}
+
+.profile-follow {
+  margin-top: 20px;
+  display: flex;
+  gap: 35px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.profile-badge {
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ffc847;
+  border-radius: 8px;
+  background: rgba(255, 200, 71, 0.2);
+  color: #ffc847;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.profile-description {
+  max-width: 420px;
+  font-size: 23px;
+  font-weight: 400;
+  color: rgba(28, 39, 76, 0.5);
+}
+
+/* --------------------------------------------------
+   DIVIDERS
+-------------------------------------------------- */
+.divider {
+  margin-top: 30px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* --------------------------------------------------
+   STICKY CONTAINER (The stretch logic)
+-------------------------------------------------- */
+.profile-sticky-container {
+  position: sticky;
+  top: 71px; /* Matches your JS inline top value */
+  z-index: 100;
+  background: #F7F9FC; /* Stretches 100% width */
+  width: 100%;
+}
+
+/* This inner class ensures the menu content stays at the 80px alignment */
+.profile-tabs {
+  padding: 20px 80px 20px; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Ensure the sticky divider also respects the side padding */
+.profile-sticky-container .divider.second {
+  margin: 0 0px; 
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* --------------------------------------------------
+   TABS
+-------------------------------------------------- */
+.tabs-left {
+  display: flex;
+  gap: 30px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  font-weight: 300;
+  color: #000;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  color: #ffc847;
+  font-weight: 500;
+}
+
+/* RIGHT BUTTONS */
+.tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.edit-buttons-row {
+  display: flex;
+  gap: 15px;
+}
+
+.follow-btn {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 22px;
+  font-weight: 400;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Action Styles */
+.save-action {
+  color: #2f54eb !important;
+  font-weight: 600 !important;
+}
+
+.cancel-action {
+  color: #ff4d4f !important;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------
+   CONTENT
+-------------------------------------------------- */
+.tab-content {
+  margin-top: 37px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-post-wrapper {
+  width: 765px;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+.profile-post-wrapper > * {
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.empty-state {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------
+   POPUPS
+-------------------------------------------------- */
+.profile-menu-popup {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 0;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  width: 180px;
+  z-index: 10;
+}
+
+.profile-menu-popup div {
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.profile-menu-popup div:hover {
+  background: #f2f2f2;
+}
+/* Container for the Articles Feed */
+.articles-feed-container {
+  width: 100%;
+  max-width: 800px; /* Adjust this to make it smaller/wider */
+  margin: 0 auto;    /* Centers it horizontally */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;         /* Adds space between article cards */
+}
+
+/* Optional: Ensure the Article cards inside take up the full width of this container */
+.articles-feed-container > * {
+  width: 100% !important;
+}
+
+/* Center the empty state message within the narrower layout */
+.empty-state {
+  text-align: center;
+  width: 100%;
+  padding-top: 50px;
+  color: #888;
+  font-size: 1.1rem;
+}
