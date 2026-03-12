@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import feather from "../../assets/feather.png";
 import profileDefault from "../../assets/profileDefault.svg"; 
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 const RightSidebar = ({ showOnly = null }) => {
   const [eventsData, setEventsData] = useState([]);
@@ -28,14 +29,14 @@ const RightSidebar = ({ showOnly = null }) => {
     async function fetchData() {
       try {
         const eventRes = await fetch(
-          "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/events"
+          `${API_BASE_URL}/events`
         );
         const eventJson = await eventRes.json();
         setEventsData(Array.isArray(eventJson?.data) ? eventJson.data : []);
 
         if (user?.username) {
           const friendRes = await fetch(
-            `https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/users/${user.username}/following`
+            `${API_BASE_URL}/users/${user.username}/following`
           );
           const friendJson = await friendRes.json();
           setFriends(Array.isArray(friendJson) ? friendJson : []);

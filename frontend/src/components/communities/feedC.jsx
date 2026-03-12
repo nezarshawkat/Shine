@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CommunityCard from "./CommunityCard";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 export default function FeedC({ feedWidth }) {
   const [communities, setCommunities] = useState([]);
@@ -10,7 +11,7 @@ export default function FeedC({ feedWidth }) {
     const fetchCommunities = async () => {
       try {
         // Ensure this URL matches your active backend port
-        const res = await fetch("https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/communities");
+        const res = await fetch(`${API_BASE_URL}/communities`);
         
         if (!res.ok) {
           throw new Error(`Server error: ${res.status}`);

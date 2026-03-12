@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
 import "/workspaces/Shine/frontend/src/styles/events.css";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -15,7 +16,7 @@ export default function Events() {
   ====================================== */
   useEffect(() => {
     axios
-      .get("https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/events")
+      .get(`${API_BASE_URL}/events`)
       .then((res) => {
         const data = res?.data?.data;
 

@@ -5,6 +5,7 @@ import EarthIcon from "/workspaces/Shine/frontend/src/assets/Earth.svg";
 import LockIcon from "/workspaces/Shine/frontend/src/assets/Lock.svg";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";
@@ -99,7 +100,7 @@ export default function CommunityForm() {
       formData.append("interests", JSON.stringify(interests));
 
       // 3. API Call
-      const response = await fetch("https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/communities", {
+      const response = await fetch(`${API_BASE_URL}/communities`, {
         method: "POST",
         body: formData,
       });

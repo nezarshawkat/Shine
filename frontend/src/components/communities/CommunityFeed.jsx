@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import CommunityCard from "./CommunityCard";
 import axios from "axios";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Removed the .js suffix and kept it to the base route
-const API_BASE_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/communities";
+const API_BASE_URL = `${API_BASE_URL}/communities`;
 
 export default function CommunityFeed({ userId }) {
   const [communities, setCommunities] = useState([]);

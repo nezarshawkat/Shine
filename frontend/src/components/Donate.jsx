@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react"; // Added useContext
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 // Import your AuthContext here to get the logged-in user's info
 // import { AuthContext } from "../context/AuthContext"; 
 import "../styles/Donate.css";
@@ -23,8 +24,7 @@ const Donate = () => {
   const presets = [5, 10, 25, 50];
 
   // Update this URL to your actual backend URL
-  const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
-
+  
   const handleDonate = async () => {
     const finalAmount = customAmount || amount;
     

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 export const AuthContext = createContext();
 
@@ -8,8 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
-
+  
   // Function to refresh user data from the server
   const refreshUser = async (username, currentToken) => {
     try {

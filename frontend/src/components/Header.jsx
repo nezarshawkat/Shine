@@ -1,3 +1,4 @@
+import { API_BASE_URL, BACKEND_URL } from "../api";
 // src/components/Header.jsx
 import React, { useContext, useState, useEffect } from "react";
 import "../styles/Header.css";
@@ -9,7 +10,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./AuthProvider.jsx";
 
 // Update this to match your backend URL
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 function Header() {
   const navigate = useNavigate();

@@ -4,6 +4,7 @@ import axios from "axios";
 import { AuthContext } from "./AuthProvider.jsx";
 import "../styles/SignUp.css";
 import logo from "../assets/shine-logo.png";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const SignUp = () => {
     try {
       // ✅ Make sure this matches your backend route
       const res = await axios.post(
-        "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/users/signup",
+        `${API_BASE_URL}/users/signup`,
         formData
       );
 

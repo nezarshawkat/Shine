@@ -4,9 +4,9 @@ import axios from "axios";
 import { AuthContext } from "./AuthProvider.jsx";
 import "../styles/LogIn.css";
 import logo from "../assets/shine-logo.png";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 // Remove trailing slash if present
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev").replace(/\/$/, "");
 
 const LogIn = () => {
   const navigate = useNavigate();

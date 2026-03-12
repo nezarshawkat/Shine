@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
 import axios from "axios";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";
@@ -12,7 +13,6 @@ const LIGHT = "#ECF2F6";
 const BORDER = "#D8DDE6";
 const BG = "#F7F9FC";
 const LINK_BLUE = "#4A90E2"; 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 /* ---------- Toast Component ---------- */
 function Toast({ message, type = "success", duration = 2000, onClose }) {

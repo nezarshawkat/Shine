@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const ASSET_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
+const ASSET_URL = BACKEND_URL;
 
 const LeftBarC = ({ 
   searchText, 

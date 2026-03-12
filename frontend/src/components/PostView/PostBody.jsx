@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx"; 
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Icons
 import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
@@ -14,7 +15,7 @@ import HeartIcon from "/workspaces/Shine/frontend/src/assets/Heart.svg";
 import HeartClickedIcon from "/workspaces/Shine/frontend/src/assets/HeartC.svg"; 
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
 
-const BASE_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
+const BASE_URL = BACKEND_URL;
 
 // --- HELPERS ---
 const getImageUrl = (path) => {

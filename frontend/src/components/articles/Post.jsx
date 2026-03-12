@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Icons
 import heartIcon from "/workspaces/Shine/frontend/src/assets/Heart.svg";
@@ -11,7 +12,6 @@ import saveIcon from "/workspaces/Shine/frontend/src/assets/Tag.svg";
 import saveClickedIcon from "/workspaces/Shine/frontend/src/assets/TagClicked.svg";
 import MenuIcon from "/workspaces/Shine/frontend/src/assets/Menu.svg";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 function Toast({ message, type = "success", duration = 2000, onClose }) {
   useEffect(() => {

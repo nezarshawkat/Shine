@@ -7,8 +7,9 @@ import CritiquePost from "/workspaces/Shine/frontend/src/components/posts/critiq
 import AnalysisPost from "/workspaces/Shine/frontend/src/components/posts/analysisPost.jsx";
 import PollPost from "/workspaces/Shine/frontend/src/components/posts/pollPost.jsx";
 import SkeletonPost from "/workspaces/Shine/frontend/src/components/posts/SkeletonPost.jsx";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const FEED_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev/api/posts";
+const FEED_URL = `${API_BASE_URL}/posts`;
 
 export default function Feed({ feed, setFeed, onSelectPost }) {
   const { searchQuery } = useContext(SearchContext);

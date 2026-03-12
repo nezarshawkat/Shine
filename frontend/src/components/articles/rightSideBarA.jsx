@@ -5,9 +5,8 @@ import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvi
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import axios from "axios";
+import { API_BASE_URL, BACKEND_URL } from "../../api";
 
-const BACKEND_URL =
-  "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 const RightSideBarA = () => {
   const navigate = useNavigate();
