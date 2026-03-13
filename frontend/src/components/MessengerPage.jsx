@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Search, Send, MoreVertical, Info, Edit2, Trash2, X
+  Search, Send, MoreVertical, Info, Edit2, Trash2, X, ChevronLeft 
 } from 'lucide-react';
 import profileDefault from "../assets/profileDefault.svg";
 import "/workspaces/Shine/frontend/src/styles/MessengerPage.css";
@@ -9,13 +9,14 @@ import "/workspaces/Shine/frontend/src/styles/MessengerPage.css";
 const MessengerPage = ({ currentUser }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(null); 
+  const [view, setView] = useState('list'); // 'list' or 'chat' for mobile orientation
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null); // For message-level menu
+  const [openMenuId, setOpenMenuId] = useState(null); 
 
   const scrollRef = useRef();
 
@@ -40,7 +41,13 @@ const MessengerPage = ({ currentUser }) => {
   };
 
   useEffect(() => { fetchConversations(); }, []);
-  useEffect(() => { if (activeTab?.id) fetchChatHistory(activeTab.id); }, [activeTab]);
+  useEffect(() => { 
+    if (activeTab?.id) {
+        fetchChatHistory(activeTab.id);
+        setView('chat'); // Switch view on mobile when a chat is selected
+    } 
+  }, [activeTab]);
+  
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
   // --- 2. SEARCH LOGIC ---
@@ -142,10 +149,11 @@ const MessengerPage = ({ currentUser }) => {
   if (!currentUser) return <div className="loading">Loading...</div>;
 
   return (
-    <div className="messenger-fixed-layout">
+    <div className={`messenger-fixed-layout ${view === 'chat' ? 'mobile-chat-active' : 'mobile-list-active'}`}>
       <div className="shine-messenger">
-        {/* SIDEBAR */}
-        <div className="ms-sidebar">
+        
+        {/* SIDEBAR (List View) */}
+        <div className={`ms-sidebar ${view === 'chat' ? 'mobile-hide' : ''}`}>
           <div className="ms-sidebar-header">
             <h2>Messages</h2>
             <div className="ms-search-container">
@@ -173,7 +181,7 @@ const MessengerPage = ({ currentUser }) => {
           </div>
 
           <div className="convos-list">
-            {conversations.map(conv => (
+            {conversations.length > 0 ? conversations.map(conv => (
               <div 
                 key={conv.user.id} 
                 className={`convo-item ${activeTab?.id === conv.user.id ? 'active' : ''}`}
@@ -183,20 +191,27 @@ const MessengerPage = ({ currentUser }) => {
                 <div className="convo-info">
                   <div className="convo-title">
                     <h4>{conv.user.name}</h4>
-                    <span className="last-time">{new Date(conv.lastMessageDate).toLocaleDateString()}</span>
+                    <span className="last-time">{new Date(conv.lastMessageDate).toLocaleDateString([], {month: 'short', day: 'numeric'})}</span>
                   </div>
                   <p className="last-msg">{conv.lastMessage}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+                <div className="no-convos">No conversations yet</div>
+            )}
           </div>
         </div>
 
-        {/* MAIN CHAT */}
-        <div className="ms-main">
+        {/* MAIN CHAT (Chat View) */}
+        <div className={`ms-main ${view === 'list' ? 'mobile-hide' : ''}`}>
           {activeTab ? (
             <>
               <div className="chat-header">
+                {/* Mobile Back Button */}
+                <button className="mobile-back-btn" onClick={() => setView('list')}>
+                    <ChevronLeft size={24} />
+                </button>
+
                 <div className="user-meta" onClick={() => navigate(`/profile/${activeTab.username}`)} style={{cursor: 'pointer'}}>
                   <img src={getAvatar(activeTab.image)} alt="" />
                   <div>
@@ -205,14 +220,14 @@ const MessengerPage = ({ currentUser }) => {
                   </div>
                 </div>
                 <div className="header-actions">
-                   <div className="dropdown-container">
+                    <div className="dropdown-container">
                       <button className="action-btn"><MoreVertical size={20} /></button>
                       <div className="header-dropdown">
                         <button onClick={() => navigate(`/profile/${activeTab.id}`)}>View Profile</button>
                         <button className="danger">Delete Conversation</button>
                         <button>Block User</button>
                       </div>
-                   </div>
+                    </div>
                 </div>
               </div>
 
