@@ -10,28 +10,44 @@ function Articles() {
   return (
     <div className="articles-page">
       <Header />
+      
+      {/* Mobile Top Bar */}
       <div className="forum-mobile-topbar">
-        <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>☰ Menu</button>
+        <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
+          ☰ Menu
+        </button>
       </div>
+
+      {/* Mobile Drawer Navigation */}
       {mobileNavOpen && (
         <>
           <div className="mobile-drawer-overlay" onClick={() => setMobileNavOpen(false)} />
           <aside className="mobile-left-drawer">
             <button className="mobile-drawer-close" onClick={() => setMobileNavOpen(false)}>✕</button>
-            <button>Trending</button>
-            <button>Post</button>
-            <button>Article</button>
+            
+            <div className="mobile-drawer-content">
+              {/* This container will hold the Trending list and the Yellow Button */}
+              <div className="drawer-sidebar-wrapper">
+                <RightSideBarA />
+              </div>
+            </div>
           </aside>
         </>
       )}
 
       <div className="articles-container">
-        {/* ================= CENTER FEED ================= */}
         <main className="center-column">
+          {/* On Mobile: This shows the Search + Topics. 
+             On Desktop: This is hidden via CSS. 
+          */}
+          <div className="mobile-only-search-wrapper">
+             <RightSideBarA /> 
+          </div>
+          
           <FeedA />
         </main>
 
-        {/* ================= RIGHT SIDEBAR ================= */}
+        {/* Right Sidebar (Desktop) */}
         <aside className="right-column">
           <RightSideBarA />
         </aside>

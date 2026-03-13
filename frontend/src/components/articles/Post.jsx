@@ -150,7 +150,7 @@ const Post = ({ article: initialArticle, profileUser }) => {
       });
 
       if (res.ok) {
-        setIsDeleted(true); // Immediate UI removal
+        setIsDeleted(true); 
       } else {
         const errorData = await res.json();
         showToast(errorData.error || "Failed to delete", "error");
@@ -190,13 +190,13 @@ const Post = ({ article: initialArticle, profileUser }) => {
         onClick={handlePostClick}
         className="article-post-card"
         style={{
-          display: "flex", width: "100%", minHeight: "380px",
+          display: "flex", width: "100%",
           backgroundColor: "#fff", borderRadius: "20px", overflow: "hidden",
           boxShadow: "0 10px 30px rgba(0,0,0,0.04)", cursor: "pointer",
           marginBottom: "24px", border: "1px solid #f0f0f0", position: "relative"
         }}
       >
-        <div style={{ flex: 1, padding: "35px", display: "flex", flexDirection: "column" }}>
+        <div className="article-text-section" style={{ flex: 1, padding: "35px", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
             
             <div onClick={handleProfileClick} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -222,13 +222,6 @@ const Post = ({ article: initialArticle, profileUser }) => {
 
                     {showMenu && (
                       <div className="popup-menu post-action-menu">
-                        {/* Modified: Takes you to the Article page to edit */}
-                        <button 
-                          className="side-menu-item" 
-                          onClick={(e) => { e.stopPropagation(); handlePostClick(); }}
-                        >
-                          Edit Article
-                        </button>
                         <button className="side-menu-item delete" onClick={handleDelete}>
                           Delete Article
                         </button>
@@ -251,8 +244,7 @@ const Post = ({ article: initialArticle, profileUser }) => {
             {article.content}
           </p>
 
-          {/* Interaction Bar - Removed Comment Icon */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", paddingTop: "20px", borderTop: "1px solid #f5f5f5" }}>
+          <div className="interaction-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", paddingTop: "20px", borderTop: "1px solid #f5f5f5" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <img 
@@ -276,11 +268,11 @@ const Post = ({ article: initialArticle, profileUser }) => {
         </div>
 
         {/* Media Section */}
-        <div style={{ flex: "0 0 38%", backgroundColor: "#fafafa" }}>
+        <div className="article-media-section" style={{ flex: "0 0 38%", backgroundColor: "#fafafa" }}>
           {isVideo ? (
-              <video src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <video src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           ) : (
-              <img src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+              <img src={mediaUrl} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} alt="" />
           )}
         </div>
       </div>
@@ -301,7 +293,34 @@ const Post = ({ article: initialArticle, profileUser }) => {
         }
         .side-menu-item:hover { background: #f8f9fa; }
         .side-menu-item.delete { color: #FF4D4F; border-top: 1px solid #f0f0f0; }
-        .article-post-card:hover { transform: translateY(-2px); transition: transform 0.2s ease; }
+        
+        .article-post-card {
+          transition: transform 0.2s ease;
+          min-height: 380px;
+        }
+        .article-post-card:hover { transform: translateY(-2px); }
+
+        /* Mobile Orientation Changes */
+        @media (max-width: 768px) {
+          .article-post-card {
+            flex-direction: column !important;
+            min-height: auto !important;
+          }
+          .article-text-section {
+            padding: 25px !important;
+            order: 1; /* Text stays at top */
+          }
+          .article-media-section {
+            flex: none !important;
+            width: 100% !important;
+            height: 250px !important;
+            order: 2; /* Image moves under text */
+          }
+          .interaction-bar {
+            margin-top: 15px !important;
+            padding-top: 15px !important;
+          }
+        }
       `}</style>
     </>
   );

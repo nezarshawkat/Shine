@@ -415,3 +415,52 @@
     justify-content: center;
     margin-bottom: 15px;
 }
+/* Mobile Logic */
+.mobile-back-btn {
+    display: none; /* Hidden on desktop */
+    background: none;
+    border: none;
+    margin-right: 10px;
+    padding: 5px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .ms-sidebar {
+        width: 100% !important;
+        border-right: none !important;
+    }
+    
+    .ms-main {
+        width: 100% !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        background: white;
+        z-index: 10;
+    }
+
+    .mobile-hide {
+        display: none !important;
+    }
+
+    .mobile-back-btn {
+        display: block;
+    }
+
+    .chat-header {
+        padding: 10px 15px !important;
+    }
+
+    .messenger-fixed-layout {
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .shine-messenger {
+        border-radius: 0 !important;
+        margin: 0 !important;
+        height: 100% !important;
+    }
+}

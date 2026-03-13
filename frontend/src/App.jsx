@@ -96,6 +96,7 @@ function AppRoutes() {
         <Route path="/:username/followers" element={<FollowersPage />} />
         <Route path="/:username/following" element={<FollowingPage />} />
         <Route path="/:username/friends" element={<FriendsPage />} />
+        <Route path="/:username/settings" element={<ProfileSettings />} />
         <Route path="/donate" element={<Donate />} />
         
         {/* Creation Routes */}

@@ -1,10 +1,8 @@
-import React, { useState, useContext } from "react"; // Added useContext
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
-import { API_BASE_URL, BACKEND_URL } from "../api";
-// Import your AuthContext here to get the logged-in user's info
-// import { AuthContext } from "../context/AuthContext"; 
+import { BACKEND_URL } from "../api";
 import "../styles/Donate.css";
 
 const Donate = () => {
@@ -13,9 +11,8 @@ const Donate = () => {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   
-  // NOTE: Replace this with how you access your logged-in user
-  // const { user } = useContext(AuthContext); 
-  const user = JSON.parse(localStorage.getItem("user")); // Common alternative
+  // Access logged-in user
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // Check URL for status messages from Stripe
   const isSuccess = searchParams.get("success") === "true";
@@ -23,8 +20,6 @@ const Donate = () => {
 
   const presets = [5, 10, 25, 50];
 
-  // Update this URL to your actual backend URL
-  
   const handleDonate = async () => {
     const finalAmount = customAmount || amount;
     
@@ -35,14 +30,11 @@ const Donate = () => {
 
     setLoading(true);
     try {
-      // 1. Call your backend to create a Stripe Checkout Session
-      // Passing userId ensures the backend can update the correct profile
       const response = await axios.post(`${BACKEND_URL}/api/donate`, {
         amount: finalAmount,
-        userId: user?.id || user?._id || null // Send the ID to the backend
+        userId: user?.id || user?._id || null 
       });
 
-      // 2. Redirect the user to the Stripe hosted payment page
       if (response.data.url) {
         window.location.href = response.data.url;
       }
@@ -61,40 +53,20 @@ const Donate = () => {
         
         {/* Success Message Banner */}
         {isSuccess && (
-          <div className="status-banner success" style={{ 
-            padding: "1.5rem", 
-            backgroundColor: "#d4edda", 
-            color: "#155724", 
-            borderRadius: "1rem", 
-            marginBottom: "1.5rem", 
-            width: "100%", 
-            maxWidth: "450px", 
-            textAlign: "center",
-            border: "1px solid #c3e6cb"
-          }}>
-            <h2 style={{ margin: "0 0 0.5rem 0" }}>🎉 Thank You!</h2>
-            <p style={{ margin: 0 }}>Your support helps keep Shine running. Check your email for a receipt.</p>
+          <div className="status-banner success">
+            <h2>🎉 Thank You!</h2>
+            <p>Your support helps keep Shine running. Check your email for a receipt.</p>
           </div>
         )}
 
         {/* Cancel Message Banner */}
         {isCanceled && (
-          <div className="status-banner error" style={{ 
-            padding: "1rem", 
-            backgroundColor: "#f8d7da", 
-            color: "#721c24", 
-            borderRadius: "1rem", 
-            marginBottom: "1.5rem", 
-            width: "100%", 
-            maxWidth: "450px", 
-            textAlign: "center",
-            border: "1px solid #f5c6cb"
-          }}>
-            <p style={{ margin: 0 }}>Payment was not completed. If you had trouble, please contact support.</p>
+          <div className="status-banner error">
+            <p>Payment was not completed. If you had trouble, please contact support.</p>
           </div>
         )}
 
-        <h1>Support SHINE</h1>
+        <h1>Support Shine</h1>
         <p className="subtitle">Help us keep the community running and growing.</p>
         
         <div className="donation-card">
