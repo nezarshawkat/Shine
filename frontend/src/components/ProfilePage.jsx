@@ -17,9 +17,11 @@ import profileDefault from "../assets/profileDefault.svg";
 
 import { AuthContext } from "./AuthProvider.jsx";
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+// Import the new Settings component
+import ProfileSettings from "/workspaces/Shine/frontend/src/components/ProfileSettings.jsx";
 
 export default function ProfilePage({
-  user,
+  user: initialUser,
   posts = [],
   likedPosts = [],
   savedPosts = [],
@@ -29,10 +31,13 @@ export default function ProfilePage({
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Local state for user to allow updates from settings
+  const [user, setUser] = useState(initialUser);
   const [activeTab, setActiveTab] = useState("Posts");
   const [menuOpen, setMenuOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,7 +68,11 @@ export default function ProfilePage({
   const loggedInUserId = normalizeId(loggedInUser);
   const isCurrentUser = userId === loggedInUserId;
 
-  // Handle Resize for Mobile Detection
+  // Sync state if initialUser prop changes
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
@@ -97,13 +106,9 @@ export default function ProfilePage({
 
   useEffect(() => {
     if (activeTab === "Communities" && userId) {
-      // Backend fix: Get all communities and filter by membership
       API.get(`/communities`)
         .then((res) => {
           const allComms = Array.isArray(res.data) ? res.data : [];
-          // If the backend doesn't provide a specific user endpoint, 
-          // we filter communities where the user is a creator or member
-          // Note: Ideally, add a specific endpoint to the backend for this.
           const userComms = allComms.filter(c => 
             c.creatorId === userId || 
             (c.communityMembers && c.communityMembers.some(m => m.userId === userId))
@@ -135,6 +140,7 @@ export default function ProfilePage({
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...storedUser, ...returnedUser }));
 
+      setUser(returnedUser);
       setEditMode(false);
       if (user.username !== returnedUser.username) {
         window.location.href = `/profile/${returnedUser.username}`;
@@ -142,7 +148,6 @@ export default function ProfilePage({
         setImagePreview(getImageUrl(returnedUser.image));
       }
     } catch (err) {
-      console.error("Update error", err);
       alert("Error updating profile.");
     }
   };
@@ -168,7 +173,8 @@ export default function ProfilePage({
   };
 
   const handleReport = () => {
-    console.log("Reported user:", userId);
+    const reason = window.prompt("Reason for reporting:");
+    if (reason) alert("Thank you. Report submitted.");
   };
 
   const renderPostByType = (post, index) => {
@@ -203,7 +209,8 @@ export default function ProfilePage({
             <div onClick={() => { setShareOpen(true); setMenuOpen(false); }}>Share Profile</div>
             {isCurrentUser ? (
               <>
-                <div onClick={() => navigate(`/${user.username}/settings`)}>Settings</div>
+                {/* Updated: Directly toggle local state instead of navigate */}
+                <div onClick={() => { setShowSettings(true); setMenuOpen(false); }}>Settings</div>
                 <div className="logout-item" onClick={() => { logout(); navigate("/"); }}>Logout</div>
               </>
             ) : (
@@ -229,6 +236,17 @@ export default function ProfilePage({
   return (
     <>
       <Header />
+      
+      {/* Settings Overlay Layer */}
+      {showSettings && (
+        <ProfileSettings 
+          user={user} 
+          onClose={() => setShowSettings(false)} 
+          logout={logout}
+          onUserUpdate={(updatedUser) => setUser(updatedUser)}
+        />
+      )}
+
       {shareOpen && <SharePopup postId={user.id} onClose={() => setShareOpen(false)} />}
 
       <div className="profile-page">
@@ -334,9 +352,7 @@ export default function ProfilePage({
                 communityIcon: getImageUrl(c.icon), 
                 communityName: c.name, 
                 bannerTitle: c.slogan || "", 
-                // Fixed: Backend uses 'discription' with an 'i'
                 descriptionText: c.discription || c.description || "No description provided.", 
-                // Fixed: Backend uses _count.communityMembers for count
                 membersCountText: `${c._count?.communityMembers || c.memberCount || 0} members`, 
                 imageUrl: getImageUrl(c.banner), 
                 keywords: c.interests || [] 

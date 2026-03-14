@@ -163,6 +163,15 @@ export default function PostBody() {
 
   const [votedOptionId, setVotedOptionId] = useState(null);
 
+  // For responsive layout detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const showToast = (message, type = "success") => setToast({ message, type });
 
   const formatExternalLink = (url) => {
@@ -349,7 +358,7 @@ export default function PostBody() {
         onPrev={() => setMaximizedIndex((maximizedIndex - 1 + mediaUrls.length) % mediaUrls.length)}
       />
 
-      <div style={{ width: "100%", maxWidth: 900, margin: "20px auto", background: "#fff", border: "0.5px solid #1C274C", borderRadius: 23, padding: 20, boxSizing: "border-box" }}>
+      <div style={{ width: "100%", maxWidth: 900, margin: "20px auto", background: "#fff", border: "0.5px solid #1C274C", borderRadius: 23, padding: isMobile ? 15 : 20, boxSizing: "border-box" }}>
         
         {/* HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -359,14 +368,14 @@ export default function PostBody() {
               <div style={{ fontSize: 16, color: "#1C274C" }}>{post.author?.name || "Unknown User"}</div>
             </Link>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div style={{ fontSize: 16, color: "#1C274C" }}>{post.viewsCount || 0} views</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#FFC847" }}>{post.type?.toLowerCase()}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 20 }}>
+            <div style={{ fontSize: isMobile ? 13 : 16, color: "#1C274C" }}>{post.viewsCount || 0} views</div>
+            <div style={{ fontSize: isMobile ? 13 : 16, fontWeight: 800, color: "#FFC847" }}>{post.type?.toLowerCase()}</div>
           </div>
         </div>
 
         {/* CONTENT */}
-        <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 20, marginTop: 12 }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
               {(post.keywords || []).map((k, i) => (
@@ -413,7 +422,7 @@ export default function PostBody() {
           {mediaUrls.length > 0 && (
             <div 
               onClick={() => setMaximizedIndex(imageIndex)}
-              style={{ width: 277, height: 275, borderRadius: 12, overflow: "hidden", border: "0.5px solid #ddd", cursor: "zoom-in", position: "relative" }}
+              style={{ width: isMobile ? "100%" : 277, height: isMobile ? 250 : 275, borderRadius: 12, overflow: "hidden", border: "0.5px solid #ddd", cursor: "zoom-in", position: "relative" }}
             >
               {mediaUrls[imageIndex].match(/\.(mp4|webm|ogg)$/i) ? (
                 <video src={mediaUrls[imageIndex]} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -431,14 +440,36 @@ export default function PostBody() {
           )}
         </div>
 
-        {/* FOOTER */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 15 }}>
-          <div style={{ fontSize: 14, color: "#1C274C", display: "flex", gap: 15 }}>
+        {/* FOOTER - MOBILE OPTIMIZED */}
+        <div style={{ 
+            display: "flex", 
+            flexDirection: isMobile ? "column-reverse" : "row", 
+            justifyContent: "space-between", 
+            alignItems: isMobile ? "flex-start" : "center",
+            marginTop: 15,
+            gap: isMobile ? 15 : 0
+        }}>
+          {/* Date and Time Section */}
+          <div style={{ 
+            fontSize: 14, 
+            color: "#1C274C", 
+            display: "flex", 
+            gap: 15,
+            width: isMobile ? "100%" : "auto",
+            justifyContent: "flex-start"
+          }}>
             <span>Date: {postDate.toLocaleDateString()}</span>
             <span>Time: {postDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
-          <div style={{ display: "flex", gap: 17, alignItems: "center" }}>
+          {/* Buttons Section */}
+          <div style={{ 
+            display: "flex", 
+            gap: 17, 
+            alignItems: "center",
+            width: isMobile ? "100%" : "auto",
+            justifyContent: isMobile ? "space-between" : "flex-end"
+          }}>
             {!isPoll && (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img src={isLiked ? HeartClickedIcon : HeartIcon} onClick={() => handleInteraction('like', setIsLiked, "Liked")} style={{ width: 20, cursor: "pointer" }} />
@@ -487,9 +518,9 @@ export default function PostBody() {
                 {post.sources.map((s, i) => (
                   <div key={i} style={{ display: "flex", gap: 15, marginBottom: 10 }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#FFC847", marginTop: 7 }} />
-                    <div>
+                    <div style={{ overflow: "hidden" }}>
                         <div style={{ fontSize: 14, fontWeight: 500 }}>{s.name}</div>
-                        <a href={formatExternalLink(s.link)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#0066cc", textDecoration: "underline" }}>{s.link}</a>
+                        <a href={formatExternalLink(s.link)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#0066cc", textDecoration: "underline", wordBreak: "break-all" }}>{s.link}</a>
                     </div>
                   </div>
                 ))}
@@ -513,7 +544,7 @@ export default function PostBody() {
                   onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
                   style={{ flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #1C274C", outline: "none" }}
                 />
-                <button onClick={handlePostComment} style={{ background: "#1C274C", color: "#FFC847", border: "none", padding: "0 20px", borderRadius: "8px", cursor: "pointer", fontWeight: 600 }}>
+                <button onClick={handlePostComment} style={{ background: "#1C274C", color: "#FFC847", border: "none", padding: isMobile ? "0 10px" : "0 20px", borderRadius: "8px", cursor: "pointer", fontWeight: 600, fontSize: isMobile ? 12 : 14 }}>
                   {editingComment ? "Update" : "Post"}
                 </button>
               </div>
@@ -530,7 +561,12 @@ export default function PostBody() {
                     user={user} 
                     onLike={handleLikeComment}
                     onDelete={deleteComment}
-                    onEdit={(c) => { setEditingComment(c); setCommentText(c.text); window.scrollTo({ top: document.querySelector('input').offsetTop - 100, behavior: 'smooth' }); }}
+                    onEdit={(c) => { 
+                        setEditingComment(c); 
+                        setCommentText(c.text); 
+                        const inputEl = document.querySelector('input');
+                        if(inputEl) window.scrollTo({ top: inputEl.offsetTop - 100, behavior: 'smooth' }); 
+                    }}
                     onReport={() => showToast("Reported", "error")}
                   />
                 ))

@@ -207,7 +207,19 @@ export default function PollPost({ postId, initialData }) {
               style={{ width: 41, height: 41, borderRadius: 999, objectFit: "cover", cursor: "pointer" }} alt="" />
             <div>
               <div style={{ fontSize: 16, fontWeight: 400, color: "#1C274C" }}>{post.author?.name || "User"}</div>
-              {community?.name && <div style={{ fontSize: 12, color: "#6b7280" }}>from <span style={{ color: "#1C274C", fontWeight: "bold" }}>{community.name}</span></div>}
+              {community?.name && (
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  from <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/community/${community.id || community._id}`);
+                    }}
+                    style={{ color: "#1C274C", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    {community.name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>

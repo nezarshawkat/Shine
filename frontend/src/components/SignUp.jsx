@@ -2,9 +2,11 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "./AuthProvider.jsx";
+import GoogleLogin from "/workspaces/Shine/frontend/src/components/GoogleAuth.jsx";
 import "../styles/SignUp.css";
 import logo from "../assets/shine-logo.png";
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import googleIcon from "/workspaces/Shine/frontend/src/assets/google.svg";
+import { API_BASE_URL } from "../api";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -17,8 +19,8 @@ const SignUp = () => {
     username: "",
   });
 
-  const [loading, setLoading] = useState(false); // optional: show loading state
-  const [error, setError] = useState(""); // optional: show error messages
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,16 +32,12 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      // ✅ Make sure this matches your backend route
       const res = await axios.post(
-        `${API_BASE_URL}/users/signup`,
+        `${API_BASE_URL}/auth.routes/signup`,
         formData
       );
 
-      // Save user & token in context
       login(res.data.user, res.data.token);
-
-      // Navigate to forum page
       navigate("/forum");
     } catch (err) {
       console.error(err);
@@ -114,18 +112,18 @@ const SignUp = () => {
             <label htmlFor="terms">I agree to the Terms & Conditions</label>
           </div>
 
-          <button
-            type="button"
-            className="google-btn"
-            onClick={() => alert("Google signup not implemented yet")}
-          >
-            <span className="google-icon">G</span>
-            Sign up with Google
-          </button>
-
           <button type="submit" className="signup-btn" disabled={loading}>
             {loading ? "Signing Up..." : "Sign Up"}
           </button>
+
+          <div className="divider">
+            <span>or</span>
+          </div>
+
+          {/* Wrapper to ensure the Google component respects form width and styling */}
+          <div className="google-btn-wrapper">
+            <GoogleLogin icon={googleIcon} />
+          </div>
 
           {error && <p className="error-text">{error}</p>}
         </form>
@@ -137,7 +135,7 @@ const SignUp = () => {
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="signup-right-side">{/* Optional graphic / illustration */}</div>
+      <div className="signup-right-side"></div>
     </div>
   );
 };

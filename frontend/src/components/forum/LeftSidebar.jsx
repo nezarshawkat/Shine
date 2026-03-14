@@ -22,16 +22,18 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         const trendRes = await axios.get(`${API_BASE}/posts/trends`);
         setTrends(trendRes.data);
 
-        // 2. Fetch Messenger Activity & Notifications
+        // 2. Fetch Messenger Inbox (using the new endpoint we just made)
         const [inboxRes, notifRes] = await Promise.allSettled([
           axios.get(`${API_BASE}/messenger/inbox`),
           axios.get(`${API_BASE}/notifications`)
         ]);
 
         if (inboxRes.status === "fulfilled") {
-          setInbox(inboxRes.value.data.slice(0, 3));
+          setInbox(inboxRes.value.data); // Backend already slices to 3
         }
+        
         if (notifRes.status === "fulfilled" && notifRes.value.data.length > 0) {
+          // Find the most recent unread notification if possible
           setSystemNotif(notifRes.value.data[0]);
         }
       } catch (err) {
@@ -45,13 +47,14 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   }, [API_BASE]);
 
   const shouldShow = (section) => !showOnly || showOnly.includes(section);
-  const unreadCount = inbox.filter(chat => chat.unread === true || chat.isRead === false).length;
+  
+  // Dynamic Unread Calculation
+  const unreadCount = inbox.filter(chat => chat.unread === true).length;
 
   const handleTopicClick = (topic) => {
     setSearchQuery(searchQuery === topic ? "" : topic);
   };
 
-  // Refactored to a Component to prevent focus loss and render issues
   const SearchSection = () => (
     <div className="forum-search-card" style={{ 
       width: "100%", borderRadius: "1.4rem", 
@@ -114,11 +117,9 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
 
   return (
     <div className="forum-left-sidebar" style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-      
-      {/* Search Card Section */}
       {!hideSearch && shouldShow('search') && <SearchSection />}
 
-      {/* Group 2: Trending Hashtags */}
+      {/* Trending Section */}
       {shouldShow('trending') && (
         <div className="forum-trending-card" style={{ 
           width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C", 
@@ -150,7 +151,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         </div>
       )}
 
-      {/* Group 3: Messenger (Activity Group) */}
+      {/* Messenger & Activity Section */}
       {shouldShow('messenger') && (
         <div className="forum-messages-card" style={{ 
           width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C", 
@@ -169,32 +170,47 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
             
-            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: "#FFFBF2", border: "0.5px solid #FFE4A3" }}>
-              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: "#FFC847", textTransform: "uppercase" }}>System</div>
+            {/* Dynamic System Notification */}
+            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: systemNotif && !systemNotif.isRead ? "#FFFBF2" : "#F9FAFB", border: systemNotif && !systemNotif.isRead ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: systemNotif && !systemNotif.isRead ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>System</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
                 {systemNotif ? systemNotif.content : "No new notifications"}
               </div>
             </div>
 
-            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: "#E0F2FE", border: "0.5px solid #7DD3FC" }}>
-              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: "#0284C7", textTransform: "uppercase" }}>Activity</div>
+            {/* Dynamic Activity Badge */}
+            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: unreadCount > 0 ? "#E0F2FE" : "#F9FAFB", border: unreadCount > 0 ? "0.5px solid #7DD3FC" : "0.5px solid #E5E7EB" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadCount > 0 ? "#0284C7" : "#9CA3AF", textTransform: "uppercase" }}>Activity</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
-                {unreadCount > 0 ? `You have ${unreadCount} new messages` : "All caught up!"}
+                {unreadCount > 0 ? `You have ${unreadCount} new message${unreadCount > 1 ? 's' : ''}` : "All caught up!"}
               </div>
             </div>
 
+            {/* Recent Chats List */}
             {!loading && inbox.length > 0 && inbox.map((chat, idx) => (
               <div 
                 key={idx} 
                 onClick={() => window.location.href = `/messenger/${chat._id}`}
-                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.4rem", cursor: "pointer" }}
+                style={{ 
+                  display: "flex", alignItems: "center", gap: "10px", padding: "0.4rem", 
+                  cursor: "pointer", borderRadius: "0.5rem",
+                  backgroundColor: chat.unread ? "#F0F9FF" : "transparent"
+                }}
               >
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#1C274C", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>
+                <div style={{ 
+                  width: "32px", height: "32px", borderRadius: "50%", 
+                  backgroundColor: chat.unread ? "#0284C7" : "#1C274C", 
+                  color: "white", display: "flex", alignItems: "center", 
+                  justifyContent: "center", fontSize: "0.75rem", fontWeight: "bold" 
+                }}>
                   {chat.participantName?.charAt(0) || "U"}
                 </div>
                 <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1C274C" }}>{chat.participantName}</div>
-                  <div style={{ fontSize: "0.7rem", color: "#6B7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ fontSize: "0.85rem", fontWeight: chat.unread ? "700" : "600", color: "#1C274C" }}>
+                    {chat.participantName}
+                    {chat.unread && <span style={{ marginLeft: "5px", color: "#0284C7" }}>●</span>}
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: chat.unread ? "#1C274C" : "#6B7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {chat.lastMessage}
                   </div>
                 </div>

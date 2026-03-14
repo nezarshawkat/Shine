@@ -302,6 +302,8 @@ export default function AnalysisCreate() {
               onKeyDown={handleTagKeyDown}
               placeholder="Add tag and press Enter"
               style={{ border: "none", outline: "none", fontSize: 14, minWidth: 120, flexGrow: 1 }}
+              inputMode="text"
+              enterKeyHint="done"
             />
           </div>
 

@@ -4,8 +4,50 @@ const prisma = require('../prisma');
 const auth = require('../middleware/auth');
 
 /**
- * 1. SEND MESSAGE
- * Updated with better error handling and safety checks
+ * 1. GET INBOX SUMMARY (For Sidebar)
+ * Retrieves the last 3 unique conversations for a quick preview
+ */
+router.get('/inbox', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get messages relevant to the user, excluding those they deleted
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [{ senderId: userId }, { receiverId: userId }],
+        NOT: { deletedBy: { has: userId } }
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sender: { select: { id: true, username: true, name: true } },
+        receiver: { select: { id: true, username: true, name: true } }
+      }
+    });
+
+    const chatPartners = new Map();
+    messages.forEach(msg => {
+      const partner = msg.senderId === userId ? msg.receiver : msg.sender;
+      if (partner && !chatPartners.has(partner.id)) {
+        chatPartners.set(partner.id, {
+          _id: partner.id,
+          participantName: partner.name || partner.username,
+          lastMessage: msg.text || "📷 Image",
+          isRead: msg.receiverId === userId ? msg.isRead : true,
+          unread: msg.receiverId === userId && !msg.isRead
+        });
+      }
+    });
+
+    // Return only the top 3 most recent unique conversations
+    res.json(Array.from(chatPartners.values()).slice(0, 3));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * 2. SEND MESSAGE
+ * Logic includes friendship checks and a safety wrapper for notifications
  */
 router.post('/send', auth, async (req, res) => {
   try {
@@ -19,7 +61,7 @@ router.post('/send', auth, async (req, res) => {
       return res.status(400).json({ error: "You cannot message yourself." });
     }
 
-    // Check Friendship (Mutual Follow)
+    // Check Friendship (Mutual Follow) status for restriction logic
     const followsSender = await prisma.follows.findFirst({
       where: { followerId: receiverId, followingId: senderId }
     });
@@ -29,7 +71,7 @@ router.post('/send', auth, async (req, res) => {
 
     const isFriends = !!(followsSender && followsReceiver);
 
-    // Restriction Logic
+    // If not mutual friends, limit to one message until they follow back
     if (!isFriends) {
       const existingChat = await prisma.message.findFirst({
         where: { senderId, receiverId }
@@ -47,7 +89,7 @@ router.post('/send', auth, async (req, res) => {
       include: { sender: { select: { username: true, image: true } } }
     });
 
-    // Notify safely - don't let notification failure crash the message send
+    // Notify safely - failure here should not block the response
     try {
       await prisma.notification.create({
         data: {
@@ -57,7 +99,9 @@ router.post('/send', auth, async (req, res) => {
           link: `/messenger`
         }
       });
-    } catch (e) { console.error("Notification log only:", e.message); }
+    } catch (e) { 
+      console.error("Notification log only:", e.message); 
+    }
 
     res.status(201).json(message);
   } catch (err) {
@@ -67,7 +111,8 @@ router.post('/send', auth, async (req, res) => {
 });
 
 /**
- * 2. GET CONVERSATIONS
+ * 3. GET CONVERSATIONS
+ * Retrieves all unique chat conversations for the main Messenger view
  */
 router.get('/conversations', auth, async (req, res) => {
   try {
@@ -104,7 +149,8 @@ router.get('/conversations', auth, async (req, res) => {
 });
 
 /**
- * 3. GET CHAT HISTORY
+ * 4. GET CHAT HISTORY
+ * Fetches individual messages between two users and marks unread ones as read
  */
 router.get('/history/:partnerId', auth, async (req, res) => {
   try {
@@ -122,9 +168,13 @@ router.get('/history/:partnerId', auth, async (req, res) => {
       orderBy: { createdAt: 'asc' }
     });
 
-    // Mark as read
+    // Update incoming messages as 'read'
     await prisma.message.updateMany({
-      where: { senderId: partnerId, receiverId: userId, isRead: false },
+      where: { 
+        senderId: partnerId, 
+        receiverId: userId, 
+        isRead: false 
+      },
       data: { isRead: true }
     });
 

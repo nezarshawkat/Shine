@@ -75,6 +75,7 @@ export default function OpinionCreate() {
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault();
+      e.stopPropagation();
       setKeywords([...keywords, tagInput.trim()]);
       setTagInput("");
     }
@@ -301,6 +302,8 @@ export default function OpinionCreate() {
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               placeholder="Add tag and press Enter"
+              inputMode="text"
+              enterKeyHint="done"
               style={{ border: "none", outline: "none", fontSize: 14, minWidth: 120, flexGrow: 1 }}
             />
           </div>

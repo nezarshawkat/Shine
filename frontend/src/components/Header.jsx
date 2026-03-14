@@ -3,7 +3,7 @@ import { API_BASE_URL, BACKEND_URL } from "../api";
 import React, { useContext, useState, useEffect } from "react";
 import "../styles/Header.css";
 import logo from "../assets/shine-logo.png";
-import heart from "../assets/heart.png";
+import heart from "../assets/heart.svg";
 import profileDefault from "../assets/profileDefault.svg";
 import MobileMenu from "./MobileMenu";
 import { useNavigate, useLocation } from "react-router-dom";

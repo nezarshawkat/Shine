@@ -10,24 +10,49 @@ export default function PostView() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 1. Check if there is actual history to go back to.
-  // window.history.length > 1 means the user didn't just open this tab at this URL.
+  // We keep the history check, but you can also default to true if it's still not showing
   const hasHistory = window.history.length > 1;
-
-  // 2. Only show the button if there is a history to return to.
-  // This prevents the button from appearing on a fresh direct-link visit.
-  const showBackButton = hasHistory;
-
-  // 3. Get the name of the previous page from state, or default to "Previous Page"
+  const showBackButton = hasHistory || location.state?.fromName; 
   const fromName = location.state?.fromName || "Previous Page";
 
   const handleBack = () => {
-    // Standard browser back behavior
     navigate(-1);
   };
 
   return (
     <div className="forum-page">
+      {/* Mobile-specific styles */}
+      <style>{`
+        @media (max-width: 768px) {
+          .forum-container {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 0 !important;
+            margin-top: 10px;
+          }
+          .left-column, .right-column {
+            display: none !important; 
+          }
+          .center-column {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+          .mobile-padding-wrapper {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+          .back-button-mobile {
+            display: flex !important; /* Force display on mobile */
+            margin-left: 10px !important;
+            margin-bottom: 15px !important;
+            position: relative;
+            z-index: 10;
+          }
+        }
+      `}</style>
+
       <Header />
       <div className="forum-container">
         {/* LEFT COLUMN */}
@@ -39,6 +64,7 @@ export default function PostView() {
         <div className="center-column">
           {showBackButton && (
             <button
+              className="back-button-mobile"
               onClick={handleBack}
               style={{
                 display: "flex",
@@ -61,7 +87,11 @@ export default function PostView() {
               Back to {fromName}
             </button>
           )}
-          <PostBody />
+          
+          {/* Wrapper to apply the 6px padding on mobile only */}
+          <div className="mobile-padding-wrapper">
+            <PostBody />
+          </div>
         </div>
 
         {/* RIGHT COLUMN */}

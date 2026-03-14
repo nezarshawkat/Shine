@@ -47,9 +47,9 @@ const Donate = () => {
   };
 
   return (
-    <div className="donate-page">
+    <div className="donate-page" style={{ fontFamily: "inherit" }}>
       <Header />
-      <div className="donate-container">
+      <div className="donate-container" style={{ fontFamily: "inherit" }}>
         
         {/* Success Message Banner */}
         {isSuccess && (
@@ -77,6 +77,7 @@ const Donate = () => {
                 key={val} 
                 className={amount === val ? "active" : ""} 
                 onClick={() => {setAmount(val); setCustomAmount("");}}
+                style={{ fontFamily: "inherit" }} // Forces website font on mobile buttons
               >
                 ${val}
               </button>
@@ -89,12 +90,14 @@ const Donate = () => {
             value={customAmount}
             onChange={(e) => {setCustomAmount(e.target.value); setAmount(null);}}
             className="custom-input"
+            style={{ fontFamily: "inherit" }} // Forces website font on mobile input
           />
 
           <button 
             className="confirm-button" 
             onClick={handleDonate}
             disabled={loading}
+            style={{ fontFamily: "inherit" }} // Forces website font on mobile confirm
           >
             {loading ? "Processing..." : `Donate $${customAmount || amount}`}
           </button>

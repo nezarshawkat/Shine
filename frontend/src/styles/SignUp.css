@@ -1,21 +1,41 @@
-/* Signup Page CSS scoped only to .signup-page-container */
+/* ==========================================
+   Signup Page Container (Main Layout)
+   ========================================== */
 .signup-page-container {
   font-family: 'Montserrat', sans-serif;
   display: flex;
   height: 100vh;
   width: 100%;
+  overflow: hidden; /* Prevents the whole page from scrolling */
 }
 
-/* LEFT SIDE */
+/* ==========================================
+   LEFT SIDE (Form Area)
+   ========================================== */
 .signup-left-side {
   width: 45%;
-  padding: 40px 40px;
-  background: #ECF2F6;
+  padding: 60px 70px;
+  background: #ECF2F6; /* Bluish white */
+  height: 100%;
+  overflow-y: auto; /* Only the left side scrolls */
+  scrollbar-width: none; /* Firefox: Hide scrollbar */
+  -ms-overflow-style: none; /* IE & Edge: Hide scrollbar */
 }
 
+/* Chrome, Safari, and Opera: Hide scrollbar */
+.signup-left-side::-webkit-scrollbar {
+  display: none;
+}
+
+/* Scale content down by 10% inside the left side */
+.signup-left-scale {
+  transform: scale(0.9);
+  transform-origin: top left;
+  width: 111.111%; /* Compensates for scale to avoid layout shifting */
+}
 
 .signup-left-side .logo {
-  width: 350px; /* logo size */
+  width: 350px;
   height: auto;
   margin-bottom: 40px;
 }
@@ -23,25 +43,19 @@
 .title {
   font-size: 25px;
   font-weight: 600;
-  font-color: #1c274c;
+  color: #1C274C;
   margin-bottom: 10px;
 }
-.signup-left-side h1 {
-  margin-bottom: px;
-}
 
-.signup-left-side .divider {
-  text-align: center;
-  margin: 25px 0;
-  font-size: 13px;
-  color: #999;
-}
-
+/* ==========================================
+   FORM ELEMENTS
+   ========================================== */
 .signup-left-side .signup-form label {
   display: flex;
   flex-direction: column;
   font-size: 14px;
   margin-bottom: 15px;
+  color: #1C274C;
 }
 
 .signup-left-side .signup-form input {
@@ -50,6 +64,7 @@
   border-radius: 8px;
   border: 1px solid #ddd;
   background: #ECF2F6;
+  font-family: inherit;
 }
 
 .signup-left-side .terms {
@@ -62,13 +77,59 @@
 
 .signup-left-side .terms label {
   margin: 0;
-}
-
-.signup-left-side .terms span {
-  color: #1C274C; /* dark blue */
   cursor: pointer;
 }
 
+/* Buttons */
+.signup-left-side .signup-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background-color: #FFC847; /* Yellow */
+  color: #1C274C;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.signup-left-side .signup-btn:disabled {
+  background-color: #e0bc6b;
+  cursor: not-allowed;
+}
+
+/* Divider line */
+.signup-left-side .divider {
+  text-align: center;
+  margin: 25px 0;
+  font-size: 13px;
+  color: #999;
+  position: relative;
+}
+
+.signup-left-side .divider::before,
+.signup-left-side .divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: #ddd;
+}
+
+.signup-left-side .divider::before { left: 0; }
+.signup-left-side .divider::after { right: 0; }
+
+/* Google Button Wrapper - Ensures it matches .signup-btn dimensions */
+.signup-left-side .google-btn-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* Style for the button inside GoogleLogin component */
 .signup-left-side .google-btn {
   width: 100%;
   padding: 12px;
@@ -80,31 +141,20 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 10px; /* gap between Google and SignUp */
-}
-
-.signup-left-side .google-icon {
-  font-weight: bold;
-}
-
-.signup-left-side .signup-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 30px;
-  border: none;
-  background-color: #ffc847;
-  color: #1C274C;
   font-size: 15px;
-  cursor: pointer;
+  font-family: inherit;
 }
 
+/* Footer text */
 .signup-left-side .signin-text {
   margin-top: 20px;
   font-size: 14px;
+  color: #1C274C;
 }
 
 .signup-left-side .signin-text span {
-  color: #FFC847; /* yellow */
+  color: #FFC847;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -114,61 +164,21 @@
   color: #aaa;
 }
 
-/* RIGHT SIDE (empty for now) */
+/* ==========================================
+   RIGHT SIDE (Blue Panel)
+   ========================================== */
 .signup-right-side {
   width: 55%;
-  background: #1C274C;
-  min-height: 100vh; /* stretch at least full viewport height */
-  display: flex;
-  flex-direction: column;
-}
-/* Signup Page CSS scoped only to .signup-page-container */
-.signup-page-container {
-  font-family: 'Montserrat', sans-serif;
-  display: flex;
+  background: #1C274C; /* Dark Blue */
   height: 100vh;
-  width: 100%;
-  overflow: hidden; /* ✅ prevent whole page scrolling */
-}
-
-/* LEFT SIDE */
-.signup-left-side {
-  width: 45%;
-  padding: 60px 70px;
-  background: #ECF2F6; /* bluish white */
-  height: 100%;
-  overflow-y: auto; /* ✅ only left side scrolls */
-}
-
-/* RIGHT SIDE (empty for now) */
-.signup-right-side {
-  width: 55%;
-  background: #1C274C; /* blue */
-  height: 100vh;       /* ✅ always full viewport height */
-  flex-shrink: 0;      /* ✅ never collapses */
+  flex-shrink: 0; /* Prevents collapse */
   display: flex;
   flex-direction: column;
 }
-/* Hide scrollbar but keep scrolling (LEFT SIDE ONLY) */
-.signup-left-side {
-  scrollbar-width: none;        /* Firefox */
-  -ms-overflow-style: none;     /* IE & Edge */
-}
 
-.signup-left-side::-webkit-scrollbar {
-  display: none;                /* Chrome, Safari */
-}
-/* Scale left content down by 10% */
-.signup-left-scale {
-  transform: scale(0.9);
-  transform-origin: top left;
-  width: 111.111%; /* compensate for scale to avoid cutoff */
-}
-
-
-@media (max-width: 900px) {
-  .signup-container { width: 100% !important; padding: 16px !important; }
-
+/* ==========================================
+   RESPONSIVENESS
+   ========================================== */
 @media (max-width: 1024px) {
   .signup-left-side {
     width: 100%;
@@ -176,11 +186,57 @@
   }
 
   .signup-right-side {
-    display: none;
+    display: none; /* Hide blue panel on mobile/tablet */
   }
 
   .signup-left-side .logo {
     width: min(280px, 70vw);
   }
+
+  .signup-left-scale {
+    transform: none; /* Reset scale for smaller screens */
+    width: 100%;
+  }
 }
+/* Update these specific properties in your CSS */
+.signup-left-side .signup-btn,
+.signup-left-side .google-btn {
+  width: 100% !important;        /* Force full width */
+  box-sizing: border-box;         /* Includes padding in the width calculation */
+  padding: 14px 20px;            /* Uniform padding */
+  border-radius: 30px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;                 /* Keeps icon and text aligned */
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+/* Ensure the wrapper doesn't have internal padding or constraints */
+.google-btn-wrapper {
+  width: 100%;
+  display: block;
+  margin-top: 10px;
+}
+/* Remove the .google-btn styles you wrote for the OTHER version */
+/* Apply these to the container that holds the Google iframe */
+
+.google-btn-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  height: 46px; /* Match the height of your signup-btn exactly */
+  margin-top: 10px;
+}
+
+#googleBtn {
+  width: 100% !important;
+}
+
+#googleBtn iframe {
+  width: 100% !important;
+  border-radius: 30px !important;
 }

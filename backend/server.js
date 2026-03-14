@@ -7,9 +7,13 @@ const { Server } = require("socket.io");
 const redis = require("redis");
 const prisma = require("./prisma.js");
 
+// FIXED: Changed this from 'import' to 'require'
+const { OAuth2Client } = require("google-auth-library");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // ================= STRIPE WEBHOOK =================
 const paymentRoutes = require('./routes/payment');
@@ -22,10 +26,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      
-      // Allow localhost or any github.dev preview URL
       if (
         origin.includes("localhost") || 
         origin.includes("app.github.dev") ||
@@ -88,6 +89,36 @@ app.get("/health", async (req, res) => {
     res.json({ status: "ok" });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/auth/google", async (req, res) => {
+  try {
+    const { token } = req.body;
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+    const googleId = payload.sub;
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
+        name,
+        googleId,
+        provider: "google"
+      }
+    });
+
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(401).json({ success: false });
   }
 });
 

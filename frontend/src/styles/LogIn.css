@@ -130,3 +130,50 @@
   }
 }
 }
+/* Ensure the Login Button and Google Wrapper match */
+.login-left-side .login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  background-color: #FFC847; /* Yellow */
+  color: #1C274C;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+/* Divider styling */
+.login-left-side .divider {
+  text-align: center;
+  margin: 25px 0;
+  font-size: 13px;
+  color: #999;
+  position: relative;
+}
+
+.login-left-side .divider::before,
+.login-left-side .divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  height: 1px;
+  background: #ddd;
+}
+.login-left-side .divider::before { left: 0; }
+.login-left-side .divider::after { right: 0; }
+
+/* Google Wrapper */
+.google-btn-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* Force the Google SDK container to take full width */
+#googleBtn {
+  width: 100% !important;
+}
