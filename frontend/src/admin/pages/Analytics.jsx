@@ -12,30 +12,21 @@ export default function Analytics() {
     <section>
       <h2>Analytics</h2>
       <div className="cards-grid">
-        {Object.entries(analytics?.cards || {}).map(([key, value]) => (
+        {Object.entries(analytics?.overview || {}).map(([key, value]) => (
           <div className="metric-card" key={key}><span>{key}</span><strong>{value}</strong></div>
         ))}
       </div>
       <div className="chart-grid">
-        <div className="admin-card">
-          <h3>Trending Keywords</h3>
-          {(analytics?.keywords || []).map((item) => <p key={item.keyword}>{item.keyword}: {item.count}</p>)}
-        </div>
-        <div className="admin-card">
-          <h3>Trending Hashtags</h3>
-          {(analytics?.hashtags || []).map((item) => <p key={item.hashtag}>{item.hashtag}: {item.count}</p>)}
-        </div>
+        <div className="admin-card"><h3>Platform Growth</h3><p>DAU: {analytics?.growth?.dailyActiveUsers}</p><p>WAU: {analytics?.growth?.weeklyActiveUsers}</p></div>
+        <div className="admin-card"><h3>Engagement</h3><p>Avg posts/user: {analytics?.engagement?.averagePostsPerUser}</p><p>Comments/post: {analytics?.engagement?.commentsPerPost}</p><p>Poll participation: {analytics?.engagement?.pollParticipation}</p></div>
+      </div>
+      <div className="chart-grid">
+        <div className="admin-card"><h3>Trending Keywords</h3>{(analytics?.trending?.keywords || []).map((k) => <p key={k.keyword}>{k.keyword}: {k.count}</p>)}</div>
+        <div className="admin-card"><h3>Trending Hashtags</h3>{(analytics?.trending?.hashtags || []).map((k) => <p key={k.hashtag}>{k.hashtag}: {k.count}</p>)}</div>
       </div>
       <div className="admin-card">
-        <h3>Nested Trend Timeline</h3>
-        <table className="admin-table">
-          <thead><tr><th>Bucket</th><th>Engagement</th><th>Trend of trends</th></tr></thead>
-          <tbody>
-            {(analytics?.trendsOverTime || []).map((t) => (
-              <tr key={t.bucket}><td>{t.bucket}</td><td>{t.engagement}</td><td>{t.nestedTrend}</td></tr>
-            ))}
-          </tbody>
-        </table>
+        <h3>Posts and Reports per Day</h3>
+        <table className="admin-table"><thead><tr><th>Day</th><th>Posts</th><th>Reports</th></tr></thead><tbody>{(analytics?.contentMetrics?.postsPerDay || []).map((d) => <tr key={d.day}><td>{d.day}</td><td>{d.posts}</td><td>{d.reports}</td></tr>)}</tbody></table>
       </div>
     </section>
   );

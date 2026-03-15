@@ -12,8 +12,8 @@ async function listReports(req, res) {
       },
       include: {
         reporter: { select: { id: true, username: true, email: true } },
-        post: { select: { id: true, text: true } },
-        community: { select: { id: true, name: true } },
+        post: { select: { id: true, text: true, type: true, authorId: true, author: { select: { id: true, username: true } } } },
+        community: { select: { id: true, name: true, creatorId: true, creator: { select: { id: true, username: true } } } },
         profile: { select: { id: true, username: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -28,10 +28,28 @@ async function listReports(req, res) {
 async function resolveReport(req, res) {
   try {
     const { id } = req.params;
-    const { resolution = "RESOLVED", action, blockUserId, deleteType, deleteId } = req.body;
+    const {
+      resolution = "RESOLVED",
+      action,
+      blockUserId,
+      suspendUserId,
+      deleteType,
+      deleteId,
+      warnOwnerId,
+    } = req.body;
 
-    if (blockUserId) {
-      await prisma.user.update({ where: { id: blockUserId }, data: { isAuthorized: false } });
+    if (blockUserId || suspendUserId) {
+      await prisma.user.update({ where: { id: blockUserId || suspendUserId }, data: { isAuthorized: false } });
+    }
+
+    if (warnOwnerId) {
+      await prisma.notification.create({
+        data: {
+          userId: warnOwnerId,
+          type: "ADMIN_WARNING",
+          content: "Your community has been reported. Please review the community rules and content.",
+        },
+      });
     }
 
     if (deleteType && deleteId) {
@@ -56,7 +74,7 @@ async function resolveReport(req, res) {
       action: "RESOLVE_REPORT",
       entityType: "REPORT",
       entityId: id,
-      metadata: { action, blockUserId, deleteType, deleteId, resolution },
+      metadata: { action, blockUserId, suspendUserId, deleteType, deleteId, warnOwnerId, resolution },
       ipAddress: req.ip,
     });
 

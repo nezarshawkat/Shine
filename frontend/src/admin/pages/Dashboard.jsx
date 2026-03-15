@@ -8,7 +8,7 @@ export default function Dashboard() {
     adminRequest("get", "/dashboard").then((res) => setData(res.data.data));
   }, []);
 
-  const cards = data?.analytics?.cards || {};
+  const cards = data?.analytics?.overview || {};
 
   return (
     <section>
@@ -21,17 +21,24 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      <h3>Recent Reports</h3>
-      <table className="admin-table">
-        <thead><tr><th>Type</th><th>Reason</th><th>Reporter</th><th>Status</th></tr></thead>
-        <tbody>
-          {(data?.recentReports || []).map((report) => (
-            <tr key={report.id}>
-              <td>{report.type}</td><td>{report.reason}</td><td>{report.reporter?.username}</td><td>{report.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="chart-grid">
+        <div className="admin-card">
+          <h3>Recent Reports</h3>
+          {(data?.recentReports || []).map((r) => <p key={r.id}>{r.type} • {r.reason}</p>)}
+        </div>
+        <div className="admin-card">
+          <h3>Recent Users</h3>
+          {(data?.recentUsers || []).map((u) => <p key={u.id}>{u.username}</p>)}
+        </div>
+        <div className="admin-card">
+          <h3>Recent Posts</h3>
+          {(data?.recentPosts || []).map((p) => <p key={p.id}>{String(p.text || "").slice(0, 60)}</p>)}
+        </div>
+        <div className="admin-card">
+          <h3>Recent Communities</h3>
+          {(data?.recentCommunities || []).map((c) => <p key={c.id}>{c.name}</p>)}
+        </div>
+      </div>
     </section>
   );
 }

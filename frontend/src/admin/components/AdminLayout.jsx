@@ -10,6 +10,8 @@ const tabs = [
   ["communities", "Communities"],
   ["reports", "Reports"],
   ["analytics", "Analytics"],
+  ["support", "Support"],
+  ["system-messages", "System Messages"],
 ];
 
 export default function AdminLayout() {

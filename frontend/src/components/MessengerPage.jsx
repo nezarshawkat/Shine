@@ -17,6 +17,7 @@ const MessengerPage = ({ currentUser }) => {
   const [conversations, setConversations] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null); 
+  const [systemNotifications, setSystemNotifications] = useState([]);
 
   const scrollRef = useRef();
 
@@ -33,6 +34,13 @@ const MessengerPage = ({ currentUser }) => {
     } catch (err) { console.error(err); }
   };
 
+  const fetchSystemNotifications = async () => {
+    try {
+      const res = await fetch(`/api/messenger/system`, { headers: getAuthHeader() });
+      if (res.ok) setSystemNotifications(await res.json());
+    } catch (err) { console.error(err); }
+  };
+
   const fetchChatHistory = async (partnerId) => {
     try {
       const res = await fetch(`/api/messenger/history/${partnerId}`, { headers: getAuthHeader() });
@@ -40,13 +48,16 @@ const MessengerPage = ({ currentUser }) => {
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { fetchConversations(); }, []);
+  useEffect(() => { fetchConversations(); fetchSystemNotifications(); }, []);
   useEffect(() => { 
-    if (activeTab?.id) {
+    if (activeTab?.system) {
+        setChatHistory(systemNotifications.map((n) => ({ ...n, senderId: "system", text: n.content })));
+        setView('chat');
+    } else if (activeTab?.id) {
         fetchChatHistory(activeTab.id);
         setView('chat'); // Switch view on mobile when a chat is selected
     } 
-  }, [activeTab]);
+  }, [activeTab, systemNotifications]);
   
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
@@ -70,7 +81,7 @@ const MessengerPage = ({ currentUser }) => {
 
   // --- 3. ACTIONS ---
   const handleSendMessage = async () => {
-    if (!message.trim() || !activeTab) return;
+    if (!message.trim() || !activeTab || activeTab.system) return;
     try {
       const res = await fetch('/api/messenger/send', {
         method: 'POST',
@@ -181,6 +192,10 @@ const MessengerPage = ({ currentUser }) => {
           </div>
 
           <div className="convos-list">
+            <div className={`convo-item ${activeTab?.system ? "active" : ""}`} onClick={() => setActiveTab({ id: "__system", system: true, name: "System Notifications", username: "system" })}>
+              <img src={profileDefault} alt="" />
+              <div className="convo-info"><div className="convo-title"><h4>System Notifications</h4></div><p className="last-msg">{systemNotifications.length} messages</p></div>
+            </div>
             {conversations.length > 0 ? conversations.map(conv => (
               <div 
                 key={conv.user.id} 
@@ -212,7 +227,7 @@ const MessengerPage = ({ currentUser }) => {
                     <ChevronLeft size={24} />
                 </button>
 
-                <div className="user-meta" onClick={() => navigate(`/profile/${activeTab.username}`)} style={{cursor: 'pointer'}}>
+                <div className="user-meta" onClick={() => !activeTab.system && navigate(`/profile/${activeTab.username}`)} style={{cursor: activeTab.system ? "default" : 'pointer'}}>
                   <img src={getAvatar(activeTab.image)} alt="" />
                   <div>
                     <h3>{activeTab.name}</h3>
@@ -236,7 +251,7 @@ const MessengerPage = ({ currentUser }) => {
                 <div ref={scrollRef} />
               </div>
 
-              <div className="chat-input-section">
+              {!activeTab.system && <div className="chat-input-section">
                 <div className="input-inner">
                   <input 
                     value={message}
@@ -248,7 +263,7 @@ const MessengerPage = ({ currentUser }) => {
                     <Send size={20} />
                   </button>
                 </div>
-              </div>
+              </div>}
             </>
           ) : (
             <div className="empty-chat">

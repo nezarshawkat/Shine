@@ -27,7 +27,7 @@ export default function ProfilePage({
   savedPosts = [],
   communities: initialCommunities = [],
 }) {
-  const { user: loggedInUser, logout } = useContext(AuthContext);
+  const { user: loggedInUser, logout, token } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,6 +35,7 @@ export default function ProfilePage({
   const [user, setUser] = useState(initialUser);
   const [activeTab, setActiveTab] = useState("Posts");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -172,9 +173,18 @@ export default function ProfilePage({
     }
   };
 
-  const handleReport = () => {
-    const reason = window.prompt("Reason for reporting:");
-    if (reason) alert("Thank you. Report submitted.");
+  const handleReport = () => setShowReportModal(true);
+
+  const submitUserReport = async (reason) => {
+    try {
+      await submitReport(token, { type: "PROFILE", targetId: user.id, reason });
+      alert("Report submitted.");
+    } catch (err) {
+      alert("Failed to submit report");
+    } finally {
+      setShowReportModal(false);
+      setMenuOpen(false);
+    }
   };
 
   const renderPostByType = (post, index) => {
@@ -248,6 +258,12 @@ export default function ProfilePage({
       )}
 
       {shareOpen && <SharePopup postId={user.id} onClose={() => setShareOpen(false)} />}
+      <ReportModal
+        title="Report User"
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSelect={submitUserReport}
+      />
 
       <div className="profile-page">
         <div className="profile-top">

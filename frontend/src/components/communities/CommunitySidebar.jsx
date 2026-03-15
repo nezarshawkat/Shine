@@ -8,6 +8,8 @@ import feather from "../../assets/feather.png";
 import MenuIcon from "../../assets/Menu.svg";
 import axios from "axios";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
+import ReportModal from "../reporting/ReportModal";
+import { submitReport } from "../reporting/reportUtils";
 
 
 const CommunitySidebar = ({ 
@@ -30,6 +32,7 @@ const CommunitySidebar = ({
   const [showPostPopup, setShowPostPopup] = useState(false);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [loadingTrends, setLoadingTrends] = useState(true);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
 
   useEffect(() => {
@@ -70,6 +73,17 @@ const CommunitySidebar = ({
       window.location.reload();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const submitCommunityReport = async (reason) => {
+    try {
+      await submitReport(token, { type: "COMMUNITY", targetId: communityId, reason });
+      setShowReportModal(false);
+      setShowSettingsPopup(false);
+      alert("Report submitted");
+    } catch (error) {
+      alert("Failed to submit report");
     }
   };
 
@@ -141,7 +155,7 @@ const CommunitySidebar = ({
                   </>
                 ) : (
                   <>
-                    <div className="side-menu-item" onClick={() => alert("Reported")}>Report</div>
+                    <div className="side-menu-item" onClick={() => setShowReportModal(true)}>Report</div>
                     <div className="side-menu-item delete" onClick={handleLeave}>Leave Group</div>
                   </>
                 )}
@@ -165,6 +179,12 @@ const CommunitySidebar = ({
         </div>
       </div>
 
+      <ReportModal
+        title="Report Community"
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSelect={submitCommunityReport}
+      />
       <style>{`
         .popup-menu { 
           position: absolute; 

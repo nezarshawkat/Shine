@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx"; 
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { submitReport } from "../reporting/reportUtils";
 
 // Icons
 import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
@@ -173,6 +174,20 @@ export default function PostBody() {
   }, []);
 
   const showToast = (message, type = "success") => setToast({ message, type });
+  const handleSubmitPostReport = async (reason) => {
+    const targetId = post?.id || post?._id || postId;
+    if (!targetId) return;
+    try {
+      const authToken = localStorage.getItem("token");
+      await submitReport(authToken, { type: "POST", targetId, reason });
+      showToast(`Reported for ${reason}`);
+    } catch (error) {
+      showToast("Failed to submit report", "error");
+    } finally {
+      setShowFlagPopup(false);
+    }
+  };
+
 
   const formatExternalLink = (url) => {
     if (!url) return "#";
@@ -498,7 +513,7 @@ export default function PostBody() {
               {showFlagPopup && (
                 <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 8, width: 200, zIndex: 10 }}>
                   {["Spam", "False Info", "Inappropriate"].map(opt => (
-                    <div key={opt} onClick={() => { showToast(`Reported for ${opt}`); setShowFlagPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13 }}>{opt}</div>
+                    <div key={opt} onClick={() => handleSubmitPostReport(opt)} style={{ padding: "8px", cursor: "pointer", fontSize: 13 }}>{opt}</div>
                   ))}
                 </div>
               )}

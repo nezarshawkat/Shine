@@ -51,6 +51,16 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum EventMode {
+  ONLINE
+  OFFLINE
+}
+
+enum SupportStatus {
+  OPEN
+  RESOLVED
+}
+
 // ================= MODELS =================
 
 model User {
@@ -101,7 +111,12 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
 
   votedPolls PollOption[]
+
+  supportMessages SupportMessage[]
+  createdEvents Event[]
 }
+
+
 
 model Block {
   id        String @id @default(uuid())
@@ -335,6 +350,7 @@ model Community {
   posts            Post[]
   communityMembers CommunityMember[]
   requests         CommunityRequest[]
+  events           Event[]
 
   // 🔥 FIXED RELATION
   reports AdminReport[]
@@ -412,11 +428,20 @@ model Notification {
 }
 
 model Event {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String
   image       String
   date        DateTime
+
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id])
+
+  location    String?
+  mode        EventMode  @default(OFFLINE)
+
+  creatorId   String?
+  creator     User?      @relation(fields: [creatorId], references: [id])
 
   status      String   @default("ACTIVE")
   featured    Boolean  @default(false)
@@ -495,4 +520,15 @@ model AdminAuditLog {
   createdAt    DateTime @default(now())
 
   @@index([adminId, createdAt])
+}
+model SupportMessage {
+  id         String        @id @default(uuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  subject    String
+  message    String
+  adminReply String?
+  status     SupportStatus @default(OPEN)
+  createdAt  DateTime      @default(now())
+  resolvedAt DateTime?
 }

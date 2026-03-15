@@ -184,4 +184,30 @@ router.get('/history/:partnerId', auth, async (req, res) => {
   }
 });
 
+
+
+router.get('/system', auth, async (req, res) => {
+  try {
+    const data = await prisma.notification.findMany({
+      where: { userId: req.user.id, type: 'SYSTEM' },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/system/:id/read', auth, async (req, res) => {
+  try {
+    const data = await prisma.notification.update({
+      where: { id: req.params.id },
+      data: { isRead: true }
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

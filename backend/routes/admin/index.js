@@ -2,9 +2,11 @@ const express = require("express");
 const adminAuth = require("../../middleware/adminAuth");
 const { adminLogin, seedAdmin } = require("../../controllers/admin/authController");
 const { listUsers, updateUser, toggleUserBlock, deleteUser } = require("../../controllers/admin/usersController");
-const { listContent, updateContent, deleteContent } = require("../../controllers/admin/contentController");
+const { listContent, createContent, updateContent, deleteContent } = require("../../controllers/admin/contentController");
 const { listReports, resolveReport } = require("../../controllers/admin/reportsController");
 const { getAnalytics, getDashboardOverview } = require("../../controllers/admin/analyticsController");
+const { listSupportMessages, replySupportMessage } = require("../../controllers/admin/supportController");
+const { sendSystemMessage } = require("../../controllers/admin/messagingController");
 
 const router = express.Router();
 
@@ -39,6 +41,7 @@ router.delete("/posts/:id", wrapType("posts", deleteContent));
 
 // EVENTS
 router.get("/events", wrapType("events", listContent));
+router.post("/events", wrapType("events", createContent));
 router.put("/events/:id", wrapType("events", updateContent));
 router.delete("/events/:id", wrapType("events", deleteContent));
 
@@ -50,5 +53,12 @@ router.delete("/communities/:id", wrapType("communities", deleteContent));
 /* ---------- reports ---------- */
 router.get("/reports", listReports);
 router.patch("/reports/:id/resolve", resolveReport);
+
+/* ---------- support ---------- */
+router.get("/support", listSupportMessages);
+router.patch("/support/:id", replySupportMessage);
+
+/* ---------- system messaging ---------- */
+router.post("/messages/system", sendSystemMessage);
 
 module.exports = router;

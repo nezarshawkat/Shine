@@ -83,6 +83,8 @@ app.use("/api/messenger", require("./routes/messenger.js"));
 app.use("/api/articles", require("./routes/articles"));
 app.use("/api", require("./routes/comments")); 
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/reports", require("./routes/reports"));
+app.use("/api/support", require("./routes/support"));
 
 app.get("/health", async (req, res) => {
   try {

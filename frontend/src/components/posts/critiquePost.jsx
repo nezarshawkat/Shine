@@ -5,6 +5,7 @@ import { getCommunityById } from "/workspaces/Shine/frontend/src/utlis/getCommun
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx"; 
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { submitReport } from "../reporting/reportUtils";
 
 // Icons
 import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
@@ -139,6 +140,20 @@ export default function CritiquePost({ postId, initialData }) {
   const [maximizedIndex, setMaximizedIndex] = useState(null);
 
   const showToast = (message, type = "success") => setToast({ message, type });
+  const handleSubmitPostReport = async (reason) => {
+    const targetId = post?.id || post?._id || postId;
+    if (!targetId) return;
+    try {
+      const authToken = localStorage.getItem("token");
+      await submitReport(authToken, { type: "POST", targetId, reason });
+      showToast(`Reported for ${reason}`);
+    } catch (error) {
+      showToast("Failed to submit report", "error");
+    } finally {
+      setShowFlagPopup(false);
+    }
+  };
+
   const isAuthor = user && (user.id === post?.authorId || user._id === post?.authorId);
 
   const isPostUpdated = () => {
@@ -468,7 +483,7 @@ export default function CritiquePost({ postId, initialData }) {
                   {showFlagPopup && (
                     <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 8, width: 200, zIndex: 10 }}>
                       {["Invalid resources", "Inappropriate language", "Spam"].map(opt => (
-                        <div key={opt} onClick={(e) => { e.stopPropagation(); showToast(`Reported for ${opt}`); setShowFlagPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13 }}>{opt}</div>
+                        <div key={opt} onClick={(e) => { e.stopPropagation(); handleSubmitPostReport(opt); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13 }}>{opt}</div>
                       ))}
                     </div>
                   )}

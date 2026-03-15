@@ -10,6 +10,8 @@ import Events from "../pages/Events";
 import Communities from "../pages/Communities";
 import Reports from "../pages/Reports";
 import Analytics from "../pages/Analytics";
+import Support from "../pages/Support";
+import SystemMessages from "../pages/SystemMessages";
 
 export default function AdminApp() {
   return (
@@ -159,6 +161,8 @@ export default function AdminApp() {
           <Route path="communities" element={<Communities />} />
           <Route path="reports" element={<Reports />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="support" element={<Support />} />
+          <Route path="system-messages" element={<SystemMessages />} />
 
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>

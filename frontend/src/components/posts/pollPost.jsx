@@ -10,6 +10,7 @@ import MenuIcon from "/workspaces/Shine/frontend/src/assets/Menu.svg";
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { submitReport } from "../reporting/reportUtils";
 
 
 // --- Sub-Components ---
@@ -55,6 +56,7 @@ export default function PollPost({ postId, initialData }) {
   const [showResults, setShowResults] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showMenuPopup, setShowMenuPopup] = useState(false);
+  const [showFlagPopup, setShowFlagPopup] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [toast, setToast] = useState(null);
@@ -68,6 +70,18 @@ export default function PollPost({ postId, initialData }) {
     : profileDefault;
 
   const showToastFn = (message, type = "success") => setToast({ message, type });
+
+  const handleSubmitPostReport = async (reason) => {
+    try {
+      const authToken = localStorage.getItem("token");
+      await submitReport(authToken, { type: "POST", targetId: currentPostId, reason });
+      showToastFn(`Reported for ${reason}`);
+    } catch (error) {
+      showToastFn("Failed to submit report", "error");
+    } finally {
+      setShowFlagPopup(false);
+    }
+  };
 
   const fetchPostData = async () => {
     if (!currentPostId) return;
@@ -263,7 +277,14 @@ export default function PollPost({ postId, initialData }) {
               <img src={ShareIcon} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} style={{ width: 18, cursor: "pointer" }} alt="" />
               <img src={isSaved ? TagClickedIcon : TagIcon} onClick={toggleSave} style={{ width: 18, cursor: "pointer" }} alt="" />
               <div style={{ position: "relative" }}>
-                <img src={isAuthor ? MenuIcon : FlagIcon} onClick={(e) => { e.stopPropagation(); isAuthor && setShowMenuPopup(!showMenuPopup); }} style={{ width: 18, cursor: "pointer" }} alt="" />
+                <img src={isAuthor ? MenuIcon : FlagIcon} onClick={(e) => { e.stopPropagation(); isAuthor ? setShowMenuPopup(!showMenuPopup) : setShowFlagPopup(!showFlagPopup); }} style={{ width: 18, cursor: "pointer" }} alt="" />
+                {showFlagPopup && !isAuthor && (
+                  <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 8, padding: 6, width: 180, zIndex: 10 }}>
+                    {["Invalid resources", "Inappropriate language", "Spam"].map((opt) => (
+                      <div key={opt} onClick={(e) => { e.stopPropagation(); handleSubmitPostReport(opt); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13 }}>{opt}</div>
+                    ))}
+                  </div>
+                )}
                 {showMenuPopup && isAuthor && (
                   <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
                     <div onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); setShowMenuPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#FF4C4C", fontWeight: 600 }}>Delete Post</div>
