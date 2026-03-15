@@ -81,6 +81,7 @@ app.use("/api/communities", require("./routes/communities"));
 app.use("/api/messenger", require("./routes/messenger.js"));
 app.use("/api/articles", require("./routes/articles"));
 app.use("/api", require("./routes/comments")); 
+app.use("/api/admin", require("./routes/admin"));
 
 app.get("/health", async (req, res) => {
   try {

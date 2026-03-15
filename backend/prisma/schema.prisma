@@ -33,6 +33,23 @@ enum RequestStatus {
   DECLINED
 }
 
+enum AdminStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ReportType {
+  POST
+  COMMUNITY
+  PROFILE
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  ACTIONED
+}
+
 // ================= MODELS =================
 
 model User {
@@ -61,6 +78,7 @@ model User {
   media         Media[]
   notifications Notification[]
   donations     Donation[]
+  reportedItems Report[]         @relation("ReportReporter")
 
   // Community Relations
   createdCommunities Community[]       @relation("Creator")
@@ -113,7 +131,9 @@ model Post {
   text      String
   keywords  String[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt   DateTime @updatedAt
+  isFeatured  Boolean  @default(false)
+  moderationStatus String @default("ACTIVE")
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
@@ -145,7 +165,9 @@ model Article {
   title     String
   content   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt   DateTime @updatedAt
+  isFeatured  Boolean  @default(false)
+  moderationStatus String @default("ACTIVE")
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
@@ -296,6 +318,10 @@ model Community {
   icon             String?
   banner           String?
   status           CommunityStatus   @default(PUBLIC)
+  isFeatured       Boolean           @default(false)
+  moderationStatus String            @default("ACTIVE")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   creatorId        String
   creator          User              @relation("Creator", fields: [creatorId], references: [id])
   posts            Post[]
@@ -376,4 +402,71 @@ model Event {
   date        DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  isFeatured  Boolean  @default(false)
+  moderationStatus String @default("ACTIVE")
+}
+
+model Admin {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  password         String
+  role             String         @default("ADMIN")
+  permissions      String[]       @default([])
+  status           AdminStatus    @default(ACTIVE)
+  twoFactorEnabled Boolean        @default(false)
+  twoFactorSecret  String?
+  allowedIps       String[]       @default([])
+  lastLoginAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  resolvedReports  Report[]       @relation("ResolvedByAdmin")
+  auditLogs        AdminAuditLog[]
+}
+
+model Report {
+  id                String       @id @default(uuid())
+  type              ReportType
+  reporterId        String
+  reporter          User         @relation("ReportReporter", fields: [reporterId], references: [id])
+  targetId          String
+  targetType        String
+  reason            String
+  details           String?
+  status            ReportStatus @default(OPEN)
+  actionTaken       String?
+  resolvedByAdminId String?
+  resolvedByAdmin   Admin?       @relation("ResolvedByAdmin", fields: [resolvedByAdminId], references: [id])
+  resolvedAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([type, status])
+  @@index([targetId])
+}
+
+model AnalyticsCache {
+  id          String   @id @default(uuid())
+  metricGroup String
+  metricKey   String
+  metricLabel String
+  metricValue Float
+  trendData   Json?
+  metadata    Json?
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([metricGroup, timestamp])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  admin      Admin    @relation(fields: [adminId], references: [id])
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
 }
