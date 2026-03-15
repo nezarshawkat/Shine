@@ -8,7 +8,7 @@ const config = {
   },
   events: {
     model: "event",
-    select: { id: true, title: true, description: true, status: true, featured: true, engagement: true, date: true, createdAt: true, communityId: true, creatorId: true, location: true, mode: true },
+    select: { id: true, title: true, description: true, image: true, status: true, featured: true, engagement: true, createdAt: true },
   },
   communities: {
     model: "community",
@@ -38,12 +38,14 @@ async function listContent(req, res) {
         : { name: { contains: q, mode: "insensitive" } }
       : {};
 
+    const orderBy = type === "communities" ? { name: "asc" } : { createdAt: "desc" };
+
     const [data, total] = await Promise.all([
       model.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         select: found.select,
       }),
       model.count({ where }),
@@ -58,7 +60,7 @@ async function listContent(req, res) {
 async function updateContent(req, res) {
   try {
     const { type, id } = req.params;
-    const { featured, status, text, title, description, name, date, communityId, location, mode, creatorId } = req.body;
+    const { featured, status, text, title, description, name, image } = req.body;
     const found = getModel(type);
     const model = prisma[found.model];
 
@@ -69,11 +71,7 @@ async function updateContent(req, res) {
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
       ...(name ? { name } : {}),
-      ...(date ? { date: new Date(date) } : {}),
-      ...(communityId !== undefined ? { communityId: communityId || null } : {}),
-      ...(location !== undefined ? { location: location || null } : {}),
-      ...(mode ? { mode: String(mode).toUpperCase() } : {}),
-      ...(creatorId ? { creatorId } : {}),
+      ...(image !== undefined ? { image } : {}),
     };
 
     const data = await model.update({ where: { id }, data: payload, select: found.select });
@@ -122,20 +120,16 @@ async function createContent(req, res) {
     const model = prisma[found.model];
 
     if (type === "events") {
-      const { title, description, communityId, date, location, mode = "OFFLINE", creatorId, image } = req.body;
-      if (!title || !description || !date || !creatorId) {
-        return res.status(400).json({ error: "Missing required fields for event creation" });
+      const { title, description, image } = req.body;
+      if (!title || !description || !image) {
+        return res.status(400).json({ error: "title, description and image are required" });
       }
       const data = await model.create({
         data: {
           title,
           description,
-          date: new Date(date),
-          communityId: communityId || null,
-          location: location || null,
-          mode: String(mode).toUpperCase(),
-          creatorId,
-          image: image || "",
+          image,
+          date: new Date(),
         },
         select: found.select,
       });

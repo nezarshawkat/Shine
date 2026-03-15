@@ -12,6 +12,7 @@ import Communities from "./components/Communities.jsx";
 import Articles from "./components/Articles.jsx";
 import Article from "/workspaces/Shine/frontend/src/components/articles/article.jsx";
 import Events from "./components/Events.jsx";
+import ContactPage from "./components/ContactPage.jsx";
 import FollowersPage from "./components/FollowersPage.jsx";
 import FollowingPage from "./components/FollowingPage.jsx";
 import FriendsPage from "./components/FriendsPage.jsx";
@@ -162,6 +163,7 @@ function AppRoutes() {
         <Route path="/forum/*" element={<Forum />} />
         <Route path="/communities" element={<Communities />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         {/* Auth */}
         <Route path="/login" element={<LogIn />} />

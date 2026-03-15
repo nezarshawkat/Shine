@@ -31,7 +31,7 @@ const RightSidebar = ({ showOnly = null }) => {
           `${API_BASE_URL}/events`
         );
         const eventJson = await eventRes.json();
-        setEventsData(Array.isArray(eventJson?.data) ? eventJson.data : []);
+        setEventsData(Array.isArray(eventJson?.data) ? eventJson.data : Array.isArray(eventJson) ? eventJson : []);
 
         // 2. Fetch Friends (Following)
         if (user?.username) {

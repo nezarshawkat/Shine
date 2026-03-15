@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 import Header from "./Header";
 import "../styles/LandingPage.css"; // Make sure to import the CSS we created
@@ -122,7 +123,7 @@ export default function LandingPage() {
           <img src={shineLogo} alt="ShineLogo" style={{ width: 200 }} />
           <div>
             <p className="footer-text">For suggestions and Complaints</p>
-            <button>Contact Us</button>
+            <Link to="/contact"><button>Contact Us</button></Link>
           </div>
         </div>
         <div className="footer-line"></div>

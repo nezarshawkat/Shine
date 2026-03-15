@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
       orderBy: { date: "asc" },
     });
 
-    res.json(events); // same style as communities
+    res.json({ data: events });
   } catch (err) {
     console.error("Fetch Events Error:", err);
     res.status(500).json({ error: "Failed to fetch events" });

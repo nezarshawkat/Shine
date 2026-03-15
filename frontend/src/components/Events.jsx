@@ -18,13 +18,8 @@ export default function Events() {
     axios
       .get(`${API_BASE_URL}/events`)
       .then((res) => {
-        const data = res?.data?.data;
-
-        if (Array.isArray(data)) {
-          setEvents(data);
-        } else {
-          setEvents([]);
-        }
+        const data = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+        setEvents(data);
       })
       .catch((err) => {
         console.error("Error fetching events:", err);
