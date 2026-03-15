@@ -37,6 +37,7 @@ import Compost from "./components/Compost.jsx";
 import ArticleApply from "./components/ArticleApply.jsx";
 import Donate from "./components/Donate.jsx";
 import MessengerPage from "./components/MessengerPage.jsx";
+import AdminApp from "./admin/AdminApp/AdminApp.jsx";
 
 // Auth & Profile
 import ProfilePageWrapper from "./components/ProfilePageWrapper.jsx";
@@ -64,6 +65,15 @@ function AppRoutes() {
     "/invite-people",
     "/article-apply",
     "/compost",
+    "/admin",
+    "/admin/login",
+    "/admin/dashboard",
+    "/admin/users",
+    "/admin/posts",
+    "/admin/events",
+    "/admin/communities",
+    "/admin/reports",
+    "/admin/analytics"
   ];
 
   const hideHeader = hideHeaderRoutes.includes(location.pathname);
@@ -83,6 +93,7 @@ function AppRoutes() {
         {/* Auth */}
         <Route path="/login" element={<LogIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/admin/*" element={<AdminApp />} />
 
         {/* Articles */}
         <Route path="/articles" element={<Articles />} />
