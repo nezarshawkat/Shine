@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 // Providers
 import { AuthProvider, AuthContext } from "./components/AuthProvider.jsx";
-import { SearchProvider } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { SearchProvider } from "./searchContext.jsx";
 
 // Pages
 import LandingPage from "./components/LandingPage.jsx"; 
 import Forum from "./components/Forum.jsx";
 import Communities from "./components/Communities.jsx";
 import Articles from "./components/Articles.jsx";
-import Article from "/workspaces/Shine/frontend/src/components/articles/article.jsx";
+import Article from "./components/articles/article.jsx";
 import Events from "./components/Events.jsx";
 import FollowersPage from "./components/FollowersPage.jsx";
 import FollowingPage from "./components/FollowingPage.jsx";
@@ -42,6 +42,8 @@ import MessengerPage from "./components/MessengerPage.jsx";
 import ProfilePageWrapper from "./components/ProfilePageWrapper.jsx";
 import SignUp from "./components/SignUp.jsx";
 import LogIn from "./components/LogIn.jsx";
+import ProfileSettings from "./components/ProfileSettings.jsx";
+import AdminRoutes from "./admin/AdminRoutes.jsx";
 
 // ==========================================================
 // Component to handle Route-based Logic (like hiding Header)
@@ -66,7 +68,7 @@ function AppRoutes() {
     "/compost",
   ];
 
-  const hideHeader = hideHeaderRoutes.includes(location.pathname);
+  const hideHeader = hideHeaderRoutes.includes(location.pathname) || location.pathname.startsWith("/admin");
 
   return (
     <>
@@ -74,6 +76,9 @@ function AppRoutes() {
       {!hideHeader && <Header />}
 
       <Routes>
+        {/* Admin */}
+        <Route path="/admin/*" element={<AdminRoutes />} />
+
         {/* Main Navigation */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/forum/*" element={<Forum />} />
