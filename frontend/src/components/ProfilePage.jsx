@@ -17,8 +17,53 @@ import profileDefault from "../assets/profileDefault.svg";
 
 import { AuthContext } from "./AuthProvider.jsx";
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
-// Import the new Settings component
 import ProfileSettings from "/workspaces/Shine/frontend/src/components/ProfileSettings.jsx";
+
+/**
+ * Inline ReportModal Component
+ */
+const ReportModal = ({ open, onClose, onSelect, title }) => {
+  const [reason, setReason] = useState("");
+  if (!open) return null;
+
+  const reasons = [
+    "Harassment",
+    "Inappropriate Content",
+    "Spam",
+    "Impersonation",
+    "Other",
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h3>{title}</h3>
+        <p>Why are you reporting this profile?</p>
+        <div className="report-reasons">
+          {reasons.map((r) => (
+            <button 
+              key={r} 
+              className={`reason-btn ${reason === r ? 'selected' : ''}`}
+              onClick={() => setReason(r)}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button className="cancel-btn" onClick={onClose}>Cancel</button>
+          <button 
+            className="submit-btn" 
+            disabled={!reason} 
+            onClick={() => onSelect(reason)}
+          >
+            Submit Report
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function ProfilePage({
   user: initialUser,
@@ -29,9 +74,7 @@ export default function ProfilePage({
 }) {
   const { user: loggedInUser, logout, token } = useContext(AuthContext);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Local state for user to allow updates from settings
+  
   const [user, setUser] = useState(initialUser);
   const [activeTab, setActiveTab] = useState("Posts");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,7 +112,6 @@ export default function ProfilePage({
   const loggedInUserId = normalizeId(loggedInUser);
   const isCurrentUser = userId === loggedInUserId;
 
-  // Sync state if initialUser prop changes
   useEffect(() => {
     setUser(initialUser);
   }, [initialUser]);
@@ -97,9 +139,7 @@ export default function ProfilePage({
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!isMobile) {
-        setShowSearch(window.scrollY > 200);
-      }
+      if (!isMobile) setShowSearch(window.scrollY > 200);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -173,11 +213,16 @@ export default function ProfilePage({
     }
   };
 
-  const handleReport = () => setShowReportModal(true);
-
   const submitUserReport = async (reason) => {
     try {
-      await submitReport(token, { type: "PROFILE", targetId: user.id, reason });
+      // Assuming API handles reports or you have a dedicated route
+      await API.post("/reports", { 
+        type: "PROFILE", 
+        targetId: userId, 
+        reason 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       alert("Report submitted.");
     } catch (err) {
       alert("Failed to submit report");
@@ -219,12 +264,11 @@ export default function ProfilePage({
             <div onClick={() => { setShareOpen(true); setMenuOpen(false); }}>Share Profile</div>
             {isCurrentUser ? (
               <>
-                {/* Updated: Directly toggle local state instead of navigate */}
                 <div onClick={() => { setShowSettings(true); setMenuOpen(false); }}>Settings</div>
                 <div className="logout-item" onClick={() => { logout(); navigate("/"); }}>Logout</div>
               </>
             ) : (
-              <div className="report-item" onClick={handleReport} style={{ color: "#FF4D4D" }}>Report Profile</div>
+              <div className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }} style={{ color: "#FF4D4D" }}>Report Profile</div>
             )}
           </div>
         )}
@@ -247,7 +291,6 @@ export default function ProfilePage({
     <>
       <Header />
       
-      {/* Settings Overlay Layer */}
       {showSettings && (
         <ProfileSettings 
           user={user} 
@@ -258,6 +301,7 @@ export default function ProfilePage({
       )}
 
       {shareOpen && <SharePopup postId={user.id} onClose={() => setShareOpen(false)} />}
+      
       <ReportModal
         title="Report User"
         open={showReportModal}
