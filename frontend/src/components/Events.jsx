@@ -2,9 +2,15 @@ import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
 import "../styles/events.css";
-import { API_BASE_URL, buildMediaUrl } from "../api";
+import { API_BASE_URL, BACKEND_URL } from "../api";
 
 const isVideoMedia = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
+
+// Helper function to construct the full URL for images/videos
+const buildMediaUrl = (path) => {
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${BACKEND_URL}${path}`;
+};
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -17,7 +23,11 @@ export default function Events() {
     axios
       .get(`${API_BASE_URL}/events`)
       .then((res) => {
-        const data = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+        const data = Array.isArray(res?.data?.data) 
+          ? res.data.data 
+          : Array.isArray(res?.data) 
+          ? res.data 
+          : [];
         setEvents(data);
       })
       .catch((err) => {
@@ -56,7 +66,12 @@ export default function Events() {
 
   useEffect(() => {
     const activeMedia = activeEvent?.image || activeEvent?.imageUrl || activeEvent?.media;
-    if (!activeEvent || !activeMedia || isVideoMedia(activeMedia)) return;
+    
+    // Skip if no media or if it's a video (canvas can't easily analyze video brightness this way)
+    if (!activeEvent || !activeMedia || isVideoMedia(activeMedia)) {
+        setTextColor("dark-text"); // Default fallback
+        return;
+    }
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -71,16 +86,18 @@ export default function Events() {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0);
 
-        const data = ctx.getImageData(0, 0, img.width, img.height).data;
+        const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
         let colorSum = 0;
 
-        for (let i = 0; i < data.length; i += 4) {
-          colorSum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        for (let i = 0; i < imageData.length; i += 4) {
+          colorSum += (imageData[i] + imageData[i + 1] + imageData[i + 2]) / 3;
         }
 
         const brightness = colorSum / (img.width * img.height);
+        // If brightness is high (light background), use dark text. Otherwise light text.
         setTextColor(brightness > 127 ? "dark-text" : "light-text");
-      } catch {
+      } catch (err) {
+        console.error("Brightness detection failed", err);
         setTextColor("dark-text");
       }
     };
@@ -100,11 +117,8 @@ export default function Events() {
     return (
       <div className="events-page">
         <Header />
-
         <div className="events-empty-wrapper">
-          <h4 className="events-empty-text">
-            There are no events right now
-          </h4>
+          <h4 className="events-empty-text">There are no events right now</h4>
         </div>
       </div>
     );
@@ -128,10 +142,22 @@ export default function Events() {
         </p>
       </div>
 
-      <div
-        className="event-banner"
-        style={!activeIsVideo ? { backgroundImage: `url(${mediaUrl})` } : undefined}
-      >
+      <div className="event-banner">
+        {!activeIsVideo && activeMedia && (
+          <img
+            src={mediaUrl}
+            alt={activeEvent.title}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              position: "absolute",
+              top: 0,
+              left: 0,
+            }}
+          />
+        )}
+
         {activeIsVideo && (
           <video
             key={mediaUrl}
@@ -141,6 +167,14 @@ export default function Events() {
             muted
             loop
             playsInline
+            style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                position: "absolute",
+                top: 0,
+                left: 0,
+              }}
           />
         )}
 
@@ -148,7 +182,7 @@ export default function Events() {
           className="slideshow-toggle"
           onClick={() => setIsPlaying(!isPlaying)}
         >
-          {isPlaying ? "⏸️" : "▶️"}
+          {isPlaying ? "停" : "▶️"}
         </button>
 
         <div className="event-dots-vertical">
@@ -172,7 +206,9 @@ export default function Events() {
           </span>
 
           <div className="event-actions">
-            <button className="btn-primary" onClick={handleParticipate}>Participate</button>
+            <button className="btn-primary" onClick={handleParticipate}>
+              Participate
+            </button>
             <span className="contact-text">Contact for info.</span>
           </div>
         </div>
