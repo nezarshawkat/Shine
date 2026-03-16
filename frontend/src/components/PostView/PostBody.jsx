@@ -701,22 +701,24 @@ export default function PostBody() {
               gap: 10,
             }}
           >
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {(post.keywords || []).map((k, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: "#ECF2F6",
-                    border: "0.5px solid #1C274C",
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  {k}
-                </div>
-              ))}
-            </div>
+            {!isMobile && (
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                {(post.keywords || []).map((k, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: "#ECF2F6",
+                      border: "0.5px solid #1C274C",
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                  >
+                    {k}
+                  </div>
+                ))}
+              </div>
+            )}
             <div
               style={{ fontSize: 16, lineHeight: 1.5, whiteSpace: "pre-wrap" }}
             >
@@ -864,6 +866,25 @@ export default function PostBody() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {isMobile && (
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              {(post.keywords || []).map((k, i) => (
+                <div
+                  key={`mobile-${i}`}
+                  style={{
+                    background: "#ECF2F6",
+                    border: "0.5px solid #1C274C",
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  {k}
+                </div>
+              ))}
             </div>
           )}
         </div>

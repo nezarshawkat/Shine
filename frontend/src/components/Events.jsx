@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
 import "/workspaces/Shine/frontend/src/styles/events.css";
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import { API_BASE_URL, buildMediaUrl } from "../api";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -30,6 +30,32 @@ export default function Events() {
   const activeEvent =
     events.length > 0 ? events[activeIndex % events.length] : null;
 
+  const handleParticipate = async () => {
+    if (!activeEvent?.id) return;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to participate in events.");
+        return;
+      }
+
+      const res = await axios.post(
+        `${API_BASE_URL}/events/${activeEvent.id}/participate`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data?.alreadyParticipating) {
+        alert("You have already requested participation details for this event.");
+      } else {
+        alert("Participation confirmed. Event details were sent to your notifications.");
+      }
+    } catch (err) {
+      console.error("Event participation failed:", err);
+      alert("We could not submit your participation right now. Please try again.");
+    }
+  };
+
   /* ======================================
      IMAGE TEXT COLOR DETECTION
   ====================================== */
@@ -38,7 +64,7 @@ export default function Events() {
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = activeEvent.image;
+    img.src = buildMediaUrl(activeEvent.image);
 
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -110,7 +136,7 @@ export default function Events() {
       <div
         className="event-banner"
         style={{
-          backgroundImage: `url(${activeEvent.image})`,
+          backgroundImage: `url(${buildMediaUrl(activeEvent.image)})`,
         }}
       >
         <button
@@ -141,7 +167,7 @@ export default function Events() {
           </span>
 
           <div className="event-actions">
-            <button className="btn-primary">Participate</button>
+            <button className="btn-primary" onClick={handleParticipate}>Participate</button>
             <span className="contact-text">Contact for info.</span>
           </div>
         </div>

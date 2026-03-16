@@ -498,6 +498,26 @@ export default function CritiquePost({ postId, initialData }) {
   return (
     <>
       <style>{`
+        @media (max-width: 768px) {
+          .post-main-layout {
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+          }
+          .post-media-block {
+            width: 100% !important;
+            height: 250px !important;
+            flex: unset !important;
+          }
+          .post-desktop-keywords {
+            display: none !important;
+          }
+          .post-mobile-keywords {
+            display: flex !important;
+            gap: 7px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+          }
+        }
         @media (max-width: 600px) {
           .post-timestamp {
             display: none !important;
@@ -689,9 +709,9 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
         )}
 
-        <div style={{ marginTop: 12, display: "flex", gap: 20 }}>
-          <div style={{ flex: 1 }}>
-            <div
+        <div className="post-main-layout" style={{ marginTop: 12, display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+            <div className="post-desktop-keywords"
               style={{
                 display: "flex",
                 gap: 7,
@@ -794,9 +814,11 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
           {mediaList.length > 0 && !isEditing && (
             <div
+              className="post-media-block"
               style={{
-                width: 277,
+                width: "min(277px, 100%)",
                 height: 275,
+                flex: "1 1 260px",
                 borderRadius: 12,
                 overflow: "hidden",
                 flexShrink: 0,
@@ -846,6 +868,26 @@ export default function CritiquePost({ postId, initialData }) {
               )}
             </div>
           )}
+                    <div
+            className="post-mobile-keywords"
+            style={{ display: "none" }}
+          >
+            {post.keywords?.map((k, i) => (
+              <span
+                key={`mobile-${i}`}
+                style={{
+                  background: "#ECF2F6",
+                  border: "0.5px solid #1C274C",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
+                {k}
+              </span>
+            ))}
+          </div>
+
         </div>
 
         {!isEditing && (

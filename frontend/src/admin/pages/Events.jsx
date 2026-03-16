@@ -4,7 +4,7 @@ import API, { BACKEND_URL } from "../../api";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", image: "" });
+  const [form, setForm] = useState({ title: "", description: "", detailsMessage: "", image: "" });
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -46,13 +46,13 @@ export default function Events() {
   };
 
   const createEvent = async () => {
-    if (!form.title || !form.description || !form.image || uploading) {
+    if (!form.title || !form.description || !form.detailsMessage || !form.image || uploading) {
       return;
     }
 
     setError("");
     await adminRequest("post", "/events", form);
-    setForm({ title: "", description: "", image: "" });
+    setForm({ title: "", description: "", detailsMessage: "", image: "" });
     setImagePreview("");
     load();
   };
@@ -81,6 +81,13 @@ export default function Events() {
             setForm((f) => ({ ...f, description: e.target.value }))
           }
         />
+        <textarea
+          placeholder="Details message sent automatically to participants"
+          value={form.detailsMessage}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, detailsMessage: e.target.value }))
+          }
+        />
         <label style={{ fontWeight: 600 }}>Upload Event Image</label>
         <input type="file" accept="image/*" onChange={onFileChange} />
         <input
@@ -102,7 +109,7 @@ export default function Events() {
         <button
           onClick={createEvent}
           disabled={
-            !form.title || !form.description || !form.image || uploading
+            !form.title || !form.description || !form.detailsMessage || !form.image || uploading
           }
         >
           {uploading ? "Uploading image..." : "Create Event"}
@@ -114,6 +121,7 @@ export default function Events() {
             <th>Image</th>
             <th>Title</th>
             <th>Description</th>
+            <th>Details Message</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -142,7 +150,18 @@ export default function Events() {
               </td>
               <td>{eventItem.title}</td>
               <td>{eventItem.description}</td>
-              <td>
+              <td style={{ maxWidth: 320, whiteSpace: "pre-wrap" }}>{eventItem.detailsMessage || "-"}</td>
+              <td style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={async () => {
+                    const nextMessage = window.prompt("Edit participation details message", eventItem.detailsMessage || "");
+                    if (nextMessage === null) return;
+                    await adminRequest("put", `/events/${eventItem.id}`, { detailsMessage: nextMessage });
+                    load();
+                  }}
+                >
+                  Edit Message
+                </button>
                 <button className="danger" onClick={() => remove(eventItem.id)}>
                   Delete
                 </button>
@@ -151,7 +170,7 @@ export default function Events() {
           ))}
           {events.length === 0 && (
             <tr>
-              <td colSpan={4}>No events found.</td>
+              <td colSpan={5}>No events found.</td>
             </tr>
           )}
         </tbody>

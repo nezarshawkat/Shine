@@ -8,7 +8,7 @@ const config = {
   },
   events: {
     model: "event",
-    select: { id: true, title: true, description: true, image: true, status: true, featured: true, engagement: true, createdAt: true },
+    select: { id: true, title: true, description: true, detailsMessage: true, image: true, status: true, featured: true, engagement: true, createdAt: true },
   },
   communities: {
     model: "community",
@@ -60,7 +60,7 @@ async function listContent(req, res) {
 async function updateContent(req, res) {
   try {
     const { type, id } = req.params;
-    const { featured, status, text, title, description, name, image } = req.body;
+    const { featured, status, text, title, description, detailsMessage, name, image } = req.body;
     const found = getModel(type);
     const model = prisma[found.model];
 
@@ -70,6 +70,7 @@ async function updateContent(req, res) {
       ...(text ? { text } : {}),
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
+      ...(detailsMessage !== undefined ? { detailsMessage } : {}),
       ...(name ? { name } : {}),
       ...(image !== undefined ? { image } : {}),
     };
@@ -120,14 +121,15 @@ async function createContent(req, res) {
     const model = prisma[found.model];
 
     if (type === "events") {
-      const { title, description, image } = req.body;
-      if (!title || !description || !image) {
-        return res.status(400).json({ error: "title, description and image are required" });
+      const { title, description, detailsMessage, image } = req.body;
+      if (!title || !description || !detailsMessage || !image) {
+        return res.status(400).json({ error: "title, description, detailsMessage and image are required" });
       }
       const data = await model.create({
         data: {
           title,
           description,
+          detailsMessage: detailsMessage || null,
           image,
           date: new Date(),
         },

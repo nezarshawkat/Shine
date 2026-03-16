@@ -65,6 +65,12 @@ router.get("/", async (req, res) => {
       include: {
         author: true,
         media: true,
+        parentPost: {
+          include: {
+            author: true,
+            media: true,
+          },
+        },
         likes: userId ? { where: { userId: userId } } : false,
         saves: userId ? { where: { userId: userId } } : false,
         _count: {
@@ -419,6 +425,12 @@ router.get("/:id", async (req, res) => {
         saves: userId ? { where: { userId } } : false,
         sources: true,
         community: true,
+        parentPost: {
+          include: {
+            author: true,
+            media: true,
+          },
+        },
         _count: { select: { likes: true, comments: true, shares: true, views: true, saves: true } }
       }
     });
