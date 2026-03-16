@@ -505,8 +505,8 @@ export default function CritiquePost({ postId, initialData }) {
           }
           .post-media-block {
             width: 100% !important;
-            aspect-ratio: 4 / 3 !important;
             height: auto !important;
+            aspect-ratio: 16 / 9;
             flex: unset !important;
           }
           .post-desktop-keywords {
@@ -570,91 +570,83 @@ export default function CritiquePost({ postId, initialData }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Link
-              to={`/profile/${post.author?.username}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                textDecoration: "none",
-              }}
-            >
-              <img
-                src={authorImage}
-                alt=""
-                style={{
-                  width: 41,
-                  height: 41,
-                  borderRadius: 999,
-                  objectFit: "cover",
-                }}
-              />
-              <div>
+
+            <div style={{ position: "relative", width: 41, height: 41 }}>
+              <Link
+                to={`/profile/${post.author?.username}`}
+                style={{ textDecoration: "none" }}
+              >
+                <img
+                  src={authorImage}
+                  alt=""
+                  style={{
+                    width: 41,
+                    height: 41,
+                    borderRadius: 999,
+                    objectFit: "cover",
+                  }}
+                />
+              </Link>
+
+              {originalPost?.author && (
+                <img
+                  src={
+                    originalPost.author.image
+                      ? originalPost.author.image.startsWith("http")
+                        ? originalPost.author.image
+                        : `${BACKEND_URL}${originalPost.author.image}`
+                      : profileDefault
+                  }
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    bottom: -3,
+                    right: -5,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 999,
+                    objectFit: "cover",
+                    border: "2px solid white",
+                  }}
+                />
+              )}
+            </div>
+
+            <div>
+              <Link
+                to={`/profile/${post.author?.username}`}
+                style={{ textDecoration: "none" }}
+              >
                 <div
                   style={{ fontSize: 16, fontWeight: 400, color: "#1C274C" }}
                 >
                   {post.author?.name || "User"}
                 </div>
-                {community?.name && (
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>
-                    from{" "}
-                    <span style={{ fontWeight: "bold", color: "#1C274C" }}>
-                      {community.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Link>
+              </Link>
 
-            {originalPost?.author && (
-              <>
-                <span
-                  style={{ fontSize: 16, color: "#1C274C", margin: "0 4px" }}
-                >
-                  on
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <img
-                    src={
-                      originalPost.author.image
-                        ? originalPost.author.image.startsWith("http")
-                          ? originalPost.author.image
-                          : `${BACKEND_URL}${originalPost.author.image}`
-                        : profileDefault
-                    }
-                    alt=""
-                    style={{
-                      width: 41,
-                      height: 41,
-                      borderRadius: 999,
-                      objectFit: "cover",
-                    }}
-                  />
-                  <div>
-                    <span
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 400,
-                        color: "#1C274C",
-                      }}
-                    >
-                      {originalPost.author.name}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 500,
-                        color: "#1C274C",
-                      }}
-                    >
-                      's post
-                    </span>
-                  </div>
+              {community?.name && (
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  from{" "}
+                  <span style={{ fontWeight: "bold", color: "#1C274C" }}>
+                    {community.name}
+                  </span>
                 </div>
-              </>
+              )}
+            </div>
+
+            {originalPost?.author && window.innerWidth > 768 && (
+              <span
+                style={{
+                  fontSize: 14,
+                  color: "#1C274C",
+                  marginLeft: 6,
+                }}
+              >
+                on {originalPost.author.name}'s post
+              </span>
             )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
             <div style={{ fontSize: 16, fontWeight: 500, color: "#1C274C" }}>
               {post.viewsCount || 0} views
             </div>
@@ -717,7 +709,7 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
         )}
 
-        <div className="post-main-layout" style={{ marginTop: 12, display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <div className="post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap" }}>
           <div className="post-main-content" style={{ flex: "1 1 320px", minWidth: 0 }}>
             <div className="post-desktop-keywords"
               style={{
@@ -745,7 +737,7 @@ export default function CritiquePost({ postId, initialData }) {
 
           <div
             className="post-mobile-keywords"
-            style={{ display: "none" }}
+            style={{ display: "none", marginBottom: 12, }}
           >
             {post.keywords?.map((k, i) => (
               <span
@@ -845,7 +837,8 @@ export default function CritiquePost({ postId, initialData }) {
               className="post-media-block"
               style={{
                 width: "min(277px, 100%)",
-                aspectRatio: "4 / 3",
+                height: "auto",
+                aspectRatio: "16 / 10",
                 flex: "1 1 260px",
                 borderRadius: 12,
                 overflow: "hidden",

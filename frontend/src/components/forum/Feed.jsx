@@ -99,7 +99,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
 
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
 
-  // 5. RENDER POST - FIXED: Added width: 100% to force filling the column
+  // 5. RENDER POST
   const renderPost = (post, index) => {
     const isLast = filteredFeed.length === index + 1;
     
@@ -122,7 +122,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
         ref={isLast ? lastPostRef : null}
         key={post.id || index}
         style={{ 
-          width: "100%", // Force post to fill the center column
+          width: "100%", 
           marginBottom: isMobile ? "2px" : "12px" 
         }}
       >
@@ -154,11 +154,12 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       style={{
         width: "100%",
         flex: 1,
-        padding: isMobile ? "12px" : "20px",
+        // UPDATED: 6px padding on left/right for mobile
+        padding: isMobile ? "12px 6px" : "20px",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center", // Ensures content stays centered if it hits a max-width
+        alignItems: "center",
       }}
     >
       {/* Container for the list of posts */}

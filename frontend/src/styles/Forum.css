@@ -195,3 +195,29 @@
     box-sizing: border-box;
   }
 }
+@media (max-width: 768px) {
+  .post-main-layout {
+    display: block !important;
+  }
+
+  .post-main-content {
+    width: 100% !important;
+    flex: unset !important;
+    min-width: 0 !important;
+  }
+
+  .post-media-block {
+    margin-top: 12px;
+  }
+
+  .post-desktop-keywords {
+    display: none !important;
+  }
+
+  .post-mobile-keywords {
+    display: flex !important;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+}
