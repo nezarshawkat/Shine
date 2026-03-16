@@ -35,18 +35,29 @@ router.post(
 
 
 router.post(
-  "/event-image",
-  upload.single("image"),
+  "/event-media",
+  upload.single("media"),
   async (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ error: "image file is required" });
-      const imageUrl = `/uploads/${req.file.filename}`;
-      res.status(201).json({ image: imageUrl });
+      if (!req.file) return res.status(400).json({ error: "media file is required" });
+      const mediaUrl = `/uploads/${req.file.filename}`;
+      res.status(201).json({ media: mediaUrl, image: mediaUrl });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "Upload failed" });
     }
   }
 );
+
+router.post("/event-image", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "image file is required" });
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.status(201).json({ image: imageUrl, media: imageUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 
 module.exports = router;

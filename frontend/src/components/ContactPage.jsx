@@ -11,7 +11,8 @@ export default function ContactPage() {
     e.preventDefault();
 
     try {
-      await API.post("/support/public", { subject, message });
+      const token = localStorage.getItem("token");
+      await API.post("/support", { subject, message }, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
       setSubject("");
       setMessage("");
       setStatus("Your message was sent. Shine support will get back to you soon.");

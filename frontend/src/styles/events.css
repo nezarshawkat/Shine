@@ -44,6 +44,14 @@
   transition: background-image 0.5s ease-in-out;
 }
 
+.event-banner-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Overlay to ensure text readability on busy images */
 .event-banner::before {
   content: "";

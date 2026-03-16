@@ -505,7 +505,8 @@ export default function CritiquePost({ postId, initialData }) {
           }
           .post-media-block {
             width: 100% !important;
-            height: 250px !important;
+            aspect-ratio: 4 / 3 !important;
+            height: auto !important;
             flex: unset !important;
           }
           .post-desktop-keywords {
@@ -516,6 +517,13 @@ export default function CritiquePost({ postId, initialData }) {
             gap: 7px;
             flex-wrap: wrap;
             margin-top: 10px;
+            order: 2;
+          }
+          .post-main-content {
+            order: 3;
+          }
+          .post-media-block {
+            order: 4;
           }
         }
         @media (max-width: 600px) {
@@ -710,7 +718,7 @@ export default function CritiquePost({ postId, initialData }) {
         )}
 
         <div className="post-main-layout" style={{ marginTop: 12, display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+          <div className="post-main-content" style={{ flex: "1 1 320px", minWidth: 0 }}>
             <div className="post-desktop-keywords"
               style={{
                 display: "flex",
@@ -734,6 +742,26 @@ export default function CritiquePost({ postId, initialData }) {
                 </span>
               ))}
             </div>
+
+          <div
+            className="post-mobile-keywords"
+            style={{ display: "none" }}
+          >
+            {post.keywords?.map((k, i) => (
+              <span
+                key={`mobile-${i}`}
+                style={{
+                  background: "#ECF2F6",
+                  border: "0.5px solid #1C274C",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
+                {k}
+              </span>
+            ))}
+          </div>
 
             {isEditing ? (
               <div
@@ -806,7 +834,7 @@ export default function CritiquePost({ postId, initialData }) {
                       fontWeight: 600,
                     }}
                   >
-                    {expanded ? "Show less" : "Read more"}
+                    {expanded ? "Show less" : "... Read more"}
                   </button>
                 )}
               </div>
@@ -817,7 +845,7 @@ export default function CritiquePost({ postId, initialData }) {
               className="post-media-block"
               style={{
                 width: "min(277px, 100%)",
-                height: 275,
+                aspectRatio: "4 / 3",
                 flex: "1 1 260px",
                 borderRadius: 12,
                 overflow: "hidden",
@@ -868,27 +896,7 @@ export default function CritiquePost({ postId, initialData }) {
               )}
             </div>
           )}
-                    <div
-            className="post-mobile-keywords"
-            style={{ display: "none" }}
-          >
-            {post.keywords?.map((k, i) => (
-              <span
-                key={`mobile-${i}`}
-                style={{
-                  background: "#ECF2F6",
-                  border: "0.5px solid #1C274C",
-                  padding: "4px 8px",
-                  borderRadius: 6,
-                  fontSize: 12,
-                }}
-              >
-                {k}
-              </span>
-            ))}
-          </div>
-
-        </div>
+                  </div>
 
         {!isEditing && (
           <div

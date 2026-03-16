@@ -30,14 +30,15 @@ export default function Events() {
     setUploading(true);
     try {
       const fd = new FormData();
-      fd.append("image", file);
-      const { data } = await API.post("/upload/event-image", fd, {
+      fd.append("media", file);
+      const { data } = await API.post("/upload/event-media", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setForm((f) => ({ ...f, image: data.image || "" }));
-      setImagePreview(data.image ? `${BACKEND_URL}${data.image}` : "");
+      const mediaPath = data.media || data.image || "";
+      setForm((f) => ({ ...f, image: mediaPath }));
+      setImagePreview(mediaPath ? `${BACKEND_URL}${mediaPath}` : "");
     } catch (err) {
-      setError(err?.response?.data?.error || "Image upload failed");
+      setError(err?.response?.data?.error || "Media upload failed");
       setForm((f) => ({ ...f, image: "" }));
       setImagePreview("");
     } finally {
@@ -88,10 +89,10 @@ export default function Events() {
             setForm((f) => ({ ...f, detailsMessage: e.target.value }))
           }
         />
-        <label style={{ fontWeight: 600 }}>Upload Event Image</label>
-        <input type="file" accept="image/*" onChange={onFileChange} />
+        <label style={{ fontWeight: 600 }}>Upload Event Image or Video</label>
+        <input type="file" accept="image/*,video/*" onChange={onFileChange} />
         <input
-          placeholder="Or paste image URL"
+          placeholder="Or paste image/video URL"
           value={form.image.startsWith("data:") ? "" : form.image}
           onChange={(e) => {
             setForm((f) => ({ ...f, image: e.target.value }));
@@ -99,11 +100,11 @@ export default function Events() {
           }}
         />
         {imagePreview && (
-          <img
-            src={imagePreview}
-            alt="Event preview"
-            style={{ maxWidth: 260, borderRadius: 8 }}
-          />
+          imagePreview.match(/\.(mp4|webm|ogg)$/i) ? (
+            <video src={imagePreview} controls style={{ maxWidth: 260, borderRadius: 8 }} />
+          ) : (
+            <img src={imagePreview} alt="Event preview" style={{ maxWidth: 260, borderRadius: 8 }} />
+          )
         )}
         {error && <div style={{ color: "#b91c1c", fontSize: 13 }}>{error}</div>}
         <button
@@ -112,7 +113,7 @@ export default function Events() {
             !form.title || !form.description || !form.detailsMessage || !form.image || uploading
           }
         >
-          {uploading ? "Uploading image..." : "Create Event"}
+          {uploading ? "Uploading media..." : "Create Event"}
         </button>
       </div>
       <table className="admin-table">
@@ -130,13 +131,28 @@ export default function Events() {
             <tr key={eventItem.id}>
               <td>
                 {eventItem.image ? (
+                  (eventItem.image.match(/\.(mp4|webm|ogg)$/i) ? (
+                    <video
+                    src={
+                      eventItem.image.startsWith("http")
+                        ? eventItem.image
+                        : `${BACKEND_URL}${eventItem.image}`
+                    }
+                    style={{
+                      width: 72,
+                      height: 48,
+                      objectFit: "cover",
+                      borderRadius: 6,
+                    }}
+                    controls
+                  />
+                  ) : (
                   <img
                     src={
                       eventItem.image.startsWith("http")
                         ? eventItem.image
                         : `${BACKEND_URL}${eventItem.image}`
                     }
-                    alt={eventItem.title}
                     style={{
                       width: 72,
                       height: 48,
@@ -144,6 +160,7 @@ export default function Events() {
                       borderRadius: 6,
                     }}
                   />
+                  ))
                 ) : (
                   "-"
                 )}

@@ -4,6 +4,8 @@ import axios from "axios";
 import "/workspaces/Shine/frontend/src/styles/events.css";
 import { API_BASE_URL, buildMediaUrl } from "../api";
 
+const isVideoMedia = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
+
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -11,9 +13,6 @@ export default function Events() {
   const [isPlaying, setIsPlaying] = useState(true);
   const intervalRef = useRef(null);
 
-  /* ======================================
-     FETCH EVENTS
-  ====================================== */
   useEffect(() => {
     axios
       .get(`${API_BASE_URL}/events`)
@@ -27,8 +26,7 @@ export default function Events() {
       });
   }, []);
 
-  const activeEvent =
-    events.length > 0 ? events[activeIndex % events.length] : null;
+  const activeEvent = events.length > 0 ? events[activeIndex % events.length] : null;
 
   const handleParticipate = async () => {
     if (!activeEvent?.id) return;
@@ -56,11 +54,8 @@ export default function Events() {
     }
   };
 
-  /* ======================================
-     IMAGE TEXT COLOR DETECTION
-  ====================================== */
   useEffect(() => {
-    if (!activeEvent || !activeEvent.image) return;
+    if (!activeEvent || !activeEvent.image || isVideoMedia(activeEvent.image)) return;
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -86,9 +81,6 @@ export default function Events() {
     };
   }, [activeEvent]);
 
-  /* ======================================
-     AUTO SLIDESHOW
-  ====================================== */
   useEffect(() => {
     if (!isPlaying || events.length <= 1) return;
 
@@ -99,9 +91,6 @@ export default function Events() {
     return () => clearInterval(intervalRef.current);
   }, [isPlaying, events.length]);
 
-  /* ======================================
-     EMPTY STATE (TOP CENTER FIXED)
-  ====================================== */
   if (events.length === 0) {
     return (
       <div className="events-page">
@@ -118,9 +107,9 @@ export default function Events() {
 
   if (!activeEvent) return <div>Loading events...</div>;
 
-  /* ======================================
-     MAIN UI
-  ====================================== */
+  const mediaUrl = buildMediaUrl(activeEvent.image);
+  const activeIsVideo = isVideoMedia(activeEvent.image);
+
   return (
     <div className="events-page">
       <Header />
@@ -135,10 +124,20 @@ export default function Events() {
 
       <div
         className="event-banner"
-        style={{
-          backgroundImage: `url(${buildMediaUrl(activeEvent.image)})`,
-        }}
+        style={!activeIsVideo ? { backgroundImage: `url(${mediaUrl})` } : undefined}
       >
+        {activeIsVideo && (
+          <video
+            key={mediaUrl}
+            className="event-banner-media"
+            src={mediaUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+        )}
+
         <button
           className="slideshow-toggle"
           onClick={() => setIsPlaying(!isPlaying)}

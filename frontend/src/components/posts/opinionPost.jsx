@@ -22,7 +22,7 @@ import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault
 
 // --- Sub-components ---
 
-function ImageMaximizer({ images, currentIndex, onClose, onPrev, onNext }) {
+function ImageMaximizer({ media, currentIndex, onClose, onPrev, onNext }) {
   if (currentIndex === null) return null;
 
   return (
@@ -37,22 +37,32 @@ function ImageMaximizer({ images, currentIndex, onClose, onPrev, onNext }) {
         color: "white", fontSize: 40, cursor: "pointer", zIndex: 3001
       }}>&times;</button>
 
-      {images.length > 1 && (
+      {media.length > 1 && (
         <>
           <button onClick={(e) => { e.stopPropagation(); onPrev(); }} style={arrowStyle({ left: 30 })}>&#10094;</button>
           <button onClick={(e) => { e.stopPropagation(); onNext(); }} style={arrowStyle({ right: 30 })}>&#10095;</button>
         </>
       )}
 
-      <img 
-        src={images[currentIndex]} 
-        alt="Maximized view" 
-        style={{ maxWidth: "90%", maxHeight: "85%", borderRadius: 8, objectFit: "contain" }}
-        onClick={(e) => e.stopPropagation()} 
-      />
+      {media[currentIndex].match(/\.(mp4|webm|ogg)$/i) ? (
+        <video
+          src={media[currentIndex]}
+          controls
+          autoPlay
+          style={{ maxWidth: "90%", maxHeight: "85%", borderRadius: 8 }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <img 
+          src={media[currentIndex]} 
+          alt="Maximized view" 
+          style={{ maxWidth: "90%", maxHeight: "85%", borderRadius: 8, objectFit: "contain" }}
+          onClick={(e) => e.stopPropagation()} 
+        />
+      )}
 
       <div style={{ position: "absolute", bottom: 40, color: "white", background: "rgba(0,0,0,0.5)", padding: "5px 15px", borderRadius: 20, fontSize: 14 }}>
-        {currentIndex + 1} / {images.length}
+        {currentIndex + 1} / {media.length}
       </div>
     </div>
   );
@@ -298,7 +308,7 @@ export default function AnalysisPost({ postId, initialData }) {
     ? (post.author.image.startsWith('http') ? post.author.image : `${BACKEND_URL}${post.author.image}`) 
     : profileDefault;
 
-  const mediaList = post.media?.filter(m => m.type === "image" || m.url.endsWith('.gif')).map(m => m.url.startsWith('http') ? m.url : `${BACKEND_URL}${m.url}`) || [];
+  const mediaList = post.media?.filter((m) => m.type === "image" || m.type === "video" || m.url.endsWith(".gif")).map((m) => (m.url.startsWith("http") ? m.url : `${BACKEND_URL}${m.url}`)) || [];
   const community = post.community || getCommunityById(post.communityId);
   const MAX_CHARS = 900;
   const displayText = !expanded && post.text?.length > MAX_CHARS ? post.text.slice(0, MAX_CHARS) + "..." : post.text;
@@ -311,17 +321,28 @@ export default function AnalysisPost({ postId, initialData }) {
   return (
     <>
       <style>{`
+        .post-content-layout {
+          align-items: flex-start;
+        }
         @media (max-width: 600px) {
           .post-timestamp {
             display: none !important;
           }
-          /* Hide the text inside the button span on mobile */
           .sources-btn-text {
             display: none;
           }
-          /* Show shortened text via pseudo-element */
           .sources-toggle-btn::after {
             content: "Sources";
+          }
+          .post-content-layout {
+            flex-direction: column;
+          }
+          .post-text-pane {
+            width: 100%;
+          }
+          .post-media-block {
+            width: 100% !important;
+            max-width: 100% !important;
           }
         }
       `}</style>
@@ -330,7 +351,7 @@ export default function AnalysisPost({ postId, initialData }) {
       {showDeleteModal && <DeleteModal onConfirm={handleDelete} onCancel={() => setShowDeleteModal(false)} />}
       
       <ImageMaximizer 
-        images={mediaList} 
+        media={mediaList} 
         currentIndex={maximizedIndex} 
         onClose={() => setMaximizedIndex(null)}
         onNext={() => setMaximizedIndex((maximizedIndex + 1) % mediaList.length)}
@@ -371,8 +392,8 @@ export default function AnalysisPost({ postId, initialData }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 12, display: "flex", gap: 20 }}>
-          <div style={{ flex: 1 }}>
+        <div className="post-content-layout" style={{ marginTop: 12, display: "flex", gap: 20 }}>
+          <div className="post-text-pane" style={{ flex: 1 }}>
              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 10 }}>
                 {post.keywords?.map((k, i) => (
                   <span key={i} style={{ background: "#ECF2F6", border: "0.5px solid #1C274C", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
@@ -396,7 +417,7 @@ export default function AnalysisPost({ postId, initialData }) {
                  <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{displayText}</div>
                  {post.text?.length > MAX_CHARS && (
                    <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "none", border: "none", color: "#FFC847", cursor: "pointer", fontWeight: 600 }}>
-                     {expanded ? "Show less" : "Read more"}
+                     {expanded ? "Show less" : "... Read more"}
                    </button>
                  )}
                </div>
@@ -404,10 +425,15 @@ export default function AnalysisPost({ postId, initialData }) {
           </div>
           {mediaList.length > 0 && !isEditing && (
             <div 
-              style={{ width: 277, height: 275, borderRadius: 12, overflow: "hidden", flexShrink: 0, cursor: "zoom-in" }}
+              className="post-media-block"
+              style={{ width: 277, aspectRatio: "4 / 3", borderRadius: 12, overflow: "hidden", flexShrink: 0, cursor: "zoom-in" }}
               onClick={(e) => { e.stopPropagation(); setMaximizedIndex(0); }}
             >
-              <img src={mediaList[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {mediaList[0].match(/\.(mp4|webm|ogg)$/i) ? (
+                <video src={mediaList[0]} controls style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <img src={mediaList[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              )}
             </div>
           )}
         </div>
