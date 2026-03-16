@@ -342,7 +342,6 @@ export default function ProfilePage({
 
             <div className="profile-badge">
               <span>{user.roleLevel || "Starter"}</span>
-              <span className="icon">ⓘ</span>
             </div>
           </div>
 

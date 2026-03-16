@@ -1,21 +1,90 @@
-import React from "react";
+import React, { useState } from "react";
 
-const REASONS = ["Invalid resources", "Inappropriate language", "Spam"];
+export default function ReportModal({
+  title = "Report",
+  open,
+  onClose,
+  onSelect,
+  prompt = "Tell us why you are reporting this.",
+  placeholder = "Write report reason...",
+}) {
+  const [reason, setReason] = useState("");
 
-export default function ReportModal({ title = "Report", open, onClose, onSelect }) {
   if (!open) return null;
 
+  const submit = () => {
+    const trimmed = reason.trim();
+    if (!trimmed) return;
+    onSelect(trimmed);
+    setReason("");
+  };
+
+  const close = () => {
+    setReason("");
+    onClose();
+  };
+
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.3)", display: "grid", placeItems: "center", zIndex: 2500 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 360, maxWidth: "90vw", background: "white", borderRadius: 12, padding: 16 }}>
+    <div
+      onClick={close}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(28,39,76,.25)",
+        backdropFilter: "blur(4px)",
+        display: "grid",
+        placeItems: "center",
+        zIndex: 2500,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 420,
+          maxWidth: "92vw",
+          background: "white",
+          borderRadius: 16,
+          padding: 18,
+          border: "1px solid rgba(28,39,76,.15)",
+        }}
+      >
         <h3 style={{ marginTop: 0 }}>{title}</h3>
-        <p style={{ color: "#6b7280", marginTop: 0 }}>Choose a reason:</p>
-        <div style={{ display: "grid", gap: 8 }}>
-          {REASONS.map((reason) => (
-            <button key={reason} onClick={() => onSelect(reason)} style={{ textAlign: "left", background: "#f3f4f6", color: "#111827" }}>
-              {reason}
-            </button>
-          ))}
+        <p style={{ color: "#6b7280", marginTop: 0 }}>{prompt}</p>
+        <textarea
+          rows={5}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder={placeholder}
+          style={{
+            width: "100%",
+            borderRadius: 10,
+            border: "1px solid #d1d5db",
+            padding: "10px 12px",
+            resize: "vertical",
+            color: "#1C274C",
+          }}
+        />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginTop: 12,
+          }}
+        >
+          <button
+            onClick={close}
+            style={{ background: "#f3f4f6", color: "#1C274C" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={!reason.trim()}
+            style={{ background: "#1C274C", color: "#FFC847" }}
+          >
+            Submit Report
+          </button>
         </div>
       </div>
     </div>
