@@ -5,13 +5,17 @@ const auth = require("../middleware/auth");
 
 async function getGuestSupportUser() {
   const email = "guest-support@shine.local";
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return existing;
+  const username = "guest_support";
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) return existingByEmail;
+
+  const existingByUsername = await prisma.user.findUnique({ where: { username } });
+  if (existingByUsername) return existingByUsername;
 
   return prisma.user.create({
     data: {
       email,
-      username: "guest_support",
+      username,
       name: "Guest Support",
       isAuthorized: true,
     },

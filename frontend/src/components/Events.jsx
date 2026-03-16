@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
-import "/workspaces/Shine/frontend/src/styles/events.css";
+import "../styles/events.css";
 import { API_BASE_URL, buildMediaUrl } from "../api";
 
 const isVideoMedia = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
@@ -55,29 +55,34 @@ export default function Events() {
   };
 
   useEffect(() => {
-    if (!activeEvent || !activeEvent.image || isVideoMedia(activeEvent.image)) return;
+    const activeMedia = activeEvent?.image || activeEvent?.imageUrl || activeEvent?.media;
+    if (!activeEvent || !activeMedia || isVideoMedia(activeMedia)) return;
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = buildMediaUrl(activeEvent.image);
+    img.src = buildMediaUrl(activeMedia);
 
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
 
-      const data = ctx.getImageData(0, 0, img.width, img.height).data;
-      let colorSum = 0;
+        const data = ctx.getImageData(0, 0, img.width, img.height).data;
+        let colorSum = 0;
 
-      for (let i = 0; i < data.length; i += 4) {
-        colorSum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        for (let i = 0; i < data.length; i += 4) {
+          colorSum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        }
+
+        const brightness = colorSum / (img.width * img.height);
+        setTextColor(brightness > 127 ? "dark-text" : "light-text");
+      } catch {
+        setTextColor("dark-text");
       }
-
-      const brightness = colorSum / (img.width * img.height);
-      setTextColor(brightness > 127 ? "dark-text" : "light-text");
     };
   }, [activeEvent]);
 
@@ -107,8 +112,9 @@ export default function Events() {
 
   if (!activeEvent) return <div>Loading events...</div>;
 
-  const mediaUrl = buildMediaUrl(activeEvent.image);
-  const activeIsVideo = isVideoMedia(activeEvent.image);
+  const activeMedia = activeEvent.image || activeEvent.imageUrl || activeEvent.media || "";
+  const mediaUrl = buildMediaUrl(activeMedia);
+  const activeIsVideo = isVideoMedia(activeMedia);
 
   return (
     <div className="events-page">

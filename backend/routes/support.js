@@ -6,14 +6,18 @@ const router = express.Router();
 
 async function getGuestSupportUser() {
   const email = "guest-support@shine.local";
+  const username = "guest_support";
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return existing;
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) return existingByEmail;
+
+  const existingByUsername = await prisma.user.findUnique({ where: { username } });
+  if (existingByUsername) return existingByUsername;
 
   return prisma.user.create({
     data: {
       email,
-      username: "guest_support",
+      username,
       name: "Guest Support",
       isAuthorized: true,
     },
@@ -35,7 +39,8 @@ function resolveUserIdFromToken(req) {
 
 async function createSupportMessage(req, res, { forceGuest = false } = {}) {
   try {
-    const { subject, message } = req.body;
+    const subject = String(req.body?.subject || "").trim();
+    const message = String(req.body?.message || "").trim();
     if (!subject || !message) {
       return res.status(400).json({ error: "subject and message are required" });
     }

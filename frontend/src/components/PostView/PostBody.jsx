@@ -591,8 +591,11 @@ export default function PostBody() {
     );
 
   const isPoll = post.type?.toLowerCase() === "poll";
+  const isCritique = post.type?.toLowerCase() === "critique";
   const postDate = new Date(post.createdAt);
   const postAuthorImg = getImageUrl(post.author?.image);
+  const originalPost = post.parentPost;
+  const originalAuthorImg = getImageUrl(originalPost?.author?.image);
   const mediaUrls =
     post.media?.map((m) =>
       m.url.startsWith("http") ? m.url : `${BASE_URL}${m.url}`,
@@ -638,29 +641,59 @@ export default function PostBody() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Link
-              to={`/profile/${post.author?.username}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                textDecoration: "none",
-              }}
-            >
-              <img
-                src={postAuthorImg}
-                alt=""
-                style={{
-                  width: 41,
-                  height: 41,
-                  borderRadius: 999,
-                  objectFit: "cover",
-                }}
-              />
-              <div style={{ fontSize: 16, color: "#1C274C" }}>
-                {post.author?.name || "Unknown User"}
-              </div>
-            </Link>
+            <div style={{ position: "relative", width: 41, height: 41 }}>
+              <Link to={`/profile/${post.author?.username}`}>
+                <img
+                  src={postAuthorImg}
+                  alt=""
+                  style={{
+                    width: 41,
+                    height: 41,
+                    borderRadius: 999,
+                    objectFit: "cover",
+                  }}
+                />
+              </Link>
+              {isCritique && originalPost?.author && (
+                <img
+                  src={originalAuthorImg}
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    bottom: -3,
+                    right: -5,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 999,
+                    objectFit: "cover",
+                    border: "2px solid white",
+                  }}
+                />
+              )}
+            </div>
+
+            <div>
+              <Link
+                to={`/profile/${post.author?.username}`}
+                style={{ textDecoration: "none" }}
+              >
+                <div style={{ fontSize: 16, color: "#1C274C" }}>
+                  {post.author?.name || "Unknown User"}
+                </div>
+              </Link>
+
+              {post.community?.name && (
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  from <span style={{ fontWeight: "bold", color: "#1C274C" }}>{post.community.name}</span>
+                </div>
+              )}
+            </div>
+
+            {isCritique && originalPost?.author && !isMobile && (
+              <span style={{ fontSize: 14, color: "#1C274C", marginLeft: 6 }}>
+                on {originalPost.author?.name}'s post
+              </span>
+            )}
           </div>
           <div
             style={{
@@ -683,6 +716,49 @@ export default function PostBody() {
             </div>
           </div>
         </div>
+
+        {isCritique && originalPost && (
+          <div
+            onClick={() => navigate(`/post/${originalPost.id}`)}
+            style={{
+              marginTop: 8,
+              padding: "0 12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "#F6F6F6",
+              border: "0.5px solid #1C274C",
+              height: 49,
+              borderRadius: 13,
+              fontSize: 16,
+              color: "#1C274C",
+              cursor: "pointer",
+            }}
+          >
+            <div
+              style={{
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                maxWidth: "calc(100% - 85px)",
+              }}
+            >
+              {originalPost.text}
+            </div>
+            <button
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#1C274C",
+                fontSize: 16,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              See Post
+            </button>
+          </div>
+        )}
 
         {/* CONTENT */}
         <div

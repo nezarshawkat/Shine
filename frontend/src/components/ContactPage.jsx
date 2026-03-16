@@ -12,7 +12,8 @@ export default function ContactPage() {
 
     try {
       const token = localStorage.getItem("token");
-      await API.post("/support", { subject, message }, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      const endpoint = token ? "/support" : "/support/public";
+      await API.post(endpoint, { subject, message }, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
       setSubject("");
       setMessage("");
       setStatus("Your message was sent. Shine support will get back to you soon.");
@@ -37,7 +38,7 @@ export default function ContactPage() {
           style={{ padding: "0.85rem", borderRadius: 8, border: "1px solid #ddd" }}
         />
         <textarea
-          placeholder="How can we help you?"
+          placeholder="How can I help you?"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
