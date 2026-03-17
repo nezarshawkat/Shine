@@ -60,6 +60,7 @@ export default function CommunityProfile() {
   const [editData, setEditData] = useState({});
   const [bannerFile, setBannerFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
+  const [membership, setMembership] = useState({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
 
   const observer = useRef();
   const postPopupRef = useRef(null);
@@ -92,13 +93,35 @@ export default function CommunityProfile() {
     }
   };
 
+
+  const fetchMembership = async () => {
+    if (!currentUserId || !communityId) {
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+      return;
+    }
+
+    try {
+      const res = await axios.get(`${API_URL}/communities/${communityId}/membership/${currentUserId}`);
+      const data = res.data || {};
+      setMembership({
+        isMember: !!data.isMember,
+        isPending: data.status === "PENDING",
+        isAdmin: data.role === "ADMIN" || data.role === "MAIN_ADMIN",
+        isMainAdmin: data.role === "MAIN_ADMIN",
+      });
+    } catch (err) {
+      console.error("Membership error", err);
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+    }
+  };
   useEffect(() => {
     setFeed([]);
     setPage(1);
     setHasMore(true);
     fetchCommunity();
     fetchTrends();
-  }, [communityId]);
+    fetchMembership();
+  }, [communityId, currentUserId]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -106,7 +129,7 @@ export default function CommunityProfile() {
       setLoading(true);
       try {
         const res = await axios.get(`${API_URL}/communities/${communityId}/posts`, {
-          params: { page, limit: 10 },
+          params: { page, limit: 10, userId: currentUserId || undefined },
         });
         const { posts, pagination } = res.data;
         if (posts.length === 0) {
@@ -126,16 +149,23 @@ export default function CommunityProfile() {
       }
     };
     fetchPosts();
-  }, [page, communityId]);
+  }, [page, communityId, currentUserId]);
 
   const handleJoin = async () => {
     if (!userId || !token) { navigate("/login"); return; }
     try {
       setJoining(true);
-      await axios.post(`${API_URL}/communities/${communityId}/join`, { userId }, { 
+      const res = await axios.post(`${API_URL}/communities/${communityId}/join`, { userId }, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      window.location.reload(); 
+      if (res.data?.status === "PENDING") {
+        setMembership((prev) => ({ ...prev, isPending: true, isMember: false }));
+      } else {
+        setMembership((prev) => ({ ...prev, isPending: false, isMember: true }));
+      }
+      fetchCommunity();
+      setFeed([]);
+      setPage(1);
     } catch (err) { console.error(err); } finally { setJoining(false); }
   };
 
@@ -145,7 +175,10 @@ export default function CommunityProfile() {
       await axios.post(`${API_URL}/communities/${communityId}/leave`, { userId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      window.location.reload();
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+      setFeed([]);
+      setPage(1);
+      fetchCommunity();
     } catch (err) { console.error(err); }
   };
 
@@ -168,17 +201,10 @@ export default function CommunityProfile() {
     }
   };
 
-  const roleData = useMemo(() => {
-    if (!community || !currentUserId) return { isMember: false, isAdmin: false, isMainAdmin: false, isPending: false };
-    const memberRecord = community.communityMembers?.find((m) => m.userId === currentUserId);
-    const isPending = memberRecord?.status === "PENDING"; 
-    return {
-      isMember: !!memberRecord && !isPending,
-      isPending: isPending,
-      isAdmin: memberRecord?.role === "ADMIN" || memberRecord?.role === "MAIN_ADMIN",
-      isMainAdmin: memberRecord?.role === "MAIN_ADMIN",
-    };
-  }, [community, currentUserId]);
+  const roleData = membership;
+
+  const isPrivateCommunity = community?.status === "PRIVATE";
+  const shouldLockPosts = isPrivateCommunity && !roleData.isMember;
 
   const lastPostRef = useCallback((node) => {
     if (loading) return;
@@ -303,7 +329,7 @@ export default function CommunityProfile() {
                 className="mobile-join-btn"
                 style={{ backgroundColor: roleData.isPending ? "#ccc" : "#1C274C", color: roleData.isPending ? "#666" : "#FFC847" }}
               >
-                {joining ? "Processing..." : roleData.isPending ? "Request Pending" : "Join Community"}
+                {joining ? "Processing..." : roleData.isPending ? "Request Pending" : isPrivateCommunity ? "Request to Join" : "Join Community"}
               </button>
             ) : (
               <div style={{ display: "flex", gap: "10px", width: "100%", marginBottom: "20px" }}>
@@ -333,7 +359,7 @@ export default function CommunityProfile() {
                       {roleData.isAdmin || roleData.isMainAdmin ? (
                         <>
                           <div className="side-menu-item" onClick={() => { setSettingsTab("Members"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Community Manager</div>
-                          <div className="side-menu-item" onClick={() => { setSettingsTab("General"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Settings</div>
+                          <div className="side-menu-item" onClick={() => { setSettingsTab("General"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Community Settings</div>
                         </>
                       ) : (
                         <>
@@ -362,7 +388,7 @@ export default function CommunityProfile() {
           </div>
 
           {/* 3. THE FEED */}
-          <div className="community-feed-list">
+          <div className={`community-feed-list ${shouldLockPosts ? "locked-feed" : ""}`}>
             {filteredFeed.map((post, index) => {
               const Component = { opinion: OpinionPost, critique: CritiquePost, analysis: AnalysisPost, poll: PollPost }[post.type];
               return Component ? (
@@ -372,6 +398,7 @@ export default function CommunityProfile() {
               ) : null;
             })}
             {loading && <SkeletonPost />}
+            {shouldLockPosts && <div className="locked-feed-overlay">Join community to see posts</div>}
           </div>
         </main>
 
@@ -387,6 +414,7 @@ export default function CommunityProfile() {
               setSettingsTab(tab);
               setShowSettingsOverlay(true);
             }}
+            isPrivate={isPrivateCommunity}
           />
         </div>
       </div>
@@ -432,6 +460,15 @@ export default function CommunityProfile() {
         .trend-tags { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .trend-tags button { font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 0.6rem; border: 1px solid #ccc; background: transparent; cursor: pointer; }
         .trend-tags button.active { background: #ECF2F6; border-color: #1C274C; }
+
+        .community-feed-list.locked-feed { position: relative; }
+        .community-feed-list.locked-feed > div { filter: blur(6px); pointer-events: none; user-select: none; }
+        .locked-feed-overlay {
+          position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+          font-size: 24px; font-weight: 700; color: #1C274C; text-align: center;
+          background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); z-index: 3;
+          padding: 16px; border-radius: 16px;
+        }
 
         .community-description { padding: 15px 0; font-size: 15px; color: #333; line-height: 1.5; }
         .edit-save-btn { background: #1C274C; color: #FFC847; border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }

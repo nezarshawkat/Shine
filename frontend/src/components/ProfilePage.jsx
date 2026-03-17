@@ -241,6 +241,22 @@ export default function ProfilePage({
     }
   };
 
+  const handleMessageUser = () => {
+    if (!userId || isCurrentUser) return;
+
+    navigate("/messenger", {
+      state: {
+        openChatUser: {
+          id: userId,
+          username: user?.username,
+          name: user?.name,
+          image: user?.image,
+        },
+      },
+    });
+    setMenuOpen(false);
+  };
+
   const renderPostByType = (post, index) => {
     const componentMap = { opinion: OpinionPost, analysis: AnalysisPost, critique: CritiquePost, poll: PollPost };
     const Component = componentMap[post.type] || OpinionPost;
@@ -277,7 +293,10 @@ export default function ProfilePage({
                 <div className="logout-item" onClick={() => { logout(); navigate("/"); }}>Logout</div>
               </>
             ) : (
-              <div className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }} style={{ color: "#FF4D4D" }}>Report Profile</div>
+              <>
+                <div onClick={handleMessageUser}>Message</div>
+                <div className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }} style={{ color: "#FF4D4D" }}>Report Profile</div>
+              </>
             )}
           </div>
         )}

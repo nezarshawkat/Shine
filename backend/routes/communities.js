@@ -324,9 +324,33 @@ router.get("/:id/membership/:userId", async (req, res) => {
 router.get("/:id/posts", async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+
+    const community = await prisma.community.findUnique({ where: { id }, select: { status: true } });
+    if (!community) return res.status(404).json({ error: "Community not found" });
+
+    if (community.status === "PRIVATE") {
+      if (!userId) {
+        return res.json({
+          posts: [],
+          pagination: { total: 0, totalPages: 0, currentPage: page },
+        });
+      }
+
+      const member = await prisma.communityMember.findUnique({
+        where: { userId_communityId: { userId, communityId: id } },
+      });
+
+      if (!member) {
+        return res.json({
+          posts: [],
+          pagination: { total: 0, totalPages: 0, currentPage: page },
+        });
+      }
+    }
 
     const posts = await prisma.post.findMany({
       where: { communityId: id },

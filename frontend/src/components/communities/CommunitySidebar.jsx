@@ -18,7 +18,8 @@ const CommunitySidebar = ({
   isAdmin, 
   isMainAdmin, 
   communityName, 
-  onOpenSettings 
+  onOpenSettings,
+  isPrivate
 }) => {
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
   const { user, token, userId } = useContext(AuthContext);
@@ -111,7 +112,7 @@ const CommunitySidebar = ({
             cursor: isPending ? "default" : "pointer", border: "none" 
           }}
         >
-          {joining ? "Processing..." : isPending ? "Request Pending" : "Join Community"}
+          {joining ? "Processing..." : isPending ? "Request Pending" : isPrivate ? "Request to Join" : "Join Community"}
         </button>
       ) : (
         /* BUTTONS SIDE BY SIDE (RESTORED ORIGINAL LAYOUT) */
@@ -150,7 +151,7 @@ const CommunitySidebar = ({
                         Community Manager
                     </div>
                     <div className="side-menu-item" onClick={() => { onOpenSettings("General"); setShowSettingsPopup(false); }}>
-                        Settings
+                        Community Settings
                     </div>
                   </>
                 ) : (

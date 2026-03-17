@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, Send, MoreVertical, Info, Edit2, Trash2, X, ChevronLeft 
 } from 'lucide-react';
@@ -8,6 +8,7 @@ import "/workspaces/Shine/frontend/src/styles/MessengerPage.css";
 
 const MessengerPage = ({ currentUser }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState(null); 
   const [view, setView] = useState('list'); // 'list' or 'chat' for mobile orientation
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,6 +61,23 @@ const MessengerPage = ({ currentUser }) => {
   }, [activeTab, systemNotifications]);
   
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
+
+
+  useEffect(() => {
+    const openChatUser = location.state?.openChatUser;
+    if (!openChatUser?.id) return;
+
+    const resolvedUser = {
+      ...openChatUser,
+      image: openChatUser.image
+        ? (openChatUser.image.startsWith("http") ? openChatUser.image : `/api${openChatUser.image}`)
+        : openChatUser.image,
+    };
+
+    setActiveTab(resolvedUser);
+    setView('chat');
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
 
   // --- 2. SEARCH LOGIC ---
   useEffect(() => {
@@ -178,14 +196,18 @@ const MessengerPage = ({ currentUser }) => {
               </div>
               {searchQuery.trim() !== "" && (
                 <div className="search-results-dropdown">
-                  {isSearching ? <div className="p-2">Searching...</div> : 
-                    searchResults.map(user => (
+                  {isSearching ? (
+                    <div className="p-2">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((user) => (
                       <div key={user.id} className="search-result-item" onClick={() => { setActiveTab(user); setSearchQuery(""); }}>
                         <img src={getAvatar(user.image)} alt="" />
                         <div><p className="res-name">{user.name}</p><p className="res-user">@{user.username}</p></div>
                       </div>
                     ))
-                  }
+                  ) : (
+                    <div className="p-2">No users found</div>
+                  )}
                 </div>
               )}
             </div>

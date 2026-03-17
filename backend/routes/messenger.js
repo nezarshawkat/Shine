@@ -186,6 +186,33 @@ router.get('/history/:partnerId', auth, async (req, res) => {
 
 
 
+
+router.get('/search', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const term = (req.query.q || '').trim();
+
+    if (!term) return res.json([]);
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: { not: userId },
+        OR: [
+          { username: { contains: term, mode: 'insensitive' } },
+          { name: { contains: term, mode: 'insensitive' } }
+        ]
+      },
+      select: { id: true, username: true, name: true, image: true },
+      take: 20,
+      orderBy: { name: 'asc' }
+    });
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/system', auth, async (req, res) => {
   try {
     const data = await prisma.notification.findMany({
