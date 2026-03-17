@@ -6,6 +6,7 @@ const { OAuth2Client } = require("google-auth-library");
 const prisma = require("../prisma");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const DEFAULT_PROFILE_IMAGE = "/uploads/profileDefault.svg";
 
 // Helper to include common user relations
 const userIncludeOptions = {
@@ -45,7 +46,7 @@ router.post("/signup", async (req, res) => {
         password: hashedPassword,
         provider: "local",
         description: "",
-        image: null
+        image: DEFAULT_PROFILE_IMAGE
       },
       include: userIncludeOptions
     });

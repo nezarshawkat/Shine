@@ -19,6 +19,20 @@ import { AuthContext } from "./AuthProvider.jsx";
 import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
 import ProfileSettings from "/workspaces/Shine/frontend/src/components/ProfileSettings.jsx";
 
+const ROLE_LEVEL_CLASS = {
+  Starter: "role-starter",
+  Intermediate: "role-intermediate",
+  Proffesional: "role-proffesional",
+  Professional: "role-proffesional",
+  Advanced: "role-intermediate",
+};
+
+const normalizeRoleLevel = (roleLevel) => {
+  if (roleLevel === "Advanced") return "Intermediate";
+  if (roleLevel === "Professional") return "Proffesional";
+  return roleLevel || "Starter";
+};
+
 /**
  * Inline ReportModal Component
  */
@@ -147,14 +161,9 @@ export default function ProfilePage({
 
   useEffect(() => {
     if (activeTab === "Communities" && userId) {
-      API.get(`/communities`)
+      API.get(`/users/${userId}/communities`)
         .then((res) => {
-          const allComms = Array.isArray(res.data) ? res.data : [];
-          const userComms = allComms.filter(c => 
-            c.creatorId === userId || 
-            (c.communityMembers && c.communityMembers.some(m => m.userId === userId))
-          );
-          setFetchedCommunities(userComms);
+          setFetchedCommunities(Array.isArray(res.data) ? res.data : []);
         })
         .catch((err) => console.error("Error loading communities", err));
     }
@@ -340,8 +349,8 @@ export default function ProfilePage({
               </div>
             </div>
 
-            <div className="profile-badge">
-              <span>{user.roleLevel || "Starter"}</span>
+            <div className={`profile-badge ${ROLE_LEVEL_CLASS[normalizeRoleLevel(user?.roleLevel)] || "role-starter"}`}>
+              <span>{normalizeRoleLevel(user?.roleLevel)}</span>
             </div>
           </div>
 

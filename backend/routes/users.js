@@ -5,6 +5,7 @@ const router = express.Router();
 const prisma = require("../prisma");
 const multer = require("multer");
 const path = require("path");
+const DEFAULT_PROFILE_IMAGE = "/uploads/profileDefault.svg";
 
 // ---------------- MULTER CONFIGURATION ----------------
 const storage = multer.diskStorage({
@@ -49,7 +50,7 @@ router.post("/signup", async (req, res) => {
         username,
         password: hashedPassword,
         description: "",
-        image: null,
+        image: DEFAULT_PROFILE_IMAGE,
       },
       select: {
         id: true,
@@ -148,6 +149,29 @@ router.get("/:username", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch user" });
+  }
+});
+
+
+// ---------------- GET USER COMMUNITIES ----------------
+router.get("/:userId/communities", async (req, res) => {
+  try {
+    const communities = await prisma.communityMember.findMany({
+      where: { userId: req.params.userId },
+      include: {
+        community: {
+          include: {
+            _count: { select: { communityMembers: true } },
+          },
+        },
+      },
+      orderBy: { joinedAt: "desc" },
+    });
+
+    res.json(communities.map((membership) => membership.community));
+  } catch (err) {
+    console.error("Failed to fetch user communities:", err);
+    res.status(500).json({ error: "Failed to fetch user communities" });
   }
 });
 

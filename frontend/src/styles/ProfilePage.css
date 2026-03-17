@@ -76,6 +76,25 @@
   font-weight: 500;
 }
 
+
+.profile-badge.role-starter {
+  border-color: #ffc847;
+  background: rgba(255, 200, 71, 0.2);
+  color: #a66c00;
+}
+
+.profile-badge.role-intermediate {
+  border-color: #7ab4ff;
+  background: rgba(122, 180, 255, 0.2);
+  color: #1d5dbf;
+}
+
+.profile-badge.role-proffesional {
+  border-color: #71d79a;
+  background: rgba(113, 215, 154, 0.2);
+  color: #147a3e;
+}
+
 .profile-description {
   max-width: 420px;
   font-size: 23px;
