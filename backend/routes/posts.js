@@ -49,7 +49,7 @@ async function updatePostScore(post, redisClient) {
 
 // ================== GET POSTS (PAGINATION) ==================
 router.get("/", async (req, res) => {
-  const userId = getUserIdFromToken(req);
+  const userId = getUserIdFromToken(req) || req.query.userId || null;
   try {
     let { page = 1, pageSize = 10 } = req.query;
     page = parseInt(page);
@@ -58,7 +58,16 @@ router.get("/", async (req, res) => {
     if (isNaN(page) || page < 1) page = 1;
     if (isNaN(pageSize) || pageSize < 1) pageSize = 10;
 
+    const visiblePostWhere = {
+      OR: [
+        { communityId: null },
+        { community: { status: "PUBLIC" } },
+        ...(userId ? [{ community: { communityMembers: { some: { userId } } } }] : []),
+      ],
+    };
+
     const posts = await prisma.post.findMany({
+      where: visiblePostWhere,
       skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: { createdAt: "desc" },

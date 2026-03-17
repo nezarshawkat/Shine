@@ -208,6 +208,32 @@ export default function CommunitySettings({ community, initialSection = "General
         .m-badge.member { background: #E2E8F0; color: #334155; }
         .role-select { padding: 4px 8px; border-radius: 6px; border: 1px solid #CBD5E1; }
         .kick-btn { background: none; border: none; color: #EF4444; font-weight: 600; cursor: pointer; margin-left: 10px; }
+
+
+        @media (max-width: 850px) {
+          .settings-container { flex-direction: column; }
+          .settings-sidebar {
+            width: 100%;
+            height: auto;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            border-right: none;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+          }
+          .settings-back-btn { margin-bottom: 0; padding: 8px 12px; }
+          .settings-back-btn .btn-text { display: none; }
+          .settings-nav { display: flex; flex: 1; justify-content: flex-end; gap: 6px; }
+          .nav-item { margin-bottom: 0; width: auto; padding: 10px; }
+          .nav-text { display: none; }
+          .nav-icon { margin-right: 0; }
+          .settings-main { padding: 20px; }
+          .setting-row { flex-direction: column; align-items: flex-start; }
+          .shine-input { width: 100%; }
+          .member-manage-row { align-items: flex-start; flex-direction: column; gap: 8px; }
+        }
       `}</style>
     </div>
   );

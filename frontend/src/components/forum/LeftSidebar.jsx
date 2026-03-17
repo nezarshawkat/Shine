@@ -85,7 +85,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
   const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
   const [inbox, setInbox] = useState([]);
-  const [systemNotif, setSystemNotif] = useState(null);
+  const [systemNotifications, setSystemNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const API_BASE = API_BASE_URL;
@@ -106,8 +106,8 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           setInbox(inboxRes.value.data);
         }
         
-        if (notifRes.status === "fulfilled" && notifRes.value.data.length > 0) {
-          setSystemNotif(notifRes.value.data[0]);
+        if (notifRes.status === "fulfilled") {
+          setSystemNotifications(notifRes.value.data || []);
         }
       } catch (err) {
         console.error("Failed to fetch sidebar data", err);
@@ -122,6 +122,9 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const shouldShow = (section) => !showOnly || showOnly.includes(section);
   
   const unreadCount = inbox.filter(chat => chat.unread === true).length;
+  const unreadSystemCount = systemNotifications.filter((notif) => notif.isRead === false).length;
+  const latestSystemNotif = systemNotifications.find((notif) => notif.isRead === false) || systemNotifications[0] || null;
+  const totalNewNotifications = unreadCount + unreadSystemCount;
 
   const handleTopicClick = (topic) => {
     setSearchQuery(searchQuery === topic ? "" : topic);
@@ -184,6 +187,20 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.15rem" }}>
             <span style={{ fontSize: "1.25rem", fontWeight: "500", color: "#1C274C" }}>Messenger</span>
+            {totalNewNotifications > 0 && (
+              <span
+                style={{
+                  padding: "0.2rem 0.5rem",
+                  borderRadius: "999px",
+                  backgroundColor: "#FFE4A3",
+                  color: "#1C274C",
+                  fontSize: "0.75rem",
+                  fontWeight: "700"
+                }}
+              >
+                {totalNewNotifications} new
+              </span>
+            )}
             <span 
               onClick={() => window.location.href = "/messenger"}
               style={{ fontSize: "1rem", fontWeight: "300", color: "#FFC847", cursor: "pointer" }}
@@ -194,10 +211,16 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           <div style={{ height: "0.5px", backgroundColor: "#1C274C", marginBottom: "1.15rem", marginLeft: "-1.25rem", marginRight: "-1.25rem" }}></div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: systemNotif && !systemNotif.isRead ? "#FFFBF2" : "#F9FAFB", border: systemNotif && !systemNotif.isRead ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
-              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: systemNotif && !systemNotif.isRead ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>System</div>
+            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: unreadSystemCount > 0 ? "#FFFBF2" : "#F9FAFB", border: unreadSystemCount > 0 ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadSystemCount > 0 ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>
+                System {unreadSystemCount > 0 ? `(${unreadSystemCount} new)` : ""}
+              </div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
-                {systemNotif ? systemNotif.content : "No new notifications"}
+                {latestSystemNotif
+                  ? unreadSystemCount > 0
+                    ? `You have ${unreadSystemCount} new notification${unreadSystemCount > 1 ? "s" : ""}`
+                    : latestSystemNotif.content
+                  : "No notifications yet"}
               </div>
             </div>
 

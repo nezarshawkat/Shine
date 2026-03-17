@@ -116,7 +116,10 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${FEED_URL}?page=${page}&pageSize=10`);
+        const res = await axios.get(FEED_URL, {
+          params: { page, pageSize: 10, userId: userId || undefined },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
         const newPosts = res.data;
 
         if (!Array.isArray(newPosts)) {
@@ -144,7 +147,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     };
 
     fetchFeed();
-  }, [page, isUserSearch, setFeed]);
+  }, [page, isUserSearch, setFeed, userId, token]);
 
   const handleFollowToggle = async (targetUserId, currentlyFollowing) => {
     if (!userId || !token || !user?.username || followBusyUserId) return;
