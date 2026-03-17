@@ -82,8 +82,22 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const { name, slogan, discription, privacy, adminId } = req.body;
-      if (!adminId) return res.status(400).json({ message: "adminId is required" });
+      const { name, slogan, discription, privacy, adminId, interests } = req.body;
+
+      if (!adminId) {
+        return res.status(400).json({ message: "adminId is required" });
+      }
+
+      // PARSE INTERESTS: Parse the JSON string from FormData into a real array
+      let interestsArray = [];
+      if (interests) {
+        try {
+          interestsArray = JSON.parse(interests);
+        } catch (e) {
+          // Fallback if it's sent as a plain comma-separated string
+          interestsArray = typeof interests === "string" ? interests.split(",") : [];
+        }
+      }
 
       const iconPath = req.files?.["icon"] ? `/uploads/${req.files["icon"][0].filename}` : null;
       const bannerPath = req.files?.["banner"] ? `/uploads/${req.files["banner"][0].filename}` : null;
@@ -92,7 +106,8 @@ router.post(
         data: {
           name,
           slogan,
-          discription,
+          discription, // Matches the spelling in your Prisma schema
+          interests: interestsArray, 
           icon: iconPath,
           banner: bannerPath,
           status: privacy?.toUpperCase() === "PRIVATE" ? "PRIVATE" : "PUBLIC",
@@ -105,12 +120,11 @@ router.post(
 
       res.status(201).json(newCommunity);
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Failed to create" });
+      console.error("Prisma Creation Error:", err);
+      res.status(500).json({ error: "Failed to create community", details: err.message });
     }
   }
 );
-
 /**
  * UPDATE Community General Settings
  */
@@ -377,5 +391,6 @@ router.get("/:id/posts", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
+
 
 module.exports = router;

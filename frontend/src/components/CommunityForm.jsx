@@ -5,7 +5,7 @@ import EarthIcon from "/workspaces/Shine/frontend/src/assets/Earth.svg";
 import LockIcon from "/workspaces/Shine/frontend/src/assets/Lock.svg";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import { API_BASE_URL } from "../api";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";
@@ -59,16 +59,23 @@ export default function CommunityForm() {
     else setBannerFile(file);
   };
 
-  // --- Interests Tag Handler (Same effect as Keywords) ---
+  // --- Interests Tag Handlers ---
   const handleInterestKeyDown = (e) => {
     if (e.key === "Enter" && interestInput.trim()) {
       e.preventDefault();
-      setInterests([...interests, interestInput.trim()]);
+      // Prevent duplicate interests
+      if (!interests.includes(interestInput.trim())) {
+        setInterests([...interests, interestInput.trim()]);
+      }
       setInterestInput("");
     }
     if (e.key === "Backspace" && !interestInput && interests.length) {
       setInterests(interests.slice(0, -1));
     }
+  };
+
+  const removeInterest = (indexToRemove) => {
+    setInterests(interests.filter((_, index) => index !== indexToRemove));
   };
 
   const handleCreate = async () => {
@@ -96,7 +103,7 @@ export default function CommunityForm() {
       formData.append("icon", iconFile);
       formData.append("banner", bannerFile);
       
-      // Sending Interests as a stringified array for the backend
+      // Sending Interests as a stringified array for the backend to parse
       formData.append("interests", JSON.stringify(interests));
 
       // 3. API Call
@@ -174,20 +181,41 @@ export default function CommunityForm() {
             style={{ 
               border: `1px solid ${BORDER}`, 
               borderRadius: 12, 
-              padding: "12px", 
+              padding: "10px 14px", 
               display: "flex", 
               flexWrap: "wrap", 
               alignItems: "center", 
-              gap: 6, 
+              gap: 8, 
               background: "#fff", 
               cursor: "text",
-              marginBottom: 24 
+              marginBottom: 24,
+              minHeight: "54px"
             }}
             onClick={() => document.getElementById("interest-input")?.focus()}
           >
             {interests.map((tag, i) => (
-              <div key={i} style={{ background: LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: 8, padding: "4px 8px", fontSize: 13, whiteSpace: "nowrap" }}>
+              <div 
+                key={i} 
+                style={{ 
+                  background: LIGHT, 
+                  border: `1px solid ${PRIMARY}`, 
+                  borderRadius: 8, 
+                  padding: "4px 10px", 
+                  fontSize: 14, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 6,
+                  color: PRIMARY,
+                  fontWeight: 500
+                }}
+              >
                 {tag}
+                <span 
+                  onClick={(e) => { e.stopPropagation(); removeInterest(i); }} 
+                  style={{ cursor: "pointer", fontWeight: 700, fontSize: 16, color: PRIMARY, lineHeight: 1 }}
+                >
+                  &times;
+                </span>
               </div>
             ))}
             <input
@@ -195,8 +223,8 @@ export default function CommunityForm() {
               value={interestInput}
               onChange={(e) => setInterestInput(e.target.value)}
               onKeyDown={handleInterestKeyDown}
-              placeholder="Add interest and press Enter"
-              style={{ border: "none", outline: "none", fontSize: 14, minWidth: 120, flexGrow: 1 }}
+              placeholder={interests.length === 0 ? "Add interest and press Enter" : ""}
+              style={{ border: "none", outline: "none", fontSize: 16, minWidth: 150, flexGrow: 1, padding: "4px 0" }}
             />
           </div>
 
@@ -221,14 +249,14 @@ export default function CommunityForm() {
           {/* Icon Upload */}
           <label style={labelStyle}>Group icon</label>
           <input type="file" id="icon-up" hidden accept="image/*" onChange={(e) => handleFileChange(e, "icon")} />
-          <button onClick={() => document.getElementById('icon-up').click()} style={{ padding: "10px 20px", border: `1px solid ${PRIMARY}`, borderRadius: 10, background: iconFile ? LIGHT : "transparent", cursor: "pointer", fontWeight: 600, marginBottom: 24 }}>
+          <button onClick={() => document.getElementById('icon-up').click()} style={{ padding: "12px 20px", border: `1px solid ${PRIMARY}`, borderRadius: 10, background: iconFile ? LIGHT : "transparent", cursor: "pointer", fontWeight: 600, marginBottom: 24, color: PRIMARY }}>
             {iconFile ? `✓ ${iconFile.name.substring(0, 15)}...` : "Upload icon"}
           </button>
 
           {/* Banner Upload */}
           <label style={labelStyle}>Banner</label>
           <input type="file" id="banner-up" hidden accept="image/*" onChange={(e) => handleFileChange(e, "banner")} />
-          <button onClick={() => document.getElementById('banner-up').click()} style={{ padding: "10px 20px", border: `1px solid ${PRIMARY}`, borderRadius: 10, background: bannerFile ? LIGHT : "transparent", cursor: "pointer", fontWeight: 600, marginBottom: 40 }}>
+          <button onClick={() => document.getElementById('banner-up').click()} style={{ padding: "12px 20px", border: `1px solid ${PRIMARY}`, borderRadius: 10, background: bannerFile ? LIGHT : "transparent", cursor: "pointer", fontWeight: 600, marginBottom: 40, color: PRIMARY }}>
             {bannerFile ? `✓ ${bannerFile.name.substring(0, 15)}...` : "Upload banner"}
           </button>
         </div>

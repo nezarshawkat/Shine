@@ -116,6 +116,7 @@ export default function CommunityProfile() {
       setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
     }
   };
+
   useEffect(() => {
     setFeed([]);
     setPage(1);
@@ -311,7 +312,6 @@ export default function CommunityProfile() {
       <div className="community-container">
         <main className="community-center">
           
-          {/* 1. DESCRIPTION (Now above buttons on mobile) */}
           <div className="community-description">
             {isEditing ? (
               <textarea 
@@ -324,7 +324,6 @@ export default function CommunityProfile() {
             )}
           </div>
 
-          {/* 2. MOBILE-ONLY ACTION BUTTONS & SEARCH */}
           <div className="mobile-sidebar-replacement">
             {!roleData.isMember ? (
               <button 
@@ -391,18 +390,23 @@ export default function CommunityProfile() {
             </div>
           </div>
 
-          {/* 3. THE FEED */}
           <div className={`community-feed-list ${shouldLockPosts ? "locked-feed" : ""}`}>
-            {filteredFeed.map((post, index) => {
-              const Component = { opinion: OpinionPost, critique: CritiquePost, analysis: AnalysisPost, poll: PollPost }[post.type];
-              return Component ? (
-                <div key={post.id} ref={filteredFeed.length === index + 1 ? lastPostRef : null} style={{ marginBottom: "12px" }}>
-                  <Component postId={post.id} initialData={post} />
-                </div>
-              ) : null;
-            })}
-            {loading && <SkeletonPost />}
-            {shouldLockPosts && <div className="locked-feed-overlay">Join community to see posts</div>}
+            {shouldLockPosts && (
+              <div className="locked-feed-overlay">
+                <span>Join community to see posts</span>
+              </div>
+            )}
+            <div className="feed-content-wrapper">
+              {filteredFeed.map((post, index) => {
+                const Component = { opinion: OpinionPost, critique: CritiquePost, analysis: AnalysisPost, poll: PollPost }[post.type];
+                return Component ? (
+                  <div key={post.id} ref={filteredFeed.length === index + 1 ? lastPostRef : null} style={{ marginBottom: "12px" }}>
+                    <Component postId={post.id} initialData={post} />
+                  </div>
+                ) : null;
+              })}
+              {loading && <SkeletonPost />}
+            </div>
           </div>
         </main>
 
@@ -444,8 +448,8 @@ export default function CommunityProfile() {
           .community-center { width: 100% !important; padding: 0 15px !important; }
         }
 
-        .sidebar-post-btn-style { width: 100%; height: 57px; borderRadius: 1.4rem; background-color: #1c274c; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; border-radius: 1.4rem; }
-        .sidebar-menu-btn-style { width: 57px; height: 57px; borderRadius: 1.4rem; background-color: #F0F2F5; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 1.4rem; }
+        .sidebar-post-btn-style { width: 100%; height: 57px; border-radius: 1.4rem; background-color: #1c274c; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
+        .sidebar-menu-btn-style { width: 57px; height: 57px; border-radius: 1.4rem; background-color: #F0F2F5; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .mobile-join-btn { width: 100%; height: 61px; border-radius: 19px; font-weight: 600; cursor: pointer; border: none; margin-bottom: 20px; }
 
         .popup-menu { 
@@ -465,13 +469,18 @@ export default function CommunityProfile() {
         .trend-tags button { font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 0.6rem; border: 1px solid #ccc; background: transparent; cursor: pointer; }
         .trend-tags button.active { background: #ECF2F6; border-color: #1C274C; }
 
-        .community-feed-list.locked-feed { position: relative; }
-        .community-feed-list.locked-feed > div { filter: blur(6px); pointer-events: none; user-select: none; }
+        .community-feed-list { position: relative; width: 100%; }
+        .feed-content-wrapper { width: 100%; transition: filter 0.3s ease; }
+        .community-feed-list.locked-feed .feed-content-wrapper { filter: blur(10px); pointer-events: none; user-select: none; }
+        
         .locked-feed-overlay {
-          position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-          font-size: 24px; font-weight: 700; color: #1C274C; text-align: center;
-          background: rgba(255,255,255,0.25); backdrop-filter: blur(2px); z-index: 3;
-          padding: 16px; border-radius: 16px;
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+          display: flex; align-items: flex-start; justify-content: center;
+          padding-top: 100px; z-index: 10; pointer-events: none;
+        }
+        .locked-feed-overlay span {
+          background: rgba(255, 255, 255, 0.9); padding: 15px 30px; border-radius: 50px;
+          font-weight: 700; color: #1C274C; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .community-description { padding: 15px 0; font-size: 15px; color: #333; line-height: 1.5; }
@@ -482,22 +491,38 @@ export default function CommunityProfile() {
       `}</style>
 
       {showMembersPopup && (
-        <div className="members-popup-overlay" onClick={() => setShowMembersPopup(false)}>
-          <div className="members-popup-card" onClick={(e) => e.stopPropagation()}>
-            <div className="members-popup-header">
-              <h3>Community Members</h3>
-              <button onClick={() => setShowMembersPopup(false)}>✕</button>
+        <div className="members-popup-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', 
+            justifyContent: 'center', zIndex: 1000
+        }} onClick={() => setShowMembersPopup(false)}>
+          <div className="members-popup-card" style={{
+              backgroundColor: 'white', borderRadius: '20px', width: '90%', 
+              maxWidth: '450px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div className="members-popup-header" style={{
+                padding: '20px', borderBottom: '1px solid #eee', display: 'flex', 
+                justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0, color: '#1C274C' }}>Community Members</h3>
+              <button style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }} onClick={() => setShowMembersPopup(false)}>✕</button>
             </div>
-            <div className="members-popup-list">
+            <div className="members-popup-list" style={{ overflowY: 'auto', padding: '10px' }}>
               {(community.communityMembers || []).map((member) => (
-                <div key={member.user?.id} className="member-row" onClick={() => navigate(`/profile/${member.user?.username || member.user?.id}`)}>
-                  <img src={getFullUrl(member.user?.image, profileDefault)} alt="" />
-                  <div>
-                    <div className="member-name">{member.user?.name || member.user?.username}</div>
-                    <div className="member-username">@{member.user?.username}</div>
+                <div key={member.user?.id} className="member-row" style={{
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', 
+                    cursor: 'pointer', borderRadius: '10px'
+                }} onClick={() => navigate(`/profile/${member.user?.username || member.user?.id}`)}>
+                  <img src={getFullUrl(member.user?.image, profileDefault)} alt="" style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="member-name" style={{ fontWeight: 600, color: '#1C274C' }}>{member.user?.name || member.user?.username}</div>
+                    <div className="member-username" style={{ fontSize: '13px', color: '#666' }}>@{member.user?.username}</div>
                   </div>
                 </div>
               ))}
+              {(community.communityMembers || []).length === 0 && (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No members yet.</div>
+              )}
             </div>
           </div>
         </div>
