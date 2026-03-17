@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
@@ -17,11 +17,7 @@ function Toast({ message, type = "error", onClose }) {
   }, [onClose]);
 
   return (
-    <div style={{
-      position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)",
-      background: type === "error" ? "#FF4C4C" : PRIMARY, color: "#FFF",
-      padding: "12px 24px", borderRadius: 12, fontWeight: 600, zIndex: 3000,
-    }}>
+    <div style={{ position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)", background: type === "error" ? "#FF4C4C" : PRIMARY, color: "#FFF", padding: "12px 24px", borderRadius: 12, fontWeight: 600, zIndex: 3000 }}>
       {message}
     </div>
   );
@@ -34,13 +30,12 @@ export default function InvitePeople() {
 
   const [friendInput, setFriendInput] = useState("");
   const [friends, setFriends] = useState([]);
-  const [suggestions, setSuggestions] = useState([]); // Search results
+  const [suggestions, setSuggestions] = useState([]);
   const [toast, setToast] = useState(null);
-  
+
   const communityName = location.state?.communityName;
   const communityId = location.state?.communityId;
 
-  // Search logic: Trigger when friendInput changes
   useEffect(() => {
     const searchUsers = async () => {
       if (friendInput.length < 1) {
@@ -49,14 +44,11 @@ export default function InvitePeople() {
       }
 
       try {
-        // Updated to use the correct Codespace URL pattern
         const res = await fetch(`${API_BASE_URL}/users/search?q=${friendInput}`);
         const data = await res.json();
-        
-        // Filter out people already in the 'friends' list and the user themselves
-        const filtered = data.filter(u => 
-          !friends.includes(u.username) && 
-          u.username.toLowerCase() !== user?.username?.toLowerCase()
+
+        const filtered = data.filter(
+          (u) => !friends.some((f) => f.id === u.id) && u.username.toLowerCase() !== user?.username?.toLowerCase()
         );
         setSuggestions(filtered);
       } catch (err) {
@@ -64,13 +56,13 @@ export default function InvitePeople() {
       }
     };
 
-    const debounce = setTimeout(searchUsers, 300); // Wait 300ms after typing
+    const debounce = setTimeout(searchUsers, 300);
     return () => clearTimeout(debounce);
   }, [friendInput, friends, user]);
 
-  const addFriend = (username) => {
-    if (!friends.includes(username)) {
-      setFriends([...friends, username]);
+  const addFriend = (selectedUser) => {
+    if (!friends.some((f) => f.id === selectedUser.id)) {
+      setFriends([...friends, selectedUser]);
     }
     setFriendInput("");
     setSuggestions([]);
@@ -82,17 +74,39 @@ export default function InvitePeople() {
     }
   };
 
-  const handleInviteAction = () => {
+  const handleInviteAction = async () => {
     if (friends.length === 0) return setToast("Add at least one friend");
-    // Navigate to community page
-    navigate(`/community/${communityId || ""}`, { state: { communityName } });
+
+    try {
+      const token = localStorage.getItem("token");
+      const inviteText = `Come join my community ${communityName}. Open it here: ${window.location.origin}/community/${communityId}`;
+
+      await Promise.all(
+        friends.map((friend) =>
+          fetch(`/api/messenger/send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ receiverId: friend.id, text: inviteText }),
+          })
+        )
+      );
+
+      setToast("Invites sent successfully");
+      setTimeout(() => navigate(`/community/${communityId || ""}`, { state: { communityName } }), 700);
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to send invites");
+    }
   };
 
   if (!communityName) return null;
 
   return (
     <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast} type={toast.includes("success") ? "success" : "error"} onClose={() => setToast(null)} />}
 
       <div style={{ display: "flex", alignItems: "center", padding: "24px 40px", gap: 20 }}>
         <img src={Logo} width={220} alt="Logo" />
@@ -104,22 +118,16 @@ export default function InvitePeople() {
         <label style={{ fontSize: 24, fontWeight: 600, color: PRIMARY, marginBottom: 20 }}>
           Invite your friends to <span style={{ color: ACCENT }}>{communityName}</span>
         </label>
-        
+
         <div style={{ position: "relative" }}>
-          <div 
-            style={{
-              width: "600px", minHeight: "60px", background: "#FFF", border: `1px solid ${PRIMARY}`,
-              borderRadius: "15px", padding: "10px 20px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8
-            }}
-            onClick={() => document.getElementById("invite-input").focus()}
-          >
+          <div style={{ width: "600px", minHeight: "60px", background: "#FFF", border: `1px solid ${PRIMARY}`, borderRadius: "15px", padding: "10px 20px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }} onClick={() => document.getElementById("invite-input").focus()}>
             {friends.map((friend, i) => (
-              <div key={i} style={{ background: LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                {friend}
+              <div key={friend.id || i} style={{ background: LIGHT, border: `1px solid ${PRIMARY}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                {friend.username}
                 <span onClick={() => setFriends(friends.filter((_, idx) => idx !== i))} style={{ cursor: "pointer" }}>✕</span>
               </div>
             ))}
-            <input 
+            <input
               id="invite-input"
               autoComplete="off"
               style={{ border: "none", outline: "none", fontSize: 18, flex: 1, minWidth: "150px" }}
@@ -130,21 +138,10 @@ export default function InvitePeople() {
             />
           </div>
 
-          {/* SUGGESTIONS DROPDOWN */}
           {suggestions.length > 0 && (
-            <div style={{
-              position: "absolute", top: "110%", left: 0, width: "100%", 
-              background: "#FFF", borderRadius: 12, boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-              zIndex: 10, overflow: "hidden", border: `1px solid ${BORDER}`
-            }}>
+            <div style={{ position: "absolute", top: "110%", left: 0, width: "100%", background: "#FFF", borderRadius: 12, boxShadow: "0 10px 25px rgba(0,0,0,0.1)", zIndex: 10, overflow: "hidden", border: `1px solid ${BORDER}` }}>
               {suggestions.map((u) => (
-                <div 
-                  key={u.id}
-                  onClick={() => addFriend(u.username)}
-                  style={{ padding: "12px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${BG}` }}
-                  onMouseOver={(e) => e.currentTarget.style.background = LIGHT}
-                  onMouseOut={(e) => e.currentTarget.style.background = "#FFF"}
-                >
+                <div key={u.id} onClick={() => addFriend(u)} style={{ padding: "12px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${BG}` }} onMouseOver={(e) => (e.currentTarget.style.background = LIGHT)} onMouseOut={(e) => (e.currentTarget.style.background = "#FFF")}>
                   <img src={u.image || "/default-avatar.png"} width={30} height={30} style={{ borderRadius: "50%" }} />
                   <div>
                     <div style={{ fontWeight: 600 }}>{u.name}</div>

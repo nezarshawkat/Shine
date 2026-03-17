@@ -272,7 +272,7 @@ router.post("/:id/view", async (req, res) => {
                 where: { 
                     articleId: id, 
                     userId: userId,
-                    createdAt: { gte: oneHourAgo }
+                    viewedAt: { gte: oneHourAgo }
                 }
             });
 

@@ -179,3 +179,41 @@
   }
 }
 }
+
+.community-members-btn {
+  border: none;
+  background: rgba(255,255,255,0.9);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.members-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.members-popup-card {
+  width: min(520px, 92vw);
+  max-height: 75vh;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.members-popup-header { display: flex; justify-content: space-between; align-items: center; }
+.members-popup-header button { border: none; background: transparent; font-size: 20px; cursor: pointer; }
+.members-popup-list { overflow-y: auto; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.member-row { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; cursor: pointer; }
+.member-row:hover { background: #f3f4f6; }
+.member-row img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.member-name { font-weight: 600; color: #1C274C; }
+.member-username { font-size: 12px; color: #6b7280; }

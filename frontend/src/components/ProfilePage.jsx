@@ -328,7 +328,7 @@ export default function ProfilePage({
         />
       )}
 
-      {shareOpen && <SharePopup postId={user.id} onClose={() => setShareOpen(false)} />}
+      {shareOpen && <SharePopup id={user?.username || user?.id} type="profile" onClose={() => setShareOpen(false)} />}
       
       <ReportModal
         title="Report User"

@@ -24,6 +24,7 @@ import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import feather from "../../assets/feather.png";
 import MenuIcon from "../../assets/Menu.svg";
+import profileDefault from "../../assets/profileDefault.svg";
 
 import "/workspaces/Shine/frontend/src/styles/Communityprofile.css";
 
@@ -61,6 +62,7 @@ export default function CommunityProfile() {
   const [bannerFile, setBannerFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
   const [membership, setMembership] = useState({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+  const [showMembersPopup, setShowMembersPopup] = useState(false);
 
   const observer = useRef();
   const postPopupRef = useRef(null);
@@ -261,7 +263,9 @@ export default function CommunityProfile() {
         )}
         <div className="community-banner-members">
           {!isEditing ? (
-            <>{community._count?.communityMembers || 0} members</>
+            <button className="community-members-btn" onClick={() => setShowMembersPopup(true)}>
+              {community._count?.communityMembers || 0} members
+            </button>
           ) : (
             <div style={{ display: "flex", gap: "10px" }}>
               <button className="edit-save-btn" onClick={handleSave}>Save</button>
@@ -476,6 +480,28 @@ export default function CommunityProfile() {
         .edit-title-input, .edit-slogan-input { border: 1px solid #ddd; padding: 5px; border-radius: 4px; width: 100%; }
         .edit-desc-textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: inherit; }
       `}</style>
+
+      {showMembersPopup && (
+        <div className="members-popup-overlay" onClick={() => setShowMembersPopup(false)}>
+          <div className="members-popup-card" onClick={(e) => e.stopPropagation()}>
+            <div className="members-popup-header">
+              <h3>Community Members</h3>
+              <button onClick={() => setShowMembersPopup(false)}>✕</button>
+            </div>
+            <div className="members-popup-list">
+              {(community.communityMembers || []).map((member) => (
+                <div key={member.user?.id} className="member-row" onClick={() => navigate(`/profile/${member.user?.username || member.user?.id}`)}>
+                  <img src={getFullUrl(member.user?.image, profileDefault)} alt="" />
+                  <div>
+                    <div className="member-name">{member.user?.name || member.user?.username}</div>
+                    <div className="member-username">@{member.user?.username}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

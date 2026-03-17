@@ -184,6 +184,77 @@ router.get('/history/:partnerId', auth, async (req, res) => {
   }
 });
 
+router.patch('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Message text is required' });
+    }
+
+    const existing = await prisma.message.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Message not found' });
+    if (existing.senderId !== req.user.id) return res.status(403).json({ error: 'Not allowed' });
+
+    const updated = await prisma.message.update({
+      where: { id },
+      data: { text: text.trim() }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const message = await prisma.message.findUnique({ where: { id } });
+
+    if (!message) return res.status(404).json({ error: 'Message not found' });
+    if (message.senderId !== req.user.id && message.receiverId !== req.user.id) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+
+    const deletedBy = Array.from(new Set([...(message.deletedBy || []), req.user.id]));
+    await prisma.message.update({ where: { id }, data: { deletedBy } });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/conversation/:partnerId', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { partnerId } = req.params;
+
+    const conversationMessages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: partnerId },
+          { senderId: partnerId, receiverId: userId }
+        ]
+      },
+      select: { id: true, deletedBy: true }
+    });
+
+    await Promise.all(
+      conversationMessages.map((msg) => {
+        const deletedBy = Array.from(new Set([...(msg.deletedBy || []), userId]));
+        return prisma.message.update({ where: { id: msg.id }, data: { deletedBy } });
+      })
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 
