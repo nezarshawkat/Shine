@@ -1,61 +1,19 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, memo } from "react";
 import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import axios from "axios";
 import { API_BASE_URL } from "../../api";
 
-const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }) => {
-  const { searchQuery, setSearchQuery } = useContext(SearchContext);
-  const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
-  const [inbox, setInbox] = useState([]);
-  const [systemNotif, setSystemNotif] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const API_BASE = API_BASE_URL;
-
-  useEffect(() => {
-    const fetchAllSidebarData = async () => {
-      setLoading(true);
-      try {
-        // 1. Fetch Trends
-        const trendRes = await axios.get(`${API_BASE}/posts/trends`);
-        setTrends(trendRes.data);
-
-        // 2. Fetch Messenger Inbox (using the new endpoint we just made)
-        const [inboxRes, notifRes] = await Promise.allSettled([
-          axios.get(`${API_BASE}/messenger/inbox`),
-          axios.get(`${API_BASE}/notifications`)
-        ]);
-
-        if (inboxRes.status === "fulfilled") {
-          setInbox(inboxRes.value.data); // Backend already slices to 3
-        }
-        
-        if (notifRes.status === "fulfilled" && notifRes.value.data.length > 0) {
-          // Find the most recent unread notification if possible
-          setSystemNotif(notifRes.value.data[0]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch sidebar data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllSidebarData();
-  }, [API_BASE]);
-
-  const shouldShow = (section) => !showOnly || showOnly.includes(section);
-  
-  // Dynamic Unread Calculation
-  const unreadCount = inbox.filter(chat => chat.unread === true).length;
-
-  const handleTopicClick = (topic) => {
-    setSearchQuery(searchQuery === topic ? "" : topic);
-  };
-
-  const SearchSection = () => (
+// ✅ 1. Moved OUTSIDE to prevent unmounting/focus loss
+const SearchSection = memo(({ 
+  searchQuery, 
+  setSearchQuery, 
+  loading, 
+  trends, 
+  handleTopicClick 
+}) => {
+  return (
     <div className="forum-search-card" style={{ 
       width: "100%", borderRadius: "1.4rem", 
       border: "0.5px solid #1C274C", padding: "1.25rem", 
@@ -65,7 +23,16 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         display: "flex", alignItems: "center", backgroundColor: "#FCFCFC", 
         border: "0.2px solid black", borderRadius: "0.7rem", padding: "0.5rem 0.625rem", marginBottom: "1.1rem" 
       }}>
-        {!searchQuery && <img src={magnifier} alt="search" style={{ width: "1.25rem", marginRight: "0.4rem" }} />}
+        <img
+          src={magnifier}
+          alt="search"
+          style={{
+            width: "1.25rem",
+            marginRight: "0.4rem",
+            // ✅ Fix: use visibility instead of conditional rendering to prevent layout shift
+            visibility: searchQuery ? "hidden" : "visible",
+          }}
+        />
         <input
           type="text"
           placeholder="Search"
@@ -112,12 +79,70 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
       </div>
     </div>
   );
+});
 
-  if (onlySearch) return <SearchSection />;
+const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }) => {
+  const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
+  const [inbox, setInbox] = useState([]);
+  const [systemNotif, setSystemNotif] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const API_BASE = API_BASE_URL;
+
+  useEffect(() => {
+    const fetchAllSidebarData = async () => {
+      setLoading(true);
+      try {
+        const trendRes = await axios.get(`${API_BASE}/posts/trends`);
+        setTrends(trendRes.data);
+
+        const [inboxRes, notifRes] = await Promise.allSettled([
+          axios.get(`${API_BASE}/messenger/inbox`),
+          axios.get(`${API_BASE}/notifications`)
+        ]);
+
+        if (inboxRes.status === "fulfilled") {
+          setInbox(inboxRes.value.data);
+        }
+        
+        if (notifRes.status === "fulfilled" && notifRes.value.data.length > 0) {
+          setSystemNotif(notifRes.value.data[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch sidebar data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllSidebarData();
+  }, [API_BASE]);
+
+  const shouldShow = (section) => !showOnly || showOnly.includes(section);
+  
+  const unreadCount = inbox.filter(chat => chat.unread === true).length;
+
+  const handleTopicClick = (topic) => {
+    setSearchQuery(searchQuery === topic ? "" : topic);
+  };
+
+  // ✅ 2. Reference the stable SearchSection component
+  const searchEl = (
+    <SearchSection 
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      loading={loading}
+      trends={trends}
+      handleTopicClick={handleTopicClick}
+    />
+  );
+
+  if (onlySearch) return searchEl;
 
   return (
     <div className="forum-left-sidebar" style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-      {!hideSearch && shouldShow('search') && <SearchSection />}
+      {!hideSearch && shouldShow('search') && searchEl}
 
       {/* Trending Section */}
       {shouldShow('trending') && (
@@ -169,8 +194,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           <div style={{ height: "0.5px", backgroundColor: "#1C274C", marginBottom: "1.15rem", marginLeft: "-1.25rem", marginRight: "-1.25rem" }}></div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            
-            {/* Dynamic System Notification */}
             <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: systemNotif && !systemNotif.isRead ? "#FFFBF2" : "#F9FAFB", border: systemNotif && !systemNotif.isRead ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
               <div style={{ fontSize: "0.65rem", fontWeight: "800", color: systemNotif && !systemNotif.isRead ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>System</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
@@ -178,7 +201,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               </div>
             </div>
 
-            {/* Dynamic Activity Badge */}
             <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: unreadCount > 0 ? "#E0F2FE" : "#F9FAFB", border: unreadCount > 0 ? "0.5px solid #7DD3FC" : "0.5px solid #E5E7EB" }}>
               <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadCount > 0 ? "#0284C7" : "#9CA3AF", textTransform: "uppercase" }}>Activity</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
@@ -186,7 +208,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               </div>
             </div>
 
-            {/* Recent Chats List */}
             {!loading && inbox.length > 0 && inbox.map((chat, idx) => (
               <div 
                 key={idx} 
