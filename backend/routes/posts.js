@@ -111,10 +111,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ================== TRENDS (KEYWORDS & HASHTAGS) ==================
+// ================== TRENDS (KEYWORDS & HASHTAGS) - UPDATED ==================
 router.get("/trends", async (req, res) => {
   const redisClient = req.app.get("redisClient");
-  const CACHE_KEY = "weekly_global_trends_v3";
+  // Updated cache key to reflect the logic change
+  const CACHE_KEY = "weekly_global_trends_v4"; 
 
   try {
     if (redisClient?.isReady) {
@@ -124,6 +125,7 @@ router.get("/trends", async (req, res) => {
 
     const oneWeekAgo = new Date(Date.now() - 7 * 86400000);
 
+    // 1. Get Viral Keywords via Raw Query
     const viralKeywordsRaw = await prisma.$queryRaw`
       SELECT unnest(keywords) as word, COUNT(*) as usage_count
       FROM "Post"
@@ -133,6 +135,7 @@ router.get("/trends", async (req, res) => {
       LIMIT 12
     `;
 
+    // 2. Get Trending Hashtags from Text Analysis
     const trendingPosts = await prisma.post.findMany({
       where: { createdAt: { gte: oneWeekAgo } },
       select: { text: true },
@@ -152,7 +155,11 @@ router.get("/trends", async (req, res) => {
       trendingHashtags: Object.entries(hashtagMap)
         .map(([name, count]) => ({
           name,
-          views: count > 10 ? `${(count * 0.8).toFixed(1)}K` : `${count * 124}`, 
+          // ✅ PROFESSIONAL LOGIC: 
+          // If 1000+, show "1.2K". If less, show the actual number.
+          views: count >= 1000 
+            ? `${(count / 1000).toFixed(1)}K` 
+            : `${count}`, 
           rawCount: count,
         }))
         .sort((a, b) => b.rawCount - a.rawCount)
@@ -160,11 +167,13 @@ router.get("/trends", async (req, res) => {
     };
 
     if (redisClient?.isReady) {
-      await redisClient.setEx(CACHE_KEY, 604800, JSON.stringify(result));
+      // ✅ Set cache to 1 hour (3600s) instead of 7 days to keep trends fresh
+      await redisClient.setEx(CACHE_KEY, 3600, JSON.stringify(result));
     }
 
     res.json(result);
   } catch (err) {
+    console.error("Trends error:", err);
     res.status(500).json({ error: "Could not load trends" });
   }
 });
@@ -458,5 +467,6 @@ router.get("/:id", async (req, res) => {
     });
   } catch (err) { res.status(500).json({ error: "Internal error" }); }
 });
+
 
 module.exports = router;

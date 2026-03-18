@@ -5,7 +5,7 @@ import closeIcon from "../../assets/close.svg";
 import axios from "axios";
 import { API_BASE_URL } from "../../api";
 
-// ✅ Stable Search Component
+// ✅ Memoized Search Section to prevent re-renders on every keystroke
 const SearchSection = memo(({ 
   searchQuery, 
   setSearchQuery, 
@@ -97,7 +97,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
       setLoading(true);
       try {
         const headers = { headers: getAuthHeader() };
-        
         const [trendRes, inboxRes, systemRes] = await Promise.allSettled([
           axios.get(`${API_BASE_URL}/posts/trends`),
           axios.get(`${API_BASE_URL}/messenger/inbox`, headers),
@@ -107,14 +106,12 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         if (trendRes.status === "fulfilled") setTrends(trendRes.value.data);
         if (inboxRes.status === "fulfilled") setInbox(inboxRes.value.data);
         if (systemRes.status === "fulfilled") setSystemNotifications(systemRes.value.data);
-        
       } catch (err) {
         console.error("Failed to fetch sidebar data", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchAllSidebarData();
   }, []);
 
@@ -122,7 +119,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
     setSearchQuery(searchQuery === topic ? "" : topic);
   };
 
-  // ✅ Calculation Logic
   const unreadMsgCount = inbox.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
   const unreadSysCount = systemNotifications.filter(n => !n.isRead).length;
   const totalAlerts = unreadMsgCount + unreadSysCount;
@@ -169,7 +165,9 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
                     <span style={{ fontWeight: "500", color: "#FFC847" }}>#{index + 1}. </span>
                     <span style={{ color: "#1C274C", fontWeight: "400" }}>#{tag.name}</span>
                   </span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "500", color: "#1C274C" }}>{tag.views}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: "500", color: "#1C274C" }}>
+                    {tag.views} {/* Now shows real count like "5" or "1.2K" */}
+                  </span>
                 </div>
               ))
             ) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>Loading...</span>}
@@ -196,8 +194,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           <div style={{ height: "0.5px", backgroundColor: "#1C274C", marginBottom: "1.15rem", marginLeft: "-1.25rem", marginRight: "-1.25rem" }}></div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            
-            {/* System Row Summary */}
             <div 
               onClick={() => window.location.href = "/messenger"}
               style={{ padding: "0.8rem", borderRadius: "0.8rem", cursor: "pointer", backgroundColor: unreadSysCount > 0 ? "#FFFBF2" : "#F9FAFB", border: unreadSysCount > 0 ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
@@ -207,7 +203,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               </div>
             </div>
 
-            {/* Activity Row Summary (Replacing individual users) */}
             <div 
               onClick={() => window.location.href = "/messenger"}
               style={{ padding: "0.8rem", borderRadius: "0.8rem", cursor: "pointer", backgroundColor: unreadMsgCount > 0 ? "#E0F2FE" : "#F9FAFB", border: unreadMsgCount > 0 ? "0.5px solid #7DD3FC" : "0.5px solid #E5E7EB" }}>
@@ -216,7 +211,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
                 {unreadMsgCount} new message{unreadMsgCount === 1 ? "" : "s"}
               </div>
             </div>
-
           </div>
         </div>
       )}
