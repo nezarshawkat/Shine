@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import CommunityCard from "./CommunityCard";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { API_BASE_URL } from "../../api";
 
-export default function FeedC({ feedWidth }) {
+export default function FeedC({ feedWidth, searchText = "", setSearchText }) {
   const [communities, setCommunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,6 +32,34 @@ export default function FeedC({ feedWidth }) {
     fetchCommunities();
   }, []);
 
+  const normalizedQuery = searchText.trim().toLowerCase();
+
+  const filteredCommunities = useMemo(() => {
+    if (!normalizedQuery) return communities;
+
+    return communities.filter((community) => {
+      const name = (community.name || "").toLowerCase();
+      const slogan = (community.slogan || "").toLowerCase();
+      const description = (community.discription || "").toLowerCase();
+      const interests = Array.isArray(community.interests)
+        ? community.interests
+        : typeof community.interests === "string"
+          ? community.interests.split(",")
+          : [];
+
+      const keywords = interests
+        .map((interest) => String(interest || "").toLowerCase())
+        .filter(Boolean);
+
+      return (
+        name.includes(normalizedQuery) ||
+        slogan.includes(normalizedQuery) ||
+        description.includes(normalizedQuery) ||
+        keywords.some((keyword) => keyword.includes(normalizedQuery))
+      );
+    });
+  }, [communities, normalizedQuery]);
+
   if (loading) return <div style={{ textAlign: "center", padding: 40 }}>Loading communities...</div>;
   if (error) return <div style={{ textAlign: "center", color: "#ff4d4f", padding: 40 }}>{error}</div>;
 
@@ -39,12 +67,21 @@ export default function FeedC({ feedWidth }) {
     return <div style={{ textAlign: "center", padding: 40 }}>No communities available yet.</div>;
   }
 
+  if (filteredCommunities.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: 40, color: "#1C274C" }}>
+        No communities matched “{searchText}”. Try a community name or one of its keywords.
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", paddingBottom: "40px" }}>
-      {communities.map((comm) => (
+      {filteredCommunities.map((comm) => (
         <CommunityCard
           key={comm.id}
           feedWidth={feedWidth}
+          onintrestClick={(interest) => setSearchText?.(interest)}
           community={{
             id: comm.id,
             communityIcon: comm.icon, 

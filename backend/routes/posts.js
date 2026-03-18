@@ -114,8 +114,9 @@ router.get("/", async (req, res) => {
 // ================== TRENDS (KEYWORDS & HASHTAGS) - UPDATED ==================
 router.get("/trends", async (req, res) => {
   const redisClient = req.app.get("redisClient");
-  // Updated cache key to reflect the logic change
-  const CACHE_KEY = "weekly_global_trends_v4"; 
+  const parsedLimit = Number.parseInt(req.query.limit, 10);
+  const trendLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
+  const CACHE_KEY = `weekly_global_trends_v3:${trendLimit}`;
 
   try {
     if (redisClient?.isReady) {
@@ -163,7 +164,7 @@ router.get("/trends", async (req, res) => {
           rawCount: count,
         }))
         .sort((a, b) => b.rawCount - a.rawCount)
-        .slice(0, 10),
+        .slice(0, trendLimit),
     };
 
     if (redisClient?.isReady) {

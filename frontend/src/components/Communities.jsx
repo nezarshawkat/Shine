@@ -71,7 +71,7 @@ export default function Communities() {
           </div>
 
           <div className="center-content">
-            <FeedC />
+            <FeedC searchText={searchText} setSearchText={setSearchText} />
           </div>
         </main>
 

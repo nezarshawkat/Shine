@@ -38,6 +38,7 @@ import Compost from "./components/Compost.jsx";
 import ArticleApply from "./components/ArticleApply.jsx";
 import Donate from "./components/Donate.jsx";
 import MessengerPage from "./components/MessengerPage.jsx";
+import TrendingHashtagsPage from "./components/TrendingHashtagsPage.jsx";
 import AdminApp from "./admin/AdminApp/AdminApp.jsx";
 
 // Auth & Profile
@@ -162,6 +163,7 @@ function AppRoutes() {
         {/* Main Navigation */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/forum/*" element={<Forum />} />
+        <Route path="/forum/trending" element={<TrendingHashtagsPage />} />
         <Route path="/communities" element={<Communities />} />
         <Route path="/events" element={<Events />} />
         <Route path="/contact" element={<ContactPage />} />

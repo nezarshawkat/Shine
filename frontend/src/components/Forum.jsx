@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "./Header";
 import LeftSidebar from "./forum/LeftSidebar";
 import RightSidebar from "./forum/RightSidebar";
 import Feed from "./forum/Feed";
 import PostView from "./PostView/PostView";
+import { SearchContext } from "../searchContext.jsx";
 import "../styles/Forum.css";
 
 export default function Forum() {
   const { postId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setSearchQuery } = useContext(SearchContext);
 
   const [selectedPostId, setSelectedPostId] = useState(postId || null);
   const [feed, setFeed] = useState([]);
@@ -20,6 +23,11 @@ export default function Forum() {
   useEffect(() => {
     setSelectedPostId(postId || null);
   }, [postId]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search).get("search") || "";
+    setSearchQuery(query);
+  }, [location.search, setSearchQuery]);
 
   const handleSelectPost = (id) => {
     scrollPosRef.current = window.scrollY;

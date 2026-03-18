@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, memo } from "react";
 import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { useNavigate } from "react-router-dom";
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import axios from "axios";
@@ -82,6 +83,7 @@ const SearchSection = memo(({
 
 const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }) => {
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const navigate = useNavigate();
   const [trends, setTrends] = useState({ viralKeywords: [], trendingHashtags: [] });
   const [inbox, setInbox] = useState([]);
   const [systemNotifications, setSystemNotifications] = useState([]);
@@ -149,7 +151,12 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.15rem" }}>
             <span style={{ fontSize: "1.25rem", fontWeight: "500", color: "#1C274C" }}>Trending</span>
-            <span style={{ fontSize: "1rem", fontWeight: "300", color: "#FFC847", cursor: "pointer" }}>View all</span>
+            <span
+              onClick={() => navigate("/forum/trending")}
+              style={{ fontSize: "1rem", fontWeight: "300", color: "#FFC847", cursor: "pointer" }}
+            >
+              View all
+            </span>
           </div>
           <div style={{ height: "0.5px", backgroundColor: "#1C274C", marginBottom: "1.15rem", marginLeft: "-1.25rem", marginRight: "-1.25rem" }}></div>
           
