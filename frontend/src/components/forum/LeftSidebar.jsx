@@ -5,7 +5,7 @@ import closeIcon from "../../assets/close.svg";
 import axios from "axios";
 import { API_BASE_URL } from "../../api";
 
-// ✅ 1. Moved OUTSIDE to prevent unmounting/focus loss
+// ✅ Stable Search Component
 const SearchSection = memo(({ 
   searchQuery, 
   setSearchQuery, 
@@ -29,7 +29,6 @@ const SearchSection = memo(({
           style={{
             width: "1.25rem",
             marginRight: "0.4rem",
-            // ✅ Fix: use visibility instead of conditional rendering to prevent layout shift
             visibility: searchQuery ? "hidden" : "visible",
           }}
         />
@@ -88,27 +87,27 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const [systemNotifications, setSystemNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = API_BASE_URL;
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   useEffect(() => {
     const fetchAllSidebarData = async () => {
       setLoading(true);
       try {
-        const trendRes = await axios.get(`${API_BASE}/posts/trends`);
-        setTrends(trendRes.data);
-
-        const [inboxRes, notifRes] = await Promise.allSettled([
-          axios.get(`${API_BASE}/messenger/inbox`),
-          axios.get(`${API_BASE}/notifications`)
+        const headers = { headers: getAuthHeader() };
+        
+        const [trendRes, inboxRes, systemRes] = await Promise.allSettled([
+          axios.get(`${API_BASE_URL}/posts/trends`),
+          axios.get(`${API_BASE_URL}/messenger/inbox`, headers),
+          axios.get(`${API_BASE_URL}/messenger/system`, headers)
         ]);
 
-        if (inboxRes.status === "fulfilled") {
-          setInbox(inboxRes.value.data);
-        }
+        if (trendRes.status === "fulfilled") setTrends(trendRes.value.data);
+        if (inboxRes.status === "fulfilled") setInbox(inboxRes.value.data);
+        if (systemRes.status === "fulfilled") setSystemNotifications(systemRes.value.data);
         
-        if (notifRes.status === "fulfilled") {
-          setSystemNotifications(notifRes.value.data || []);
-        }
       } catch (err) {
         console.error("Failed to fetch sidebar data", err);
       } finally {
@@ -117,20 +116,19 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
     };
 
     fetchAllSidebarData();
-  }, [API_BASE]);
-
-  const shouldShow = (section) => !showOnly || showOnly.includes(section);
-  
-  const unreadCount = inbox.filter(chat => chat.unread === true).length;
-  const unreadSystemCount = systemNotifications.filter((notif) => notif.isRead === false).length;
-  const latestSystemNotif = systemNotifications.find((notif) => notif.isRead === false) || systemNotifications[0] || null;
-  const totalNewNotifications = unreadCount + unreadSystemCount;
+  }, []);
 
   const handleTopicClick = (topic) => {
     setSearchQuery(searchQuery === topic ? "" : topic);
   };
 
-  // ✅ 2. Reference the stable SearchSection component
+  // ✅ Calculation Logic
+  const unreadMsgCount = inbox.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
+  const unreadSysCount = systemNotifications.filter(n => !n.isRead).length;
+  const totalAlerts = unreadMsgCount + unreadSysCount;
+
+  const shouldShow = (section) => !showOnly || showOnly.includes(section);
+
   const searchEl = (
     <SearchSection 
       searchQuery={searchQuery}
@@ -174,7 +172,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
                   <span style={{ fontSize: "0.85rem", fontWeight: "500", color: "#1C274C" }}>{tag.views}</span>
                 </div>
               ))
-            ) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>Loading trends...</span>}
+            ) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>Loading...</span>}
           </div>
         </div>
       )}
@@ -183,83 +181,42 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
       {shouldShow('messenger') && (
         <div className="forum-messages-card" style={{ 
           width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C", 
-          padding: "1.25rem", backgroundColor: "#FFFFFF", boxSizing: "border-box", marginBottom: "20px"
+          padding: "1.25rem", backgroundColor: "#FFFFFF", boxSizing: "border-box"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.15rem" }}>
             <span style={{ fontSize: "1.25rem", fontWeight: "500", color: "#1C274C" }}>Messenger</span>
-            {totalNewNotifications > 0 && (
-              <span
-                style={{
-                  padding: "0.2rem 0.5rem",
-                  borderRadius: "999px",
-                  backgroundColor: "#FFE4A3",
-                  color: "#1C274C",
-                  fontSize: "0.75rem",
-                  fontWeight: "700"
-                }}
-              >
-                {totalNewNotifications} new
+            {totalAlerts > 0 && (
+              <span style={{ padding: "0.2rem 0.5rem", borderRadius: "999px", backgroundColor: "#FFE4A3", color: "#1C274C", fontSize: "0.75rem", fontWeight: "700" }}>
+                {totalAlerts} new
               </span>
             )}
-            <span 
-              onClick={() => window.location.href = "/messenger"}
-              style={{ fontSize: "1rem", fontWeight: "300", color: "#FFC847", cursor: "pointer" }}
-            >
-              Open
-            </span>
+            <span onClick={() => window.location.href = "/messenger"} style={{ fontSize: "1rem", fontWeight: "300", color: "#FFC847", cursor: "pointer" }}>Open</span>
           </div>
+
           <div style={{ height: "0.5px", backgroundColor: "#1C274C", marginBottom: "1.15rem", marginLeft: "-1.25rem", marginRight: "-1.25rem" }}></div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: unreadSystemCount > 0 ? "#FFFBF2" : "#F9FAFB", border: unreadSystemCount > 0 ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
-              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadSystemCount > 0 ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>
-                System {unreadSystemCount > 0 ? `(${unreadSystemCount} new)` : ""}
-              </div>
+            
+            {/* System Row Summary */}
+            <div 
+              onClick={() => window.location.href = "/messenger"}
+              style={{ padding: "0.8rem", borderRadius: "0.8rem", cursor: "pointer", backgroundColor: unreadSysCount > 0 ? "#FFFBF2" : "#F9FAFB", border: unreadSysCount > 0 ? "0.5px solid #FFE4A3" : "0.5px solid #E5E7EB" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadSysCount > 0 ? "#FFC847" : "#9CA3AF", textTransform: "uppercase" }}>System</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
-                {latestSystemNotif
-                  ? unreadSystemCount > 0
-                    ? `You have ${unreadSystemCount} new notification${unreadSystemCount > 1 ? "s" : ""}`
-                    : latestSystemNotif.content
-                  : "No notifications yet"}
+                {unreadSysCount} new notification{unreadSysCount === 1 ? "" : "s"}
               </div>
             </div>
 
-            <div style={{ padding: "0.8rem", borderRadius: "0.8rem", backgroundColor: unreadCount > 0 ? "#E0F2FE" : "#F9FAFB", border: unreadCount > 0 ? "0.5px solid #7DD3FC" : "0.5px solid #E5E7EB" }}>
-              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadCount > 0 ? "#0284C7" : "#9CA3AF", textTransform: "uppercase" }}>Activity</div>
+            {/* Activity Row Summary (Replacing individual users) */}
+            <div 
+              onClick={() => window.location.href = "/messenger"}
+              style={{ padding: "0.8rem", borderRadius: "0.8rem", cursor: "pointer", backgroundColor: unreadMsgCount > 0 ? "#E0F2FE" : "#F9FAFB", border: unreadMsgCount > 0 ? "0.5px solid #7DD3FC" : "0.5px solid #E5E7EB" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: "800", color: unreadMsgCount > 0 ? "#0284C7" : "#9CA3AF", textTransform: "uppercase" }}>Activity</div>
               <div style={{ fontSize: "0.85rem", color: "#1C274C" }}>
-                {unreadCount > 0 ? `You have ${unreadCount} new message${unreadCount > 1 ? 's' : ''}` : "All caught up!"}
+                {unreadMsgCount} new message{unreadMsgCount === 1 ? "" : "s"}
               </div>
             </div>
 
-            {!loading && inbox.length > 0 && inbox.map((chat, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => window.location.href = `/messenger/${chat._id}`}
-                style={{ 
-                  display: "flex", alignItems: "center", gap: "10px", padding: "0.4rem", 
-                  cursor: "pointer", borderRadius: "0.5rem",
-                  backgroundColor: chat.unread ? "#F0F9FF" : "transparent"
-                }}
-              >
-                <div style={{ 
-                  width: "32px", height: "32px", borderRadius: "50%", 
-                  backgroundColor: chat.unread ? "#0284C7" : "#1C274C", 
-                  color: "white", display: "flex", alignItems: "center", 
-                  justifyContent: "center", fontSize: "0.75rem", fontWeight: "bold" 
-                }}>
-                  {chat.participantName?.charAt(0) || "U"}
-                </div>
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontSize: "0.85rem", fontWeight: chat.unread ? "700" : "600", color: "#1C274C" }}>
-                    {chat.participantName}
-                    {chat.unread && <span style={{ marginLeft: "5px", color: "#0284C7" }}>●</span>}
-                  </div>
-                  <div style={{ fontSize: "0.7rem", color: chat.unread ? "#1C274C" : "#6B7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {chat.lastMessage}
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}

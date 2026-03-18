@@ -23,6 +23,8 @@ const MessengerPage = ({ currentUser }) => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
+  const unreadSystemCount = systemNotifications.filter((notification) => notification.isRead === false).length;
+
   const scrollRef = useRef();
   const headerMenuRef = useRef(null);
 
@@ -45,6 +47,21 @@ const MessengerPage = ({ currentUser }) => {
     } catch (err) { console.error(err); }
   };
 
+  const markSystemNotificationsAsRead = async () => {
+    if (unreadSystemCount === 0) return;
+
+    try {
+      const res = await fetch('/api/messenger/system/read-all', {
+        method: 'PATCH',
+        headers: getAuthHeader()
+      });
+
+      if (res.ok) {
+        setSystemNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const fetchChatHistory = async (partnerId) => {
     try {
       const res = await fetch(`/api/messenger/history/${partnerId}`, { headers: getAuthHeader() });
@@ -61,6 +78,7 @@ const MessengerPage = ({ currentUser }) => {
     if (activeTab?.system) {
       setChatHistory(systemNotifications.map((n) => ({ ...n, senderId: 'system', text: n.content })));
       setView('chat');
+      markSystemNotificationsAsRead();
     } else if (activeTab?.id) {
       fetchChatHistory(activeTab.id);
       setView('chat');
@@ -192,6 +210,11 @@ const MessengerPage = ({ currentUser }) => {
 
   const getAvatar = (img) => img || profileDefault;
 
+  const formatUnreadLabel = (count, singular) => {
+    if (!count) return `0 new ${singular}s`;
+    return `${count} new ${singular}${count === 1 ? '' : 's'}`;
+  };
+
   const renderMessagesWithDates = () => {
     let lastDate = null;
     return chatHistory.map((msg) => {
@@ -297,7 +320,13 @@ const MessengerPage = ({ currentUser }) => {
           <div className="convos-list">
             <div className={`convo-item ${activeTab?.system ? 'active' : ''}`} onClick={() => setActiveTab({ id: '__system', system: true, name: 'System Notifications', username: 'system' })}>
               <img src={profileDefault} alt="" />
-              <div className="convo-info"><div className="convo-title"><h4>System Notifications</h4></div><p className="last-msg">{systemNotifications.length} messages</p></div>
+              <div className="convo-info">
+                <div className="convo-title">
+                  <h4>System Notifications</h4>
+                  {unreadSystemCount > 0 && <span className="unread-badge">{unreadSystemCount}</span>}
+                </div>
+                <p className="last-msg">{formatUnreadLabel(unreadSystemCount, 'notification')}</p>
+              </div>
             </div>
             {conversations.length > 0 ? conversations.map((conv) => (
               <div
@@ -309,9 +338,14 @@ const MessengerPage = ({ currentUser }) => {
                 <div className="convo-info">
                   <div className="convo-title">
                     <h4>{conv.user.name}</h4>
-                    <span className="last-time">{new Date(conv.lastMessageDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {conv.unreadCount > 0 && <span className="unread-badge">{conv.unreadCount}</span>}
+                      <span className="last-time">{new Date(conv.lastMessageDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    </div>
                   </div>
-                  <p className="last-msg">{conv.lastMessage}</p>
+                  <p className="last-msg">
+                    {conv.unreadCount > 0 ? formatUnreadLabel(conv.unreadCount, 'message') : conv.lastMessage}
+                  </p>
                 </div>
               </div>
             )) : (

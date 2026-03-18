@@ -25,16 +25,28 @@ router.get('/inbox', auth, async (req, res) => {
     });
 
     const chatPartners = new Map();
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       const partner = msg.senderId === userId ? msg.receiver : msg.sender;
-      if (partner && !chatPartners.has(partner.id)) {
+      if (!partner) return;
+
+      if (!chatPartners.has(partner.id)) {
         chatPartners.set(partner.id, {
           _id: partner.id,
           participantName: partner.name || partner.username,
+          participantUsername: partner.username,
           lastMessage: msg.text || "📷 Image",
+          lastMessageDate: msg.createdAt,
           isRead: msg.receiverId === userId ? msg.isRead : true,
-          unread: msg.receiverId === userId && !msg.isRead
+          unread: false,
+          unreadCount: 0
         });
+      }
+
+      const existingChat = chatPartners.get(partner.id);
+      if (msg.receiverId === userId && !msg.isRead) {
+        existingChat.unreadCount += 1;
+        existingChat.unread = true;
+        existingChat.isRead = false;
       }
     });
 
@@ -130,15 +142,24 @@ router.get('/conversations', auth, async (req, res) => {
     });
 
     const chatPartners = new Map();
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       const partner = msg.senderId === userId ? msg.receiver : msg.sender;
-      if (partner && !chatPartners.has(partner.id)) {
+      if (!partner) return;
+
+      if (!chatPartners.has(partner.id)) {
         chatPartners.set(partner.id, {
           user: partner,
           lastMessage: msg.text || "Image",
           lastMessageDate: msg.createdAt,
-          isRead: msg.receiverId === userId ? msg.isRead : true
+          isRead: msg.receiverId === userId ? msg.isRead : true,
+          unreadCount: 0
         });
+      }
+
+      const conversation = chatPartners.get(partner.id);
+      if (msg.receiverId === userId && !msg.isRead) {
+        conversation.unreadCount += 1;
+        conversation.isRead = false;
       }
     });
 
@@ -303,6 +324,22 @@ router.patch('/system/:id/read', auth, async (req, res) => {
       data: { isRead: true }
     });
     res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/system/read-all', auth, async (req, res) => {
+  try {
+    await prisma.notification.updateMany({
+      where: {
+        userId: req.user.id,
+        type: 'SYSTEM',
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
