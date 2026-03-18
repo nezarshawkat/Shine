@@ -139,7 +139,7 @@ export default function TrendingHashtagsPage() {
                 {/* Hashtag Info - Centered vertically with the number */}
                 <div className="follow-info" style={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div className="follow-name" style={{ margin: 0, lineHeight: "1.2" }}>#{tag.name}</div>
-                  <div className="follow-username" style={{ margin: 0, lineHeight: "1.2" }}>Weekly views: {tag.views}</div>
+                  <div className="follow-username" style={{ margin: 0, lineHeight: "1.2" }}>Views: {tag.views}</div>
                 </div>
 
                 {/* Search Button */}
