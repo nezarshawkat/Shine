@@ -148,6 +148,7 @@ function AppRoutes() {
     "/admin/payments",
     "/admin/billing",
     "/admin/invoices",
+    "/admin/article-applications",
   ];
 
   const hideHeader = hideHeaderRoutes.includes(location.pathname);

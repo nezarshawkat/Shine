@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
 import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
+import API from "../api";
 import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
 
 const PRIMARY = "#1C274C";
@@ -29,22 +30,47 @@ function Toast({ message, type = "success", duration = 3000, onClose }) {
 }
 
 export default function ArticleApply() {
-  const { user } = useContext(AuthContext);
+  const { user, token, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [introduction, setIntroduction] = useState("");
   const [workSample, setWorkSample] = useState("");
   const [socialLink, setSocialLink] = useState("");
   const [toast, setToast] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!introduction.trim() || !workSample.trim() || !socialLink.trim()) {
       return showToast("Please fill in all fields before applying", "error");
     }
-    showToast("Application submitted successfully!");
-    setTimeout(() => navigate("/"), 2000);
+
+    if (!token) {
+      return showToast("Please log in first", "error");
+    }
+
+    try {
+      setSubmitting(true);
+      await API.post(
+        "/articles/apply",
+        {
+          introduction: introduction.trim(),
+          workSample: workSample.trim(),
+          socialLink: socialLink.trim(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      updateUser?.({ isAuthorized: false });
+      showToast("Application submitted successfully!");
+      setTimeout(() => navigate("/"), 1500);
+    } catch (error) {
+      const message = error?.response?.data?.error || "Failed to submit application";
+      showToast(message, "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const sectionHeaderStyle = { fontSize: 22, fontWeight: 700, color: PRIMARY, marginBottom: 8 };
@@ -157,23 +183,24 @@ export default function ArticleApply() {
       {/* APPLY BUTTON */}
       <button 
         onClick={handleApply} 
+        disabled={!introduction || !workSample || !socialLink || submitting}
         style={{ 
           position: "fixed",
           bottom: 50,
           right: 50,
           padding: "12px 64px", 
-          background: (introduction && workSample && socialLink) ? PRIMARY : "#D9D9D9", 
-          color: (introduction && workSample && socialLink) ? ACCENT : "#888",
+          background: (introduction && workSample && socialLink && !submitting) ? PRIMARY : "#D9D9D9", 
+          color: (introduction && workSample && socialLink && !submitting) ? ACCENT : "#888",
           borderRadius: "12px", 
           border: "none", 
           fontSize: 18, 
           fontWeight: 800, 
-          cursor: (introduction && workSample && socialLink) ? "pointer" : "not-allowed",
+          cursor: (introduction && workSample && socialLink && !submitting) ? "pointer" : "not-allowed",
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           zIndex: 100
         }}
       >
-        Apply
+        {submitting ? "Submitting..." : "Apply"}
       </button>
     </div>
   );

@@ -17,7 +17,6 @@ async function getGuestSupportUser() {
       email,
       username,
       name: "Guest Support",
-      isAuthorized: true,
     },
   });
 }

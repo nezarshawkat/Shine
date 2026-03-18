@@ -7,6 +7,7 @@ const { listReports, resolveReport } = require("../../controllers/admin/reportsC
 const { getAnalytics, getDashboardOverview } = require("../../controllers/admin/analyticsController");
 const { listSupportMessages, replySupportMessage } = require("../../controllers/admin/supportController");
 const { sendSystemMessage } = require("../../controllers/admin/messagingController");
+const { listArticleApplications, reviewArticleApplication } = require("../../controllers/admin/articleApplicationsController");
 
 const router = express.Router();
 
@@ -57,6 +58,11 @@ router.patch("/reports/:id/resolve", resolveReport);
 /* ---------- support ---------- */
 router.get("/support", listSupportMessages);
 router.patch("/support/:id", replySupportMessage);
+
+
+/* ---------- article applications ---------- */
+router.get("/article-applications", listArticleApplications);
+router.patch("/article-applications/:id", reviewArticleApplication);
 
 /* ---------- system messaging ---------- */
 router.post("/messages/system", sendSystemMessage);

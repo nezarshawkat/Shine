@@ -4,6 +4,7 @@ const prisma = require("../prisma");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const auth = require("../middleware/auth");
 
 // ================== UPLOAD SETUP ==================
 // Using 'public/uploads/' to match your community settings and allow static serving
@@ -85,6 +86,57 @@ router.get("/", async (req, res) => {
 });
 
 /* =====================================================
+    APPLY FOR ARTICLE POSTING ACCESS
+===================================================== */
+router.post("/apply", auth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const introduction = String(req.body?.introduction || "").trim();
+    const workSample = String(req.body?.workSample || "").trim();
+    const socialLink = String(req.body?.socialLink || "").trim();
+
+    if (!introduction || !workSample || !socialLink) {
+      return res.status(400).json({ error: "introduction, workSample, and socialLink are required" });
+    }
+
+    const application = await prisma.articleApplication.upsert({
+      where: { userId },
+      update: {
+        introduction,
+        workSample,
+        socialLink,
+        status: "PENDING",
+        reviewedBy: null,
+        reviewedAt: null,
+      },
+      create: {
+        userId,
+        introduction,
+        workSample,
+        socialLink,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, username: true, email: true },
+        },
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isAuthorized: false },
+    });
+
+    return res.status(201).json({ data: application });
+  } catch (error) {
+    console.error("ARTICLE APPLY ERROR:", error);
+    return res.status(500).json({ error: "Failed to submit application" });
+  }
+});
+
+/* =====================================================
     CREATE ARTICLE (With Multer & JSON Parsing)
 ===================================================== */
 router.post("/", upload.array("media"), async (req, res) => {
@@ -96,6 +148,12 @@ router.post("/", upload.array("media"), async (req, res) => {
     }
 
     const parsedSources = sources ? JSON.parse(sources) : [];
+
+    const author = await prisma.user.findUnique({ where: { id: authorId }, select: { id: true, isAuthorized: true } });
+    if (!author) return res.status(404).json({ error: "Author not found" });
+    if (!author.isAuthorized) {
+      return res.status(403).json({ error: "Author is not authorized to post articles yet" });
+    }
 
     const newArticle = await prisma.article.create({
       data: {

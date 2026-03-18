@@ -11,6 +11,7 @@ const tabs = [
   ["reports", "Reports"],
   ["analytics", "Analytics"],
   ["support", "Support"],
+  ["article-applications", "Article Applications"],
   ["system-messages", "System Messages"],
 ];
 
