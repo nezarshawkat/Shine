@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
-import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+import { AuthContext } from "../AuthProvider.jsx";
+import SharePopup from "../posts/SharePopup.jsx";
 import Header from "../Header.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Icons
-import heartIcon from "/workspaces/Shine/frontend/src/assets/Heart.svg";
-import heartClickedIcon from "/workspaces/Shine/frontend/src/assets/HeartC.svg";
-import shareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
-import saveIcon from "/workspaces/Shine/frontend/src/assets/Tag.svg";
-import saveClickedIcon from "/workspaces/Shine/frontend/src/assets/TagClicked.svg";
+import heartIcon from "../../assets/Heart.svg";
+import heartClickedIcon from "../../assets/HeartC.svg";
+import shareIcon from "../../assets/Share.svg";
+import saveIcon from "../../assets/Tag.svg";
+import saveClickedIcon from "../../assets/TagClicked.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 
 // --- Toast Component ---

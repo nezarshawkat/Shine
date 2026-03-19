@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 // Providers
 import { AuthProvider, AuthContext } from "./components/AuthProvider.jsx";
-import { SearchProvider } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { SearchProvider } from "./searchContext.jsx";
 
 // Pages
 import LandingPage from "./components/LandingPage.jsx"; 
 import Forum from "./components/Forum.jsx";
 import Communities from "./components/Communities.jsx";
 import Articles from "./components/Articles.jsx";
-import Article from "/workspaces/Shine/frontend/src/components/articles/article.jsx";
+import Article from "./components/articles/article.jsx";
 import Events from "./components/Events.jsx";
 import ContactPage from "./components/ContactPage.jsx";
 import FollowersPage from "./components/FollowersPage.jsx";

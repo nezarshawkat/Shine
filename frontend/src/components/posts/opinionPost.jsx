@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import PostCard from "./PostCard";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { getCommunityById } from "/workspaces/Shine/frontend/src/utlis/getCommunity.js";
+import { getCommunityById } from "../../utlis/getCommunity.js";
 import SharePopup from "./SharePopup"; 
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
+import { AuthContext } from "../AuthProvider.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { submitReport } from "../reporting/reportUtils";
 
 // Icons
-import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
-import TagIcon from "/workspaces/Shine/frontend/src/assets/Tag.svg";
-import TagClickedIcon from "/workspaces/Shine/frontend/src/assets/TagClicked.svg";
-import FlagIcon from "/workspaces/Shine/frontend/src/assets/Flag.svg";
-import ArrowIcon from "/workspaces/Shine/frontend/src/assets/arrow.svg";
-import CommentIcon from "/workspaces/Shine/frontend/src/assets/comment.svg";
-import HeartIcon from "/workspaces/Shine/frontend/src/assets/Heart.svg";
-import HeartClickedIcon from "/workspaces/Shine/frontend/src/assets/HeartC.svg";
-import MenuIcon from "/workspaces/Shine/frontend/src/assets/Menu.svg"; 
-import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
+import ShareIcon from "../../assets/Share.svg";
+import TagIcon from "../../assets/Tag.svg";
+import TagClickedIcon from "../../assets/TagClicked.svg";
+import FlagIcon from "../../assets/Flag.svg";
+import ArrowIcon from "../../assets/arrow.svg";
+import CommentIcon from "../../assets/comment.svg";
+import HeartIcon from "../../assets/Heart.svg";
+import HeartClickedIcon from "../../assets/HeartC.svg";
+import MenuIcon from "../../assets/Menu.svg"; 
+import profileDefault from "../../assets/profileDefault.svg";
 
 
 // --- Sub-components ---

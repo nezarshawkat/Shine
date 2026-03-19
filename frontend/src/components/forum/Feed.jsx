@@ -3,11 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../AuthProvider.jsx";
 import { SearchContext } from "../../searchContext.jsx";
-import OpinionPost from "/workspaces/Shine/frontend/src/components/posts/opinionPost.jsx";
-import CritiquePost from "/workspaces/Shine/frontend/src/components/posts/critiquePost.jsx";
-import AnalysisPost from "/workspaces/Shine/frontend/src/components/posts/analysisPost.jsx";
-import PollPost from "/workspaces/Shine/frontend/src/components/posts/pollPost.jsx";
-import SkeletonPost from "/workspaces/Shine/frontend/src/components/posts/SkeletonPost.jsx";
+import OpinionPost from "../posts/opinionPost.jsx";
+import CritiquePost from "../posts/critiquePost.jsx";
+import AnalysisPost from "../posts/analysisPost.jsx";
+import PollPost from "../posts/pollPost.jsx";
+import SkeletonPost from "../posts/SkeletonPost.jsx";
 import profileDefault from "../../assets/profileDefault.svg";
 import API, { API_BASE_URL, buildMediaUrl } from "../../api";
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { BASE_W, BASE_H, R, communityData } from "/workspaces/Shine/backend/models/commConfig.js";
+import { BASE_W, BASE_H, R, communityData } from "../../../../backend/models/commConfig.js";
 
 export default function Commb({ feedWidth = BASE_W, onKeywordClick }) {
   const {

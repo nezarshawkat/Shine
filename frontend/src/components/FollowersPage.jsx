@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import API from "/workspaces/Shine/frontend/src/api.js";
+import API from "../api.js";
 import profileDefault from "../assets/profileDefault.svg";
 import Header from "./Header.jsx";
 import "../styles/FollowPages.css";

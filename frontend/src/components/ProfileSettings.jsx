@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import API from "/workspaces/Shine/frontend/src/api.js";
+import API from "../api.js";
 
-const BACKEND_URL = "https://studious-robot-r4wpqgpjp572wj5-5000.app.github.dev";
 
 export default function ProfileSettings({ onClose, user, logout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState("Account");

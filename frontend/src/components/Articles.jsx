@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Header from "./Header";
 import RightSideBarA from "./articles/rightSideBarA";
 import FeedA from "./articles/feedA";
-import "/workspaces/Shine/frontend/src/styles/articles.css";
+import "../styles/articles.css";
 
 function Articles() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

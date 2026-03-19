@@ -2,10 +2,10 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "./AuthProvider.jsx";
-import GoogleLogin from "/workspaces/Shine/frontend/src/components/GoogleAuth.jsx";
+import GoogleLogin from "./GoogleAuth.jsx";
 import "../styles/LogIn.css";
 import logo from "../assets/shine-logo.png";
-import googleIcon from "/workspaces/Shine/frontend/src/assets/google.svg";
+import googleIcon from "../assets/google.svg";
 import { BACKEND_URL } from "../api";
 
 const LogIn = () => {

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCommunityById } from "/workspaces/Shine/frontend/src/utlis/getCommunity.js";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
-import FlagIcon from "/workspaces/Shine/frontend/src/assets/Flag.svg";
-import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
-import TagIcon from "/workspaces/Shine/frontend/src/assets/Tag.svg";
-import TagClickedIcon from "/workspaces/Shine/frontend/src/assets/TagClicked.svg";
-import MenuIcon from "/workspaces/Shine/frontend/src/assets/Menu.svg";
-import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
-import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
+import { getCommunityById } from "../../utlis/getCommunity.js";
+import { AuthContext } from "../AuthProvider.jsx";
+import FlagIcon from "../../assets/Flag.svg";
+import ShareIcon from "../../assets/Share.svg";
+import TagIcon from "../../assets/Tag.svg";
+import TagClickedIcon from "../../assets/TagClicked.svg";
+import MenuIcon from "../../assets/Menu.svg";
+import profileDefault from "../../assets/profileDefault.svg";
+import SharePopup from "./SharePopup.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { submitReport } from "../reporting/reportUtils";
 

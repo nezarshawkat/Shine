@@ -4,7 +4,7 @@ import {
   Search, Send, MoreVertical, Edit2, Trash2, ChevronLeft
 } from 'lucide-react';
 import profileDefault from "../assets/profileDefault.svg";
-import "/workspaces/Shine/frontend/src/styles/MessengerPage.css";
+import "../styles/MessengerPage.css";
 
 const MessengerPage = ({ currentUser }) => {
   const navigate = useNavigate();

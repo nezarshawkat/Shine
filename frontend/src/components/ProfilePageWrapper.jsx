@@ -1,7 +1,7 @@
 // src/components/ProfilePageWrapper.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
-import API from "/workspaces/Shine/frontend/src/api.js"; // your axios instance
+import API from "../api.js"; // your axios instance
 import ProfilePage from "./ProfilePage.jsx";
 import { AuthContext } from "./AuthProvider.jsx";
 

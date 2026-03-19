@@ -2,9 +2,9 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../Header";
 import PostBody from "./PostBody";
-import LeftSidebar from "/workspaces/Shine/frontend/src/components/forum/LeftSidebar.jsx";
-import RightSidebar from "/workspaces/Shine/frontend/src/components/forum/RightSidebar.jsx";
-import "/workspaces/Shine/frontend/src/styles/PostView.css";
+import LeftSidebar from "../forum/LeftSidebar.jsx";
+import RightSidebar from "../forum/RightSidebar.jsx";
+import "../../styles/PostView.css";
 
 export default function PostView() {
   const location = useLocation();

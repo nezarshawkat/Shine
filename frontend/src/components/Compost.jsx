@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
-import PostCard from "/workspaces/Shine/frontend/src/components/posts/PostCard.jsx";
+import Logo from "../assets/shine-logo.png";
+import { AuthContext } from "./AuthProvider.jsx";
+import PostCard from "./posts/PostCard.jsx";
 
 // Icons for the preview footer
-import ShareIcon from "/workspaces/Shine/frontend/src/assets/Share.svg";
-import TagIcon from "/workspaces/Shine/frontend/src/assets/Tag.svg";
-import FlagIcon from "/workspaces/Shine/frontend/src/assets/Flag.svg";
-import ArrowIcon from "/workspaces/Shine/frontend/src/assets/arrow.svg";
-import CommentIcon from "/workspaces/Shine/frontend/src/assets/comment.svg";
-import HeartIcon from "/workspaces/Shine/frontend/src/assets/Heart.svg";
+import ShareIcon from "../assets/Share.svg";
+import TagIcon from "../assets/Tag.svg";
+import FlagIcon from "../assets/Flag.svg";
+import ArrowIcon from "../assets/arrow.svg";
+import CommentIcon from "../assets/comment.svg";
+import HeartIcon from "../assets/Heart.svg";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";

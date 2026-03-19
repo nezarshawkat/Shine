@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
-import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
-import ArrowIcon from "/workspaces/Shine/frontend/src/assets/arrow.svg";
+import Logo from "../../assets/shine-logo.png";
+import ArrowIcon from "../../assets/arrow.svg";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
-import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
+import { AuthContext } from "../AuthProvider.jsx";
+import profileDefault from "../../assets/profileDefault.svg";
 import axios from "axios";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 

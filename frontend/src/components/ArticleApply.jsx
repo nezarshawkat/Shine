@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
+import Logo from "../assets/shine-logo.png";
+import { AuthContext } from "./AuthProvider.jsx";
 import API from "../api";
-import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
+import profileDefault from "../assets/profileDefault.svg";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";

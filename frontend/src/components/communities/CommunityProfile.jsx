@@ -26,7 +26,7 @@ import feather from "../../assets/feather.png";
 import MenuIcon from "../../assets/Menu.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 
-import "/workspaces/Shine/frontend/src/styles/Communityprofile.css";
+import "../../styles/Communityprofile.css";
 
 const API_URL = API_BASE_URL;
 const ASSET_URL = BACKEND_URL;

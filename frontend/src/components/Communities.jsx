@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Header from "./Header";
-import FeedC from "/workspaces/Shine/frontend/src/components/communities/feedC.jsx";
+import FeedC from "./communities/feedC.jsx";
 import LeftBarC from "./communities/LeftBarC.jsx";
 import RightBarC from "./communities/rightBarC.jsx";
 import "../styles/comm.css";

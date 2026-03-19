@@ -1,8 +1,8 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Logo from "/workspaces/Shine/frontend/src/assets/shine-logo.png";
-import { AuthContext } from "/workspaces/Shine/frontend/src/components/AuthProvider.jsx";
-import profileDefault from "/workspaces/Shine/frontend/src/assets/profileDefault.svg";
+import Logo from "../../assets/shine-logo.png";
+import { AuthContext } from "../AuthProvider.jsx";
+import profileDefault from "../../assets/profileDefault.svg";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 const PRIMARY = "#1C274C";

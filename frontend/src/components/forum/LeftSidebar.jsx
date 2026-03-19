@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, memo } from "react";
-import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { SearchContext } from "../../searchContext.jsx";
 import { useNavigate } from "react-router-dom";
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";

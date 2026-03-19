@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../AuthProvider.jsx";
-import "/workspaces/Shine/frontend/src/styles/CommunitySettings.css";
+import "../../styles/CommunitySettings.css";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 const API_URL = API_BASE_URL;

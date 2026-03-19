@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { SearchContext } from "../../searchContext.jsx";
 import { AuthContext } from "../AuthProvider.jsx";
 import { useParams, useNavigate } from "react-router-dom";
 import magnifier from "../../assets/magnifier.svg";

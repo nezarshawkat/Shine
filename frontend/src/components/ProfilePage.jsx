@@ -2,7 +2,7 @@ import React, { useState, useContext, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header.jsx";
 import "../styles/ProfilePage.css";
-import API from "/workspaces/Shine/frontend/src/api.js";
+import API from "../api.js";
 import { API_BASE_URL, BACKEND_URL } from "../api";
 
 import OpinionPost from "./posts/opinionPost.jsx";
@@ -11,13 +11,13 @@ import CritiquePost from "./posts/critiquePost.jsx";
 import PollPost from "./posts/pollPost.jsx";
 
 import CommunityCard from "./communities/CommunityCard.jsx";
-import Post from "/workspaces/Shine/frontend/src/components/articles/Post.jsx";
+import Post from "./articles/Post.jsx";
 import UserPlusIcon from "../assets/User Plus.svg";
 import profileDefault from "../assets/profileDefault.svg";
 
 import { AuthContext } from "./AuthProvider.jsx";
-import SharePopup from "/workspaces/Shine/frontend/src/components/posts/SharePopup.jsx";
-import ProfileSettings from "/workspaces/Shine/frontend/src/components/ProfileSettings.jsx";
+import SharePopup from "./posts/SharePopup.jsx";
+import ProfileSettings from "./ProfileSettings.jsx";
 
 const ROLE_LEVEL_CLASS = {
   Starter: "role-starter",

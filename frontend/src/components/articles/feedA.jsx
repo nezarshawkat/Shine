@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useContext } from "react";
 import axios from "axios";
 import Post from "./Post";
-import { SearchContext } from "/workspaces/Shine/frontend/src/searchContext.jsx";
+import { SearchContext } from "../../searchContext.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 
