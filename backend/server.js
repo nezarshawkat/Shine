@@ -36,7 +36,7 @@ app.use(cors({
 }));
 
 // ✅ VERY IMPORTANT (fixes preflight requests like /api/donate)
-app.options("*", cors());
+app.options("/*", cors());
 
 // ================= BODY PARSER =================
 app.use(express.json());
