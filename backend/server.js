@@ -6,8 +6,6 @@ const path = require("path");
 const { Server } = require("socket.io");
 const redis = require("redis");
 const prisma = require("./prisma.js");
-
-// FIXED: Changed this from 'import' to 'require'
 const { OAuth2Client } = require("google-auth-library");
 
 const app = express();
@@ -22,26 +20,27 @@ app.use('/api', paymentRoutes);
 // ================= GLOBAL MIDDLEWARE =================
 app.use(express.json());
 
-// FIXED CORS: Simplified for Codespaces environment
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (
-        origin.includes("localhost") || 
-        origin.includes("app.github.dev") ||
-        origin.includes("127.0.0.1")
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// ================= ✅ FIXED CORS =================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://shine-red.vercel.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow Postman
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.log("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 // ================= STATIC FILES =================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -65,8 +64,15 @@ if (process.env.ENABLE_REDIS_CACHE === "true") {
 // ================= SOCKET.IO =================
 let io = null;
 if (process.env.ENABLE_SOCKET_IO === "true") {
-  io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+  io = new Server(server, {
+    cors: {
+      origin: "https://shine-red.vercel.app",
+      methods: ["GET", "POST"]
+    }
+  });
+
   app.set("io", io);
+
   io.on("connection", (socket) => {
     socket.on("join", (userId) => socket.join(userId));
   });
@@ -87,6 +93,7 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
 
+// ================= HEALTH CHECK =================
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -96,9 +103,11 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// ================= GOOGLE AUTH =================
 app.post("/api/auth/google", async (req, res) => {
   try {
     const { token } = req.body;
+
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -122,8 +131,12 @@ app.post("/api/auth/google", async (req, res) => {
 
     res.json({ success: true, user });
   } catch (err) {
+    console.error(err);
     res.status(401).json({ success: false });
   }
 });
 
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// ================= START SERVER =================
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
