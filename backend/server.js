@@ -13,72 +13,26 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ================= STRIPE WEBHOOK =================
-const paymentRoutes = require('./routes/payment');
-app.use('/api', paymentRoutes);
-
-// ================= GLOBAL MIDDLEWARE =================
-app.use(express.json());
-
-// ================= ✅ FIXED CORS =================
+// ================= ✅ CORS FIRST =================
 const allowedOrigins = [
   "http://localhost:5173",
   "https://shine-red.vercel.app"
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.log("❌ Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: allowedOrigins,
+  credentials: true
 }));
 
-// ================= STATIC FILES =================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+// ================= ✅ BODY PARSER =================
+app.use(express.json());
 
-// ================= REDIS SETUP =================
-let redisClient = null;
-if (process.env.ENABLE_REDIS_CACHE === "true") {
-  (async () => {
-    try {
-      redisClient = redis.createClient({ url: process.env.REDIS_URL });
-      await redisClient.connect();
-      console.log("✅ Redis connected");
-      app.set("redisClient", redisClient);
-    } catch (err) {
-      console.error("❌ Redis failed:", err);
-    }
-  })();
-}
+// ================= ✅ ROUTES =================
 
-// ================= SOCKET.IO =================
-let io = null;
-if (process.env.ENABLE_SOCKET_IO === "true") {
-  io = new Server(server, {
-    cors: {
-      origin: "https://shine-red.vercel.app",
-      methods: ["GET", "POST"]
-    }
-  });
+// 🔥 payment AFTER CORS + JSON
+const paymentRoutes = require('./routes/payment');
+app.use('/api', paymentRoutes);
 
-  app.set("io", io);
-
-  io.on("connection", (socket) => {
-    socket.on("join", (userId) => socket.join(userId));
-  });
-}
-
-// ================= ROUTES =================
 app.use("/api/users", require("./routes/auth.routes.js"));
 app.use("/api/users", require("./routes/users.js"));
 app.use("/api/follow", require("./routes/follow"));
@@ -93,7 +47,7 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
 
-// ================= HEALTH CHECK =================
+// ================= HEALTH =================
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -114,17 +68,14 @@ app.post("/api/auth/google", async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    const email = payload.email;
-    const name = payload.name;
-    const googleId = payload.sub;
 
     const user = await prisma.user.upsert({
-      where: { email },
+      where: { email: payload.email },
       update: {},
       create: {
-        email,
-        name,
-        googleId,
+        email: payload.email,
+        name: payload.name,
+        googleId: payload.sub,
         provider: "google"
       }
     });
@@ -136,7 +87,7 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
-// ================= START SERVER =================
+// ================= START =================
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

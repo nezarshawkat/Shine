@@ -1,12 +1,10 @@
 import { useEffect } from "react";
 
 export default function GoogleLogin() {
-
+  // The API URL from env (Render backend)
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (!window.google) return;
-
     window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse
@@ -20,7 +18,6 @@ export default function GoogleLogin() {
         width: "300"
       }
     );
-
   }, []);
 
   async function handleCredentialResponse(response) {
@@ -40,11 +37,12 @@ export default function GoogleLogin() {
       if (data.success) {
         window.location.href = "/dashboard";
       } else {
-        console.error("Login failed");
+        console.error("Google login failed:", data);
+        alert("Login failed. Check console for details.");
       }
-
     } catch (err) {
-      console.error("❌ Google login error:", err);
+      console.error("Network or server error:", err);
+      alert("Server error. Try again later.");
     }
   }
 
