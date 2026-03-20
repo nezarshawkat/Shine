@@ -13,14 +13,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ================= STRIPE WEBHOOK =================
-const paymentRoutes = require('./routes/payment');
-app.use('/api', paymentRoutes);
-
-// ================= GLOBAL MIDDLEWARE =================
-app.use(express.json());
-
-// ================= ✅ FIXED CORS =================
+// ================= ✅ CORS FIRST (VERY IMPORTANT) =================
 const allowedOrigins = [
   "http://localhost:5173",
   "https://shine-red.vercel.app"
@@ -28,7 +21,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman
+    if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -41,6 +34,16 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+// ✅ VERY IMPORTANT (fixes preflight requests like /api/donate)
+app.options("*", cors());
+
+// ================= BODY PARSER =================
+app.use(express.json());
+
+// ================= STRIPE / PAYMENT ROUTES =================
+const paymentRoutes = require('./routes/payment');
+app.use('/api', paymentRoutes);
 
 // ================= STATIC FILES =================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

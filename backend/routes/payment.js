@@ -1,18 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// Fixed import to match your server.js (using .js extension)
 const prisma = require("../prisma.js");
 
-// 1. THE DONATE ROUTE
-// Added express.json() specifically here so it doesn't interfere with the global webhook
-router.post('/donate', express.json(), async (req, res) => {
+// ================= 1. DONATE ROUTE =================
+router.post('/donate', async (req, res) => {
   try {
+    console.log("👉 Donate route hit");
+
     const { amount, userId } = req.body;
 
-    // Validation to prevent the "Invalid URL" error
+    if (!amount) {
+      return res.status(400).json({ error: "Amount is required" });
+    }
+
     if (!process.env.FRONTEND_URL) {
-      throw new Error("FRONTEND_URL is missing in .env file");
+      throw new Error("FRONTEND_URL is missing in environment variables");
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -35,14 +38,15 @@ router.post('/donate', express.json(), async (req, res) => {
     });
 
     res.json({ url: session.url });
+
   } catch (error) {
-    console.error("Stripe Session Error:", error.message);
+    console.error("❌ Stripe Session Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// 2. THE WEBHOOK ROUTE
-// This MUST use express.raw to verify the Stripe signature
+// ================= 2. STRIPE WEBHOOK =================
+// IMPORTANT: must stay raw
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -58,14 +62,13 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle successful payment
+  // ================= HANDLE PAYMENT =================
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.metadata.userId;
 
     console.log(`💰 Payment successful: $${session.amount_total / 100} from User: ${userId}`);
     
-    // Update the database if the user was logged in
     if (userId && userId !== "guest") {
       try {
         await prisma.user.update({
@@ -81,12 +84,13 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             }
           }
         });
+
         console.log(`✅ Database updated for Supporter: ${userId}`);
       } catch (dbError) {
-        console.error("❌ Database Update Error:", dbError.message);
+        console.error("❌ Database Update Error:", dbError);
       }
     } else {
-      console.log("ℹ️ Anonymous donation received. No user profile to update.");
+      console.log("ℹ️ Anonymous donation received");
     }
   }
 

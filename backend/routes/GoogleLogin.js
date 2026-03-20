@@ -2,7 +2,10 @@ import { useEffect } from "react";
 
 export default function GoogleLogin() {
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
+    if (!window.google) return;
 
     window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
@@ -21,23 +24,28 @@ export default function GoogleLogin() {
   }, []);
 
   async function handleCredentialResponse(response) {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          token: response.credential
+        })
+      });
 
-    const res = await fetch("/api/auth/google", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        token: response.credential
-      })
-    });
+      const data = await res.json();
 
-    const data = await res.json();
+      if (data.success) {
+        window.location.href = "/dashboard";
+      } else {
+        console.error("Login failed");
+      }
 
-    if (data.success) {
-      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error("❌ Google login error:", err);
     }
-
   }
 
   return <div id="googleBtn"></div>;
