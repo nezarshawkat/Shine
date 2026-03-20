@@ -1,19 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// Fixed import to match your server.js (using .js extension)
 const prisma = require("../prisma.js");
 
 // 1. THE DONATE ROUTE
-// Added express.json() specifically here so it doesn't interfere with the global webhook
+// We use express.json() here specifically because this route is defined 
+// BEFORE the global app.use(express.json()) in server.js
 router.post('/donate', express.json(), async (req, res) => {
   try {
     const { amount, userId } = req.body;
 
-    // Validation to prevent the "Invalid URL" error
+    // Validation for Environment Variables
     if (!process.env.FRONTEND_URL) {
-      throw new Error("FRONTEND_URL is missing in .env file");
+      console.error("❌ MISSING FRONTEND_URL");
+      return res.status(500).json({ error: "Server configuration error: Missing FRONTEND_URL" });
     }
+
+    // Clean the URL to ensure no double slashes
+    const baseUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -24,14 +28,16 @@ router.post('/donate', express.json(), async (req, res) => {
             name: 'Shine Community Donation',
             description: 'Support for website funds',
           },
-          unit_amount: Math.round(amount * 100),
+          unit_amount: Math.round(amount * 100), // Stripe expects cents
         },
         quantity: 1,
       }],
       mode: 'payment',
-      metadata: { userId: userId || "guest" }, 
-      success_url: `${process.env.FRONTEND_URL}/donate?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/donate?canceled=true`,
+      metadata: { 
+        userId: userId && userId !== "undefined" ? userId : "guest" 
+      }, 
+      success_url: `${baseUrl}/donate?success=true`,
+      cancel_url: `${baseUrl}/donate?canceled=true`,
     });
 
     res.json({ url: session.url });
@@ -42,7 +48,8 @@ router.post('/donate', express.json(), async (req, res) => {
 });
 
 // 2. THE WEBHOOK ROUTE
-// This MUST use express.raw to verify the Stripe signature
+// This MUST use express.raw to verify the Stripe signature. 
+// It works now because we placed it before the global express.json() in server.js
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
