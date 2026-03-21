@@ -1,103 +1,153 @@
 const express = require('express');
 const router = express.Router();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const prisma = require("../prisma.js");
+const prisma = require('../prisma.js');
 
-// 1. THE DONATE ROUTE
-// We use express.json() here specifically because this route is defined 
-// BEFORE the global app.use(express.json()) in server.js
-router.post('/donate', express.json(), async (req, res) => {
+const PAYPAL_BASE_URL = process.env.PAYPAL_ENV === 'live'
+  ? 'https://api-m.paypal.com'
+  : 'https://api-m.sandbox.paypal.com';
+
+const parseAmount = (value) => {
+  const amount = Number.parseFloat(value);
+  return Number.isFinite(amount) ? amount : NaN;
+};
+
+const getPaypalAccessToken = async () => {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_SECRET;
+
+  if (!clientId || !secret) {
+    throw new Error('Missing PayPal credentials');
+  }
+
+  const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error_description || 'Unable to authenticate with PayPal');
+  }
+
+  return data.access_token;
+};
+
+router.post('/paypal/create-order', express.json(), async (req, res) => {
   try {
-    const { amount, userId } = req.body;
+    const amount = parseAmount(req.body?.amount);
+    const userId = req.body?.userId;
 
-    // Validation for Environment Variables
-    if (!process.env.FRONTEND_URL) {
-      console.error("❌ MISSING FRONTEND_URL");
-      return res.status(500).json({ error: "Server configuration error: Missing FRONTEND_URL" });
+    if (!Number.isFinite(amount) || amount < 1) {
+      return res.status(400).json({ error: 'Please provide a valid donation amount of at least $1.' });
     }
 
-    // Clean the URL to ensure no double slashes
-    const baseUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: { 
-            name: 'Shine Community Donation',
-            description: 'Support for website funds',
+    const accessToken = await getPaypalAccessToken();
+    const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            amount: {
+              currency_code: 'USD',
+              value: amount.toFixed(2),
+            },
+            description: 'Shine Community Donation',
+            custom_id: userId || 'guest',
           },
-          unit_amount: Math.round(amount * 100), // Stripe expects cents
+        ],
+        payment_source: {
+          paypal: {
+            experience_context: {
+              shipping_preference: 'NO_SHIPPING',
+              user_action: 'PAY_NOW',
+            },
+          },
         },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      metadata: { 
-        userId: userId && userId !== "undefined" ? userId : "guest" 
-      }, 
-      success_url: `${baseUrl}/donate?success=true`,
-      cancel_url: `${baseUrl}/donate?canceled=true`,
+      }),
     });
 
-    res.json({ url: session.url });
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('PayPal create order error:', data);
+      return res.status(500).json({ error: 'Unable to create PayPal order.' });
+    }
+
+    return res.json({
+      orderID: data.id,
+      clientId: process.env.PAYPAL_CLIENT_ID,
+    });
   } catch (error) {
-    console.error("Stripe Session Error:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error('PayPal create order error:', error.message);
+    return res.status(500).json({ error: error.message || 'Unable to create PayPal order.' });
   }
 });
 
-// 2. THE WEBHOOK ROUTE
-// This MUST use express.raw to verify the Stripe signature. 
-// It works now because we placed it before the global express.json() in server.js
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
+router.post('/paypal/capture-order', express.json(), async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body, 
-      sig, 
-      process.env.STRIPE_WEBHOOK_SECRET 
-    );
-  } catch (err) {
-    console.error(`❌ Webhook Signature Verification Failed: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const orderID = req.body?.orderID;
+    const userId = req.body?.userId;
 
-  // Handle successful payment
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const userId = session.metadata.userId;
+    if (!orderID) {
+      return res.status(400).json({ error: 'PayPal order ID is required.' });
+    }
 
-    console.log(`💰 Payment successful: $${session.amount_total / 100} from User: ${userId}`);
-    
-    // Update the database if the user was logged in
-    if (userId && userId !== "guest") {
+    const accessToken = await getPaypalAccessToken();
+    const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('PayPal capture error:', data);
+      return res.status(500).json({ error: 'Unable to capture PayPal order.' });
+    }
+
+    const capture = data.purchase_units?.[0]?.payments?.captures?.[0];
+    const payerEmail = data.payer?.email_address || null;
+    const amountValue = Number.parseFloat(capture?.amount?.value || data.purchase_units?.[0]?.amount?.value || '0');
+    const customId = data.purchase_units?.[0]?.custom_id;
+    const donationUserId = userId || (customId && customId !== 'guest' ? customId : null);
+
+    if (donationUserId) {
       try {
         await prisma.user.update({
-          where: { id: userId },
-          data: { 
-            isSupporter: true,
-            donations: {
-              create: {
-                amount: session.amount_total / 100,
-                stripeSessionId: session.id,
-                status: "completed"
-              }
-            }
-          }
+          where: { id: donationUserId },
+          data: { isSupporter: true },
         });
-        console.log(`✅ Database updated for Supporter: ${userId}`);
       } catch (dbError) {
-        console.error("❌ Database Update Error:", dbError.message);
+        console.error('PayPal supporter update error:', dbError.message);
       }
-    } else {
-      console.log("ℹ️ Anonymous donation received. No user profile to update.");
     }
-  }
 
-  res.json({ received: true });
+    return res.json({
+      message: 'Donation successful',
+      orderID: data.id,
+      transactionID: capture?.id || null,
+      amount: amountValue,
+      payerEmail,
+      status: capture?.status || data.status,
+    });
+  } catch (error) {
+    console.error('PayPal capture error:', error.message);
+    return res.status(500).json({ error: error.message || 'Unable to capture PayPal order.' });
+  }
 });
 
 module.exports = router;

@@ -157,3 +157,63 @@
 @media (max-width: 900px) {
   .donate-container, .donate-page { padding-left: 12px !important; padding-right: 12px !important; }
 }
+
+
+.status-banner {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border-radius: 1rem;
+}
+
+.status-banner.success {
+  background: #eaf8ef;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.status-banner.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-banner h2,
+.status-banner p {
+  margin: 0;
+}
+
+.donate-button-shell {
+  position: relative;
+  width: 100%;
+}
+
+.donate-button-shell .confirm-button {
+  position: relative;
+  z-index: 1;
+}
+
+.paypal-button-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.paypal-button-overlay.is-active {
+  pointer-events: auto;
+}
+
+.paypal-button-overlay > div,
+.paypal-button-overlay iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.donate-button-shell.is-loading .paypal-button-overlay {
+  pointer-events: none;
+}
+

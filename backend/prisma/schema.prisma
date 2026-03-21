@@ -132,15 +132,16 @@ model Block {
 }
 
 model Donation {
-  id              String   @id @default(uuid())
-  amount          Float
-  currency        String   @default("USD")
-  status          String   @default("completed")
-  stripeSessionId String   @unique
-  createdAt       DateTime @default(now())
+  id                  String   @id @default(uuid())
+  amount              Float
+  currency            String   @default("USD")
+  status              String   @default("completed")
+  paypalTransactionId String   @unique
+  payerEmail          String?
+  createdAt           DateTime @default(now())
 
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }

@@ -1,108 +1,211 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import Header from "./Header";
 import { BACKEND_URL } from "../api";
 import "../styles/Donate.css";
 
+const PAYPAL_SDK_CURRENCY = "USD";
+const PAYPAL_CLIENT_ID = "AYdHO3SkFeCC3TW-i3t4AXQUFamuEG_AEYvU6A8SVZ_UHlL-olRTpYggqzeIOkMVaLecb_fOd9MMy9Rv";
+const PAYPAL_BUTTON_CONTAINER_ID = "paypal-donation-button-container";
+const presets = [5, 10, 25, 50];
+
 const Donate = () => {
   const [amount, setAmount] = useState(10);
   const [customAmount, setCustomAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchParams] = useSearchParams();
-  
-  // Access logged-in user
+  const [sdkReady, setSdkReady] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("");
+  const paypalButtonsRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id || user?._id || null;
 
-  // Check URL for status messages from Stripe
-  const isSuccess = searchParams.get("success") === "true";
-  const isCanceled = searchParams.get("canceled") === "true";
+  const finalAmountNumber = useMemo(() => {
+    const selectedAmount = customAmount || amount;
+    const parsedAmount = Number.parseFloat(selectedAmount);
+    return Number.isFinite(parsedAmount) ? parsedAmount : NaN;
+  }, [amount, customAmount]);
 
-  const presets = [5, 10, 25, 50];
-
-  const handleDonate = async () => {
-    const finalAmount = customAmount || amount;
-    
-    if (!finalAmount || finalAmount < 1) {
-      alert("Please enter a valid amount.");
-      return;
+  useEffect(() => {
+    if (window.paypal) {
+      setSdkReady(true);
+      return undefined;
     }
 
-    setLoading(true);
-    try {
-      const response = await axios.post(`${BACKEND_URL}/api/donate`, {
-        amount: finalAmount,
-        userId: user?.id || user?._id || null 
-      });
+    const existingScript = document.querySelector('script[data-paypal-sdk="true"]');
 
-      if (response.data.url) {
-        window.location.href = response.data.url;
-      }
-    } catch (err) {
-      console.error("Donation error:", err);
-      alert("There was an issue connecting to the payment gateway. Please try again.");
-    } finally {
+    if (existingScript) {
+      const handleLoad = () => setSdkReady(true);
+      existingScript.addEventListener("load", handleLoad, { once: true });
+      return () => existingScript.removeEventListener("load", handleLoad);
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=${PAYPAL_SDK_CURRENCY}`;
+    script.async = true;
+    script.dataset.paypalSdk = "true";
+    script.onload = () => setSdkReady(true);
+    script.onerror = () => {
+      setStatusMessage("Unable to load PayPal checkout. Please refresh and try again.");
+      setStatusType("error");
+    };
+    document.body.appendChild(script);
+
+    return undefined;
+  }, []);
+
+  useEffect(() => {
+    const container = document.getElementById(PAYPAL_BUTTON_CONTAINER_ID);
+
+    if (!sdkReady || !window.paypal || !container) {
+      return undefined;
+    }
+
+    container.innerHTML = "";
+    paypalButtonsRef.current?.close?.();
+    paypalButtonsRef.current = null;
+
+    const buttons = window.paypal.Buttons({
+      style: {
+        layout: "vertical",
+        color: "gold",
+        shape: "rect",
+        label: "paypal",
+        height: 48,
+      },
+      createOrder: async () => {
+        if (!Number.isFinite(finalAmountNumber) || finalAmountNumber < 1) {
+          setStatusMessage("Please enter a valid amount.");
+          setStatusType("error");
+          throw new Error("Invalid donation amount.");
+        }
+
+        setLoading(true);
+        setStatusMessage("");
+        setStatusType("");
+
+        const response = await axios.post(`${BACKEND_URL}/api/paypal/create-order`, {
+          amount: finalAmountNumber,
+          userId,
+        });
+
+        if (!response.data?.orderID) {
+          throw new Error("PayPal order setup failed.");
+        }
+
+        return response.data.orderID;
+      },
+      onApprove: async (data) => {
+        try {
+          const response = await axios.post(`${BACKEND_URL}/api/paypal/capture-order`, {
+            orderID: data.orderID,
+            userId,
+          });
+
+          setStatusMessage(response.data?.message || "Donation successful");
+          setStatusType("success");
+        } catch (error) {
+          console.error("PayPal capture error:", error);
+          setStatusMessage("Unable to capture your donation. Please try again.");
+          setStatusType("error");
+        } finally {
+          setLoading(false);
+        }
+      },
+      onCancel: () => {
+        setStatusMessage("Payment was not completed. If you had trouble, please contact support.");
+        setStatusType("error");
+        setLoading(false);
+      },
+      onError: (error) => {
+        console.error("PayPal checkout error:", error);
+        setStatusMessage("There was an issue connecting to PayPal. Please try again.");
+        setStatusType("error");
+        setLoading(false);
+      },
+    });
+
+    paypalButtonsRef.current = buttons;
+    buttons.render(`#${PAYPAL_BUTTON_CONTAINER_ID}`).catch((error) => {
+      console.error("PayPal button render error:", error);
+      setStatusMessage("Unable to initialize PayPal checkout. Please try again.");
+      setStatusType("error");
       setLoading(false);
-    }
-  };
+    });
+
+    return () => {
+      paypalButtonsRef.current?.close?.();
+      paypalButtonsRef.current = null;
+      container.innerHTML = "";
+    };
+  }, [sdkReady, finalAmountNumber, userId]);
 
   return (
     <div className="donate-page" style={{ fontFamily: "inherit" }}>
       <Header />
       <div className="donate-container" style={{ fontFamily: "inherit" }}>
-        
-        {/* Success Message Banner */}
-        {isSuccess && (
-          <div className="status-banner success">
-            <h2>🎉 Thank You!</h2>
-            <p>Your support helps keep Shine running. Check your email for a receipt.</p>
-          </div>
-        )}
-
-        {/* Cancel Message Banner */}
-        {isCanceled && (
-          <div className="status-banner error">
-            <p>Payment was not completed. If you had trouble, please contact support.</p>
+        {statusMessage && (
+          <div className={`status-banner ${statusType || "success"}`}>
+            {statusType === "success" ? <h2>🎉 Thank You!</h2> : null}
+            <p>{statusMessage}</p>
           </div>
         )}
 
         <h1>Support Shine</h1>
         <p className="subtitle">Help us keep the community running and growing.</p>
-        
+
         <div className="donation-card">
           <h3>Choose an amount</h3>
           <div className="preset-grid">
             {presets.map((val) => (
-              <button 
-                key={val} 
-                className={amount === val ? "active" : ""} 
-                onClick={() => {setAmount(val); setCustomAmount("");}}
-                style={{ fontFamily: "inherit" }} // Forces website font on mobile buttons
+              <button
+                key={val}
+                className={amount === val ? "active" : ""}
+                onClick={() => {
+                  setAmount(val);
+                  setCustomAmount("");
+                }}
+                style={{ fontFamily: "inherit" }}
+                type="button"
               >
                 ${val}
               </button>
             ))}
           </div>
-          
-          <input 
-            type="number" 
-            placeholder="Custom Amount ($)" 
+
+          <input
+            type="number"
+            placeholder="Custom Amount ($)"
             value={customAmount}
-            onChange={(e) => {setCustomAmount(e.target.value); setAmount(null);}}
+            onChange={(e) => {
+              setCustomAmount(e.target.value);
+              setAmount(null);
+            }}
             className="custom-input"
-            style={{ fontFamily: "inherit" }} // Forces website font on mobile input
+            style={{ fontFamily: "inherit" }}
           />
 
-          <button 
-            className="confirm-button" 
-            onClick={handleDonate}
-            disabled={loading}
-            style={{ fontFamily: "inherit" }} // Forces website font on mobile confirm
-          >
-            {loading ? "Processing..." : `Donate $${customAmount || amount}`}
-          </button>
+          <div className={`donate-button-shell ${loading ? "is-loading" : ""} ${sdkReady ? "is-ready" : ""}`}>
+            <button
+              className="confirm-button"
+              disabled={loading || !sdkReady}
+              style={{ fontFamily: "inherit" }}
+              type="button"
+            >
+              {loading
+                ? "Processing..."
+                : !sdkReady
+                  ? "Loading PayPal..."
+                  : `Donate $${Number.isFinite(finalAmountNumber) ? finalAmountNumber : customAmount || amount}`}
+            </button>
+            <div
+              id={PAYPAL_BUTTON_CONTAINER_ID}
+              className={`paypal-button-overlay ${sdkReady && !loading ? "is-active" : ""}`}
+              aria-hidden="true"
+            />
+          </div>
 
-          <p className="security-note">🔒 Secure transaction via Stripe</p>
+          <p className="security-note">🔒 Secure transaction via PayPal</p>
         </div>
 
         <div className="impact-section">

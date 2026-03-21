@@ -44,8 +44,7 @@ app.use(
   })
 );
 
-// ================= 2. STRIPE WEBHOOK (CRITICAL ORDER) =================
-// This must come BEFORE express.json() so the webhook can receive raw bodies
+// ================= 2. PAYMENT ROUTES =================
 const paymentRoutes = require('./routes/payment');
 app.use('/api', paymentRoutes);
 
