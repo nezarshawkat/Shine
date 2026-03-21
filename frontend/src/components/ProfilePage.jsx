@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header.jsx";
 import "../styles/ProfilePage.css";
 import API from "../api.js";
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import { API_BASE_URL, buildMediaUrl } from "../api";
 
 import OpinionPost from "./posts/opinionPost.jsx";
 import AnalysisPost from "./posts/analysisPost.jsx";
@@ -105,9 +105,7 @@ export default function ProfilePage({
   const [fetchedArticles, setFetchedArticles] = useState([]);
 
   const getImageUrl = (img) => {
-    if (!img) return profileDefault;
-    if (img.startsWith("blob:") || img.startsWith("http")) return img;
-    return `${BACKEND_URL}${img}`;
+    return buildMediaUrl(img) || profileDefault;
   };
 
   const [editedName, setEditedName] = useState(user?.name || "");

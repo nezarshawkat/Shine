@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { adminRequest } from "../adminApi";
-import API, { BACKEND_URL } from "../../api";
+import API, { buildMediaUrl } from "../../api";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -36,7 +36,7 @@ export default function Events() {
       });
       const mediaPath = data.media || data.image || "";
       setForm((f) => ({ ...f, image: mediaPath }));
-      setImagePreview(mediaPath ? `${BACKEND_URL}${mediaPath}` : "");
+      setImagePreview(buildMediaUrl(mediaPath));
     } catch (err) {
       setError(err?.response?.data?.error || "Media upload failed");
       setForm((f) => ({ ...f, image: "" }));
@@ -134,9 +134,7 @@ export default function Events() {
                   (eventItem.image.match(/\.(mp4|webm|ogg)$/i) ? (
                     <video
                     src={
-                      eventItem.image.startsWith("http")
-                        ? eventItem.image
-                        : `${BACKEND_URL}${eventItem.image}`
+                      buildMediaUrl(eventItem.image)
                     }
                     style={{
                       width: 72,
@@ -149,9 +147,7 @@ export default function Events() {
                   ) : (
                   <img
                     src={
-                      eventItem.image.startsWith("http")
-                        ? eventItem.image
-                        : `${BACKEND_URL}${eventItem.image}`
+                      buildMediaUrl(eventItem.image)
                     }
                     style={{
                       width: 72,

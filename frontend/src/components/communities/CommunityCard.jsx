@@ -1,9 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_W, BASE_H, R } from "../../../../backend/models/commConfig.js";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
-
-const ASSET_URL = BACKEND_URL;
+import { buildMediaUrl } from "../../api";
 
 export default function CommunityCard({ community, feedWidth = BASE_W, onintrestClick }) {
   const navigate = useNavigate();
@@ -26,8 +24,7 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
   const rawInterests = intrests ?? interests ?? keywords ?? [];
 
   const getFullUrl = (path) => {
-    if (!path) return "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=600";
-    return path.startsWith("http") ? path : `${ASSET_URL}${path}`;
+    return buildMediaUrl(path) || "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=600";
   };
 
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;

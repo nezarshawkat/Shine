@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
-const path = require("path");
 const { Server } = require("socket.io");
 const redis = require("redis");
 const prisma = require("./prisma.js");
@@ -51,11 +50,7 @@ app.use('/api', paymentRoutes);
 // ================= 3. GLOBAL MIDDLEWARE =================
 app.use(express.json());
 
-// ================= 4. STATIC FILES =================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
-
-// ================= 5. REDIS SETUP =================
+// ================= 4. REDIS SETUP =================
 let redisClient = null;
 if (process.env.ENABLE_REDIS_CACHE === "true") {
   (async () => {
@@ -70,7 +65,7 @@ if (process.env.ENABLE_REDIS_CACHE === "true") {
   })();
 }
 
-// ================= 6. SOCKET.IO =================
+// ================= 5. SOCKET.IO =================
 let io = null;
 if (process.env.ENABLE_SOCKET_IO === "true") {
   // Updated socket cors to use the same logic or allow all for simplicity in testing
@@ -87,7 +82,7 @@ if (process.env.ENABLE_SOCKET_IO === "true") {
   });
 }
 
-// ================= 7. ROUTES =================
+// ================= 6. ROUTES =================
 app.use("/api/users", require("./routes/auth.routes.js"));
 app.use("/api/users", require("./routes/users.js"));
 app.use("/api/follow", require("./routes/follow"));

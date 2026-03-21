@@ -6,7 +6,7 @@ const { OAuth2Client } = require("google-auth-library");
 const prisma = require("../prisma");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const DEFAULT_PROFILE_IMAGE = "/uploads/profileDefault.svg";
+const DEFAULT_PROFILE_IMAGE = null;
 
 // Helper to include common user relations
 const userIncludeOptions = {

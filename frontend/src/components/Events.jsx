@@ -2,15 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
 import "../styles/events.css";
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import { API_BASE_URL, buildMediaUrl } from "../api";
 
 const isVideoMedia = (url = "") => /\.(mp4|webm|ogg)$/i.test(url);
-
-// Helper function to construct the full URL for images/videos
-const buildMediaUrl = (path) => {
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${BACKEND_URL}${path}`;
-};
 
 export default function Events() {
   const [events, setEvents] = useState([]);

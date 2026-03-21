@@ -2,8 +2,7 @@ import axios from "axios";
 
 const envBackendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-// If no explicit backend URL is provided, keep requests relative so Vite proxy can route
-// both API and media (/uploads) during local development.
+// If no explicit backend URL is provided, keep API requests relative so the Vite proxy can route them locally.
 export const BACKEND_URL = envBackendUrl;
 export const API_BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 

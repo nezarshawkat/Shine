@@ -1,17 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma.js");
-const multer = require("multer");
 const jwt = require("jsonwebtoken");
+const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
 
 const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
-
-// ================== MULTER SETUP ==================
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-const upload = multer({ storage });
 
 // ================== HELPERS ==================
 
@@ -180,7 +173,7 @@ router.get("/trends", async (req, res) => {
 });
 
 // ================== CREATE POST ==================
-router.post("/", upload.array("files"), async (req, res) => {
+router.post("/", memoryUpload.array("files"), async (req, res) => {
   const redisClient = req.app.get("redisClient");
   try {
     const { text, type, authorId, communityId, pollOptions, keywords, sources, parentId } = req.body;
@@ -190,6 +183,8 @@ router.post("/", upload.array("files"), async (req, res) => {
     const parsedKeywords = typeof keywords === "string" ? JSON.parse(keywords) : keywords || [];
     const parsedSources = typeof sources === "string" ? JSON.parse(sources) : sources || [];
     const parsedPollOptions = typeof pollOptions === "string" ? JSON.parse(pollOptions) : pollOptions || [];
+
+    const uploadedMedia = await uploadFilesToSupabase(req.files || [], "post");
 
     const post = await prisma.post.create({
       data: {
@@ -201,12 +196,12 @@ router.post("/", upload.array("files"), async (req, res) => {
         keywords: parsedKeywords,
         sources: { create: parsedSources },
         media: {
-          create: req.files?.map((f) => ({
-            url: `/uploads/${f.filename}`,
-            type: f.mimetype.startsWith("image") ? "image" : "video",
-            size: f.size,
+          create: uploadedMedia.map((asset, index) => ({
+            url: asset.url,
+            type: req.files[index].mimetype.startsWith("image") ? "image" : "video",
+            size: req.files[index].size,
             uploaderId: authorId,
-          })) || [],
+          })),
         },
         pollOptions: type === "poll" ? {
           create: parsedPollOptions.map((o) => ({ text: o.text || o })),

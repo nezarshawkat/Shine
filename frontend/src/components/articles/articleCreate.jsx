@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../AuthProvider.jsx";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { API_BASE_URL, BACKEND_URL, buildMediaUrl } from "../../api";
 
 
 const ArticleForm = () => {
@@ -152,7 +152,7 @@ const ArticleForm = () => {
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 {existingMedia.map((m) => (
                   <div key={m.id} style={{ position: "relative" }}>
-                    <img src={`${BACKEND_URL}${m.url}`} alt="preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "6px" }} />
+                    <img src={buildMediaUrl(m.url)} alt="preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "6px" }} />
                     <button type="button" onClick={() => handleRemoveExistingMedia(m.id)} style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ff4d4d", color: "#fff", border: "none", borderRadius: "50%", cursor: "pointer", width: "22px", height: "22px", fontWeight: "bold" }}>×</button>
                   </div>
                 ))}

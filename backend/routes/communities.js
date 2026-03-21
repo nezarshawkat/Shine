@@ -1,27 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-// ================== UPLOAD SETUP ==================
-const uploadDir = "public/uploads/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage });
+const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
 
 // ================== GENERAL ROUTES ==================
 
@@ -76,7 +56,7 @@ router.get("/:id", async (req, res) => {
  */
 router.post(
   "/",
-  upload.fields([
+  memoryUpload.fields([
     { name: "icon", maxCount: 1 },
     { name: "banner", maxCount: 1 },
   ]),
@@ -99,8 +79,10 @@ router.post(
         }
       }
 
-      const iconPath = req.files?.["icon"] ? `/uploads/${req.files["icon"][0].filename}` : null;
-      const bannerPath = req.files?.["banner"] ? `/uploads/${req.files["banner"][0].filename}` : null;
+      const iconUpload = req.files?.["icon"]?.[0] ? await uploadBufferToSupabase(req.files["icon"][0], "community") : null;
+      const bannerUpload = req.files?.["banner"]?.[0] ? await uploadBufferToSupabase(req.files["banner"][0], "community") : null;
+      const iconPath = iconUpload?.url || null;
+      const bannerPath = bannerUpload?.url || null;
 
       const newCommunity = await prisma.community.create({
         data: {
@@ -128,14 +110,20 @@ router.post(
 /**
  * UPDATE Community General Settings
  */
-router.put("/:id", upload.fields([{ name: "icon", maxCount: 1 }, { name: "banner", maxCount: 1 }]), async (req, res) => {
+router.put("/:id", memoryUpload.fields([{ name: "icon", maxCount: 1 }, { name: "banner", maxCount: 1 }]), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, slogan, discription, status } = req.body;
 
     const updateData = { name, slogan, discription, status };
-    if (req.files?.["icon"]) updateData.icon = `/uploads/${req.files["icon"][0].filename}`;
-    if (req.files?.["banner"]) updateData.banner = `/uploads/${req.files["banner"][0].filename}`;
+    if (req.files?.["icon"]?.[0]) {
+      const { url } = await uploadBufferToSupabase(req.files["icon"][0], "community");
+      updateData.icon = url;
+    }
+    if (req.files?.["banner"]?.[0]) {
+      const { url } = await uploadBufferToSupabase(req.files["banner"][0], "community");
+      updateData.banner = url;
+    }
 
     const updated = await prisma.community.update({
       where: { id },

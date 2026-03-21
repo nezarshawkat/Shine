@@ -5,7 +5,7 @@ import EarthIcon from "../assets/Earth.svg";
 import LockIcon from "../assets/Lock.svg";
 import { AuthContext } from "./AuthProvider.jsx";
 import profileDefault from "../assets/profileDefault.svg";
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL, buildMediaUrl } from "../api";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";
@@ -153,7 +153,7 @@ export default function CommunityForm() {
           <h1 style={{ fontSize: 32, fontWeight: 700, color: PRIMARY, margin: 0 }}>Create a community</h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src={user?.image || profileDefault} width={40} height={40} style={{ borderRadius: "50%", objectFit: 'cover' }} />
+          <img src={buildMediaUrl(user?.image) || profileDefault} width={40} height={40} style={{ borderRadius: "50%", objectFit: 'cover' }} />
           <span style={{ fontSize: 16, fontWeight: 500 }}>{user?.name || "User"}</span>
         </div>
       </div>

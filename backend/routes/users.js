@@ -3,21 +3,8 @@ const jwt = require("jsonwebtoken");
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
-const multer = require("multer");
-const path = require("path");
-const DEFAULT_PROFILE_IMAGE = "/uploads/profileDefault.svg";
-
-// ---------------- MULTER CONFIGURATION ----------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); 
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage: storage });
+const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
+const DEFAULT_PROFILE_IMAGE = null;
 
 // ---------------- TEST ROUTE ----------------
 router.get("/test", (req, res) => {
@@ -176,7 +163,7 @@ router.get("/:userId/communities", async (req, res) => {
 });
 
 // ---------------- UPDATE USER PROFILE & SETTINGS ----------------
-router.put("/:userId", upload.single("image"), async (req, res) => {
+router.put("/:userId", memoryUpload.single("image"), async (req, res) => {
   const { userId } = req.params;
   const { name, username, description, email } = req.body;
   
@@ -188,7 +175,8 @@ router.put("/:userId", upload.single("image"), async (req, res) => {
     if (email) updateData.email = email;
 
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      const { url } = await uploadBufferToSupabase(req.file, "profile");
+      updateData.image = url;
     }
 
     const updatedUser = await prisma.user.update({

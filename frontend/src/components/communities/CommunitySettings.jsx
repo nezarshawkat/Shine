@@ -2,11 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../AuthProvider.jsx";
 import "../../styles/CommunitySettings.css";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { API_BASE_URL, buildMediaUrl } from "../../api";
 
 const API_URL = API_BASE_URL;
-const ASSET_URL = BACKEND_URL;
-
 // --- TOAST COMPONENT ---
 function Toast({ message, type = "success", action, onClose }) {
   useEffect(() => {
@@ -74,9 +72,7 @@ export default function CommunitySettings({ community, initialSection = "General
   const [bannerFile, setBannerFile] = useState(null);
   
   const getFullUrl = (path, fallback) => {
-    if (!path) return fallback;
-    if (path.startsWith("blob:")) return path;
-    return path.startsWith("http") ? path : `${ASSET_URL}${path}`;
+    return buildMediaUrl(path) || fallback;
   };
 
   const [previewIcon, setPreviewIcon] = useState(getFullUrl(community?.icon, "/default-comm.png"));

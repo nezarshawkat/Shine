@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import magnifier from "../../assets/magnifier.svg";
 import closeIcon from "../../assets/close.svg";
 import { AuthContext } from "../AuthProvider.jsx";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
-
-const ASSET_URL = BACKEND_URL;
+import { API_BASE_URL, buildMediaUrl } from "../../api";
 
 const LeftBarC = ({ 
   searchText, 
@@ -25,7 +23,7 @@ const LeftBarC = ({
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const response = await fetch(`${ASSET_URL}/api/analytics/trending-searches`);
+        const response = await fetch(`${API_BASE_URL}/analytics/trending-searches`);
         const data = await response.json();
         if (data.topSearches) setTrendingTopics(data.topSearches.slice(0, 10));
       } catch (err) {
@@ -49,8 +47,7 @@ const LeftBarC = ({
   };
 
   const getFullUrl = (path) => {
-    if (!path) return "https://via.placeholder.com/41";
-    return path.startsWith("http") ? path : `${ASSET_URL}${path}`;
+    return buildMediaUrl(path) || "https://via.placeholder.com/41";
   };
 
   /* ============================================================

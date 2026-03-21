@@ -1,4 +1,4 @@
-import { API_BASE_URL, BACKEND_URL } from "../api";
+import { API_BASE_URL, buildMediaUrl } from "../api";
 // src/components/Header.jsx
 import React, { useContext, useState, useEffect } from "react";
 import "../styles/Header.css";
@@ -26,11 +26,7 @@ function Header() {
 
   // Helper function to handle the image path
   const getImageUrl = (img) => {
-    if (!img) return profileDefault;
-    // If it's already a full URL (like from a Google login) or a blob preview
-    if (img.startsWith("http") || img.startsWith("blob:")) return img;
-    // Prepend backend URL to the relative path saved in DB
-    return `${BACKEND_URL}${img}`;
+    return buildMediaUrl(img) || profileDefault;
   };
 
   return (

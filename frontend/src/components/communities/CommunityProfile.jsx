@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useContext,
 } from "react";
-import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { API_BASE_URL, buildMediaUrl } from "../../api";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SearchContext } from "../../searchContext.jsx";
@@ -29,8 +29,6 @@ import profileDefault from "../../assets/profileDefault.svg";
 import "../../styles/Communityprofile.css";
 
 const API_URL = API_BASE_URL;
-const ASSET_URL = BACKEND_URL;
-
 export default function CommunityProfile() {
   const { communityId } = useParams();
   const navigate = useNavigate();
@@ -69,9 +67,7 @@ export default function CommunityProfile() {
   const settingsPopupRef = useRef(null);
 
   const getFullUrl = (path, fallback) => {
-    if (!path) return fallback;
-    if (path.startsWith("blob:")) return path;
-    return path.startsWith("http") ? path : `${ASSET_URL}${path}`;
+    return buildMediaUrl(path) || fallback;
   };
 
   const fetchCommunity = async () => {

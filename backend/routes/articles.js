@@ -1,30 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 const auth = require("../middleware/auth");
-
-// ================== UPLOAD SETUP ==================
-// Using 'public/uploads/' to match your community settings and allow static serving
-const uploadDir = "public/uploads/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Adding a small random suffix to prevent name collisions
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e4);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage });
+const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
 
 /* =====================================================
     GET ALL ARTICLES (PAGINATED FEED)
@@ -139,7 +117,7 @@ router.post("/apply", auth, async (req, res) => {
 /* =====================================================
     CREATE ARTICLE (With Multer & JSON Parsing)
 ===================================================== */
-router.post("/", upload.array("media"), async (req, res) => {
+router.post("/", memoryUpload.array("media"), async (req, res) => {
   try {
     const { title, content, authorId, sources } = req.body;
 
@@ -155,18 +133,20 @@ router.post("/", upload.array("media"), async (req, res) => {
       return res.status(403).json({ error: "Author is not authorized to post articles yet" });
     }
 
+    const uploadedMedia = await uploadFilesToSupabase(req.files || [], "article");
+
     const newArticle = await prisma.article.create({
       data: {
         title,
         content,
         authorId,
         media: {
-          create: req.files?.map((f) => ({
-            url: `/uploads/${f.filename}`,
-            type: f.mimetype.startsWith("image") ? "image" : "video",
-            size: f.size,
+          create: uploadedMedia.map((asset, index) => ({
+            url: asset.url,
+            type: req.files[index].mimetype.startsWith("image") ? "image" : "video",
+            size: req.files[index].size,
             uploaderId: authorId,
-          })) || [],
+          })),
         },
         sources: {
           create: parsedSources.map((s) => ({ name: s.name, link: s.link })),
@@ -191,7 +171,7 @@ router.post("/", upload.array("media"), async (req, res) => {
 /* =====================================================
     EDIT ARTICLE (PUT /api/articles/:id)
 ===================================================== */
-router.put("/:id", upload.array("media"), async (req, res) => {
+router.put("/:id", memoryUpload.array("media"), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content, sources, removeMediaIds } = req.body;
@@ -210,6 +190,8 @@ router.put("/:id", upload.array("media"), async (req, res) => {
         await tx.media.deleteMany({ where: { id: { in: idsArray } } });
       }
 
+      const uploadedMedia = await uploadFilesToSupabase(req.files || [], "article");
+
       return await tx.article.update({
         where: { id },
         data: {
@@ -218,11 +200,11 @@ router.put("/:id", upload.array("media"), async (req, res) => {
           sources: sources ? {
             create: parsedSources.map((s) => ({ name: s.name, link: s.link })),
           } : undefined,
-          media: req.files?.length > 0 ? {
-            create: req.files.map((f) => ({
-              url: `/uploads/${f.filename}`,
-              type: f.mimetype.startsWith("image") ? "image" : "video",
-              size: f.size,
+          media: uploadedMedia.length > 0 ? {
+            create: uploadedMedia.map((asset, index) => ({
+              url: asset.url,
+              type: req.files[index].mimetype.startsWith("image") ? "image" : "video",
+              size: req.files[index].size,
               uploaderId: req.body.authorId, 
             })),
           } : undefined,
