@@ -1,83 +1,83 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import Header from "./Header";
-import "../styles/LandingPage.css"; // Make sure to import the CSS we created
-
-// Example images (replace with your actual assets)
+import "../styles/LandingPage.css";
+import heroImg from "../assets/hero.jpg";
 import missionImg from "../assets/mission.png";
 import visionImg from "../assets/vision.png";
-import service1 from "../assets/service1.png";
-import service2 from "../assets/service2.png";
-import service3 from "../assets/service3.png";
-import service4 from "../assets/service4.png";
 import shineLogo from "../assets/shineLogo.png";
 
+const activities = [
+  "We organize events, workshops, and training sessions to help individuals and organizations achieve their goals.",
+  "We collaborate with industry leaders to drive innovation and create meaningful impact.",
+  "We build communities to foster a supportive network of like-minded individuals.",
+  "We conduct research to provide insights and solutions for real-world challenges.",
+];
+
+const testimonials = [
+  '"Shine has transformed the way I approach my projects, providing invaluable resources and support." - 1',
+  '"The collaborative environment at Shine has been instrumental in my professional growth." - 2',
+  '"Thanks to Shine, I\'ve been able to turn my ideas into successful ventures." - 3',
+  '"Shine\'s commitment to innovation is truly inspiring and has helped me achieve my goals." - 4',
+];
+
 export default function LandingPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="landing-page">
-      <Header />
-
-      {/* Hero section */}
-      <section className="h-screen flex flex-col justify-center items-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-        <h1 className="text-5xl font-bold mb-4">A place for discussion</h1>
-        <p className="text-lg mb-6 max-w-xl text-center">
-          Empowering people through discussion, innovation, and action.
-        </p>
-        <button className="bg-white text-blue-600 font-semibold px-6 py-3 rounded hover:bg-blue-100">
-          Be a member
-        </button>
-      </section>
-
-      {/* Divider */}
-      <div className="divider"></div>
-
-      {/* Banner 1: What is Shine? */}
-      <section className="banner-hero">
-        <h2>What is Shine?</h2>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce
-          tristique justo a nulla consectetur, non aliquam urna facilisis.
-        </p>
-      </section>
-
-      {/* Divider */}
-      <div className="divider"></div>
-
-      {/* Banner 2: What do we do? */}
-      <section className="banner-do">
-        <h2>What do we do?</h2>
-        <div className="services">
-          <div className="service">
-            <img src={service1} alt="Service 1" />
-            <p>Lorem ipsum dolor sit amet</p>
-          </div>
-          <div className="service">
-            <img src={service2} alt="Service 2" />
-            <p>Lorem ipsum dolor sit amet</p>
-          </div>
-          <div className="service">
-            <img src={service3} alt="Service 3" />
-            <p>Lorem ipsum dolor sit amet</p>
-          </div>
-          <div className="service">
-            <img src={service4} alt="Service 4" />
-            <p>Lorem ipsum dolor sit amet</p>
-          </div>
+      <section className="hero-section" style={{ backgroundImage: `url(${heroImg})` }}>
+        <div className="hero-overlay" />
+        <div className="hero-content">
+          <span className="hero-eyebrow">Shine Community</span>
+          <h1>A place for innovation, collaboration, and action.</h1>
+          <p>
+            Join a forward-thinking platform where ideas become initiatives and
+            communities build meaningful change together.
+          </p>
+          <button
+            type="button"
+            className="hero-button"
+            onClick={() => navigate("/forum")}
+          >
+            Explore
+          </button>
         </div>
       </section>
 
-      {/* Divider */}
       <div className="divider"></div>
 
-      {/* Banner 3: Mission & Vision */}
+      <section className="banner-hero">
+        <h2>What is Shine?</h2>
+        <p>
+          Shine is a forward-thinking platform designed to foster innovation and
+          collaboration among global communities. With a focus on empowerment
+          and technology, Shine aims to bridge the gap between ideas and
+          implementation, offering tools and resources to turn visions into
+          reality.
+        </p>
+      </section>
+
+      <div className="divider"></div>
+
+      <section className="banner-do">
+        <h2>What We Do</h2>
+        <ul className="activities-list">
+          {activities.map((activity) => (
+            <li key={activity}>{activity}</li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="divider"></div>
+
       <section className="banner-mv">
         <div className="group">
           <div className="text-group">
             <h3>Our Mission</h3>
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus
-              lacinia odio vitae vestibulum vestibulum.
+              To empower communities through innovation and collaboration,
+              enabling them to make a positive impact on the world.
             </p>
           </div>
           <img src={missionImg} alt="Mission" />
@@ -87,43 +87,36 @@ export default function LandingPage() {
           <div className="text-group">
             <h3>Our Vision</h3>
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus
-              lacinia odio vitae vestibulum vestibulum.
+              To become a global leader in fostering innovation and
+              collaboration, driving positive change across industries and
+              communities.
             </p>
           </div>
           <img src={visionImg} alt="Vision" />
         </div>
       </section>
 
-      {/* Divider */}
       <div className="divider"></div>
 
-      {/* Banner 4: From our Members */}
       <section className="banner-members">
-        <h2>From our Members</h2>
+        <h2>Member Quotations</h2>
         <div className="quotes">
-          <div className="quote">
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-          </div>
-          <div className="quote">
-            "Vivamus lacinia odio vitae vestibulum vestibulum."
-          </div>
-          <div className="quote">
-            "Cras ultricies ligula sed magna dictum porta."
-          </div>
-          <div className="quote">
-            "Pellentesque in ipsum id orci porta dapibus."
-          </div>
+          {testimonials.map((quote) => (
+            <blockquote key={quote} className="quote">
+              {quote}
+            </blockquote>
+          ))}
         </div>
       </section>
 
-      {/* Footer */}
       <footer>
         <div className="footer-top">
           <img src={shineLogo} alt="ShineLogo" style={{ width: 200 }} />
-          <div>
+          <div className="footer-center">
             <p className="footer-text">For suggestions and Complaints</p>
-            <Link to="/contact"><button>Contact Us</button></Link>
+            <Link to="/contact">
+              <button type="button">Contact Us</button>
+            </Link>
           </div>
         </div>
         <div className="footer-line"></div>

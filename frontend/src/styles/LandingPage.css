@@ -1,109 +1,141 @@
-/* Global font for Landing Page */
 .landing-page {
   font-family: "Montserrat", sans-serif;
+  color: #1c274c;
+  background-color: #ffffff;
 }
 
-/* =======================
-   Banner 1: Hero / What is Shine?
-======================= */
-.banner-hero {
-  width: 100%;
-  max-width: 1440px;
-  height: auto;
-  background-color: transparent;
-  padding-top: 60px;
-  padding-right: 90px;
-  padding-bottom: 60px;
-  padding-left: 90px; /* ✅ exact 90px left padding */
+.hero-section {
+  position: relative;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;   /* center vertically */
-  align-items: flex-start;   /* align all text to the left */
-  margin: 90 auto;
-  gap: 10px;
-  box-sizing: border-box;    /* ensures padding is included in total width */
-}
-
-.banner-hero h2 {
-  font-size: 84px;          /* ✅ fixed size (was clamp before) */
-  font-weight: 700;
-  color: #1C274C;
-  margin: 0;
-  padding-top: 60px;        /* optional spacing from top inside banner */
-}
-
-.banner-hero p {
-  font-size: 26px;          /* ✅ fixed size */
-  font-weight: 400;
-  color: #1C274C;
-  margin-top: 20px;
-  padding-bottom: 60px;     /* optional space below text */
-  max-width: 800px;
-}
-
-
-/* =======================
- /* =======================
-   Banner 2: What do we do?
-======================= */
-.banner-do {
-  width: 100%;
-  background-color: #f8f8f8;
-  padding: 6vw;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  padding: 120px 8vw;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.55) 48%, rgba(15, 23, 42, 0.25) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  color: #ffffff;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-content h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: 1.05;
+}
+
+.hero-content p {
+  margin: 24px 0 0;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.8;
+  max-width: 580px;
+}
+
+.hero-button {
+  margin-top: 36px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffc847 0%, #ffb703 100%);
+  color: #172554;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 12px 30px rgba(255, 200, 71, 0.28);
+}
+
+.hero-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+
+.divider {
+  width: min(1120px, calc(100% - 64px));
+  height: 1px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent 0%, rgba(28, 39, 76, 0.18) 15%, rgba(28, 39, 76, 0.18) 85%, transparent 100%);
+}
+
+.banner-hero,
+.banner-do,
+.banner-members {
+  width: 100%;
+  padding: 88px 8vw;
   box-sizing: border-box;
 }
 
-.banner-do h2 {
-  font-size: clamp(2rem, 4vw, 57px);
-  font-weight: 500;
-  color: #1C274C;
-  margin-bottom: 60px;
-}
-
-.banner-do .services {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 40px;
-  width: 100%;
-}
-
-.banner-do .service {
-  flex: 1 1 220px;
+.banner-hero {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  gap: 18px;
 }
 
-.banner-do .service img {
-  width: 100%;
-  max-width: 276px;
-  height: auto;
+.banner-hero h2,
+.banner-do h2,
+.banner-members h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  color: #1c274c;
 }
 
-.banner-do .service p {
-  font-size: clamp(1rem, 2vw, 26px, 26px);
-  font-weight: 400;
-  color: #1C274C;
-  margin-top: 10px;
+.banner-hero p {
+  margin: 0;
+  max-width: 860px;
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.9;
+  color: #415070;
 }
 
-/* =======================
-   Banner 3: Mission & Vision
-======================= */
+.banner-do {
+  background: #f8fafc;
+}
+
+.activities-list {
+  max-width: 980px;
+  margin: 32px auto 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 18px;
+  color: #415070;
+  font-size: clamp(1rem, 1.7vw, 1.15rem);
+  line-height: 1.8;
+}
+
 .banner-mv {
   width: 100%;
   background-color: #ffffff;
-  padding: 6vw;
+  padding: 88px 8vw;
   display: flex;
   flex-direction: column;
-  gap: 10vw;
+  gap: 72px;
   box-sizing: border-box;
 }
 
@@ -111,6 +143,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 48px;
   width: 100%;
 }
 
@@ -119,393 +152,143 @@
 }
 
 .banner-mv .text-group {
-  max-width: 500px;
-  text-align: left;
-  padding-right: 20px
+  max-width: 560px;
 }
 
-
 .banner-mv .text-group h3 {
-  font-size: clamp(1.5rem, 3vw, 40px);
-  font-weight: 600;
-  color: #1C274C;
-  margin-bottom: 20px;
-  padding-left: 20px;
+  margin: 0 0 18px;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 700;
+  color: #1c274c;
 }
 
 .banner-mv .text-group p {
-  font-size: clamp(0.9rem, 1.5vw, 18px);
-  line-height: 1.8;
-  color: #5A5A5A;
-  padding-left: 20px;
+  margin: 0;
+  font-size: clamp(1rem, 1.7vw, 1.15rem);
+  line-height: 1.85;
+  color: #415070;
 }
 
 .banner-mv img {
-  width: 50%;
-  min-width: 450px;
+  width: min(44vw, 520px);
+  min-width: 280px;
+  border-radius: 24px;
   height: auto;
   object-fit: cover;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  padding-right: 0px
-
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
 }
 
-
-/* =======================
-   Banner 4: From Our Members
-======================= */
 .banner-members {
-  width: 100%;
-  background-color: #f8f8f8;
-  padding: 6vw;
-  display: flex;
-  flex-direction: column;
-  gap: 45px;
-  box-sizing: border-box;
+  background-color: #f8fafc;
 }
 
-.banner-members h2 {
-  font-size: clamp(1.8rem, 3vw, 40px);
-  font-weight: 500;
-  color: #1C274C;
-  text-align: center;
-  padding-top: 20px;
+.quotes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 36px;
 }
 
-.banner-members .quotes {
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
-  flex-wrap: wrap;
+.quote {
+  margin: 0;
+  padding: 28px;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #1c274c;
+  font-size: clamp(1rem, 1.5vw, 1.08rem);
+  line-height: 1.8;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(28, 39, 76, 0.08);
 }
-
-.banner-members .quote {
-  flex: 1 1 250px;
-  font-size: clamp(0.9rem, 1.5vw, 18px);
-  font-weight: 400;
-  color: #1C274C;
-  background-color: #f3f4f6;
-  padding: 15px 20px;
-  border-radius: 8px;
-  text-align: center;
-}
-
 
 footer {
-  width: 100%; /* full width */
-  background-color: #1C274C;
+  width: 100%;
+  background-color: #1c274c;
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 114px 0px 0px 0px; /* top, right, bottom, left */
+  padding: 80px 8vw 0;
   box-sizing: border-box;
 }
 
-/* ===== TOP SECTION (Logo + Centered Text/Button) ===== */
 footer .footer-top {
   display: flex;
-  justify-content: space-between; /* logo left, text+button center */
-  align-items: center; /* vertical centering */
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* ===== CENTER GROUP (Text + Button) ===== */
 footer .footer-center {
   display: flex;
   flex-direction: column;
-  align-items: center; /* horizontally center */
+  align-items: center;
   text-align: center;
-  gap: 20px; /* space between text and button */
-  flex: 1; /* allow it to take equal space */
-  padding-left: 176px;
+  gap: 20px;
+  flex: 1;
 }
 
-/* ===== TEXT ===== */
 footer .footer-text {
-  font-size: 26px;
+  font-size: 1.25rem;
   font-weight: 400;
   margin: 0;
-  padding-bottom: 10px;
 }
 
-/* ===== BUTTON ===== */
 footer button {
-  background-color: #FFC847;
-  color: #1C274C;
-  font-weight: 500;
-  font-size: 22px;
+  background-color: #ffc847;
+  color: #1c274c;
+  font-weight: 600;
+  font-size: 1rem;
   padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
-/* ===== DIVIDER LINE ===== */
 footer .footer-line {
   width: 100%;
-  border-top: 1px solid white;
-  margin: 53px 0 0 0;
-  padding: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  margin: 40px 0 0;
 }
 
-/* ===== COPYRIGHT TEXT ===== */
 footer .footer-bottom {
   text-align: center;
-  font-size: 19px;
+  font-size: 1rem;
   font-weight: 300;
-  padding: 0px 0;
+  padding: 18px 0;
   width: 100%;
 }
 
-
-/* =======================
-   Footer
-======================= */
-footer {
-  width: 100%; /* full width */
-  background-color: #1C274C;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 114px 0px 0px 0px; /* top, right, bottom, left */
-  box-sizing: border-box;
-}
-
-/* ===== TOP SECTION (Logo + Centered Text/Button) ===== */
-footer .footer-top {
-  display: flex;
-  justify-content: space-between; /* logo left, text+button center */
-  align-items: center; /* vertical centering */
-  width: 100%;
-  padding-left: 176px;
-  box-sizing: border-box;
-  padding-right: 90px;
-}
-
-/* ===== CENTER GROUP (Text + Button) ===== */
-footer .footer-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* horizontally center */
-  text-align: center;
-  gap: 20px; /* space between text and button */
-  flex: 1; /* allow it to take equal space */
-}
-
-/* ===== TEXT ===== */
-footer .footer-text {
-  font-size: 26px;
-  font-weight: 400;
-  padding-right: 176px;
-  margin: 0;
-}
-
-/* ===== BUTTON ===== */
-footer button {
-  background-color: #FFC847;
-  color: #1C274C;
-  font-weight: 500;
-  font-size: 22px;
-  padding-right: 25px;
-  border: none;
-  border-radius: 0px;
-  cursor: pointer;
-}
-
-/* ===== DIVIDER LINE ===== */
-footer .footer-line {
-  width: 100%;
-  border-top: 1px solid #f8f8f8a2;
-  margin: 50px -90 -80 -90;
-  padding: 0;
-}
-
-/* ===== COPYRIGHT TEXT ===== */
-footer .footer-bottom {
-  text-align: center;
-  font-size: 12px;
-  font-weight: 300;
-  padding: 10px 0;
-  width: 100%;
-}
-
-
-
-/* =======================
-   📱 MOBILE STYLES
-======================= */
-@media (max-width: 768px) {
-
-  #discussion-title {
-    text-align: center; /* center title on mobile */
- 
-}
-  .banner-hero {
-    padding: 20px 20px;
-    margin: 0 auto;
-    padding-bottom: 10px;
-    align-items: center; /* center text on mobile */
-}
-  /* Example 1: Adjust hero banner text */
-  .banner-hero h2 {
-    font-size: 37px;
-    text-align: center;
-    max-width: 100%;
-    padding-top: 20%;
-    padding-bottom: 0px;
-  
-  }
-
-  .banner-hero p {
-    font-size: 16px;
-    text-align: center;
-    max-width: 100%;
-    margin: 0 auto;
-    padding-bottom: 20%;
-    padding-top: 20px;
-  }
-
-  /* Example 2: Stack services vertically */
-  .banner-do .services {
-    flex-direction: column;
-    align-items: center;
-    gap: 0px;
-    padding-top: 2px;
-    padding-bottom: 20px;
-  }
-  .banner-do h2 {
-  font-weight: 500;
-  color: #1C274C;
-  margin-bottom: 60px;
-  padding-top: 40px;
-}
-
-  .banner-do .service img {
-    max-width: 200px;
-  }
-
-.banner-mv {
-  width: 100%;
-  background-color: #ffffff;
-  padding: 60px 90px;
-  display: flex;
-  flex-direction: column;
-  gap: 100px;
-  box-sizing: border-box;
-}
-
-/* Default: Text first, then image */
-.banner-mv .group {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row; /* ✅ text first, image second */
-  width: 100%;
-  gap: 60px;
-}
-
-/* Reverse: Image first, text second */
-.banner-mv .group.reverse {
-  flex-direction: row-reverse; /* ✅ reverses order for Vision section */
-}
-
-.banner-mv .text-group {
-  max-width: 500px;
-  text-align: left;
-}
-
-.banner-mv .text-group h3 {
-  font-size: 30px;
-  font-weight: 600;
-  color: #1C274C;
-  margin-bottom: 20px;
-}
-
-.banner-mv .text-group p {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #5A5A5A;
-}
-
-.banner-mv img {
-  width: 40%;
-  min-width: 250px;
-  height: auto;
-  object-fit: cover;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  
-}
-
-/* 📱 Mobile version */
-@media (max-width: 768px) {
-  .banner-mv {
-    padding: 40px 20px;
-    gap: 60px;
+@media (max-width: 900px) {
+  .hero-section,
+  .banner-hero,
+  .banner-do,
+  .banner-mv,
+  .banner-members,
+  footer {
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   .banner-mv .group,
-  .banner-mv .group.reverse {
-    flex-direction: column; /* ✅ stack text above image for both */
-    text-align: center;
-    gap: 30px;
-  }
-
-  .banner-mv .text-group {
-    text-align: center;
-    max-width: 100%;
+  .banner-mv .group.reverse,
+  footer .footer-top {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .banner-mv img {
     width: 100%;
-    max-width: 300px;
-    
-  }
-}
-
-  /* Example 4: Footer - center everything */
-  footer {
-    padding-top: 70px;
-    text-align: center;
   }
 
-  footer .footer-top {
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding-left: 0;
-    padding-right: 0;
+  .quotes {
+    grid-template-columns: 1fr;
   }
 
-  footer .footer-text {
-    padding: 0;
-    font-size: 18px;
-    padding-top:70px;
-    padding-bottom:20px;
+  footer .footer-center {
+    align-items: flex-start;
+    text-align: left;
   }
-
-  footer button {
-    font-size: 18px;
-    padding: 10px 20px;
-  }
-
-  footer .footer-bottom {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 900px) {
-  .banner-hero { padding: 24px 16px; }
-  .banner-hero h2 { font-size: 42px; padding-top: 20px; }
-  .banner-hero p { font-size: 18px; padding-bottom: 24px; }
-  .banner-mv .group, .banner-mv .group.reverse { flex-direction: column; gap: 20px; }
-  .banner-mv img { width: 100%; min-width: 0; }
-  footer { padding-top: 40px; }
-  footer .footer-top { flex-direction: column; gap: 18px; }
-  footer .footer-center { padding-left: 0; }
-  footer .footer-text { font-size: 18px; padding: 0 16px; }
-  footer button { font-size: 16px; }
-  footer .footer-bottom { font-size: 14px; padding: 10px 0; }
 }
