@@ -8,17 +8,17 @@ import visionImg from "../assets/vision.png";
 import shineLogo from "../assets/shineLogo.png";
 
 const activities = [
-  "We organize events, workshops, and training sessions to help individuals and organizations achieve their goals.",
-  "We collaborate with industry leaders to drive innovation and create meaningful impact.",
-  "We build communities to foster a supportive network of like-minded individuals.",
+  "We organize events, intiatives, and training sessions to help individuals and organizations make effect for society.",
+  "We provide a space for communities to connect, share ideas, and speak freely.",
+  "We allow people to post articles about what they are passionate about.",
   "We conduct research to provide insights and solutions for real-world challenges.",
 ];
 
 const testimonials = [
-  '"Shine has transformed the way I approach my projects, providing invaluable resources and support." - 1',
-  '"The collaborative environment at Shine has been instrumental in my professional growth." - 2',
-  '"Thanks to Shine, I\'ve been able to turn my ideas into successful ventures." - 3',
-  '"Shine\'s commitment to innovation is truly inspiring and has helped me achieve my goals." - 4',
+  "Shine has transformed the way I approach events, providing invaluable skills and thinking.",
+  "The collaborative environment at Shine has been instrumental in my professional growth.",
+  "Thanks to Shine, I\'ve been able to think, analyze, understand policies",
+  "Shine\'s commitment to innovation is truly inspiring and has helped me learn more.",
 ];
 
 export default function LandingPage() {
@@ -29,7 +29,7 @@ export default function LandingPage() {
       <section className="hero-section" style={{ backgroundImage: `url(${heroImg})` }}>
         <div className="hero-overlay" />
         <div className="hero-content">
-          <span className="hero-eyebrow">Shine Community</span>
+          <span className="hero-eyebrow">This is shine</span>
           <h1>A place for innovation, collaboration, and action.</h1>
           <p>
             Join a forward-thinking platform where ideas become initiatives and
