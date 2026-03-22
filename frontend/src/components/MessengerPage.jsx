@@ -6,6 +6,8 @@ import {
 import profileDefault from "../assets/profileDefault.svg";
 import "../styles/MessengerPage.css";
 
+const REFRESH_INTERVAL_MS = 5000;
+
 const MessengerPage = ({ currentUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,6 +79,19 @@ const MessengerPage = ({ currentUser }) => {
   useEffect(() => { fetchConversations(); fetchSystemNotifications(); }, []);
 
   useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      fetchConversations();
+      fetchSystemNotifications();
+
+      if (activeTab?.id && !activeTab.system) {
+        fetchChatHistory(activeTab.id);
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeTab?.id, activeTab?.system]);
+
+  useEffect(() => {
     if (activeTab?.system) {
       setChatHistory(systemNotifications.map((n) => ({ ...n, senderId: 'system', text: n.content })));
       setView('chat');
@@ -139,6 +154,7 @@ const MessengerPage = ({ currentUser }) => {
     setView('chat');
     setOpenHeaderMenu(false);
     setSendError("");
+    setMessage("");
   };
 
   const handleSendMessage = async () => {
@@ -228,20 +244,31 @@ const MessengerPage = ({ currentUser }) => {
     return `${count} new ${singular}${count === 1 ? '' : 's'}`;
   };
 
+  const formatConversationPreview = (conv) => {
+    if (!conv) return '';
+
+    if (conv.unreadCount > 0) {
+      return `${formatUnreadLabel(conv.unreadCount, 'message')} · ${conv.lastMessage}`;
+    }
+
+    return conv.lastMessage || 'No messages yet';
+  };
+
   const renderMessagesWithDates = () => {
     let lastDate = null;
-    const lastOutgoingMessageId = [...chatHistory].reverse().find((msg) => msg.senderId === currentUser.id)?.id;
+    const currentUserId = currentUser?.id;
+    const lastOutgoingMessageId = [...chatHistory].reverse().find((msg) => msg.senderId === currentUserId)?.id;
 
     return chatHistory.map((msg) => {
       const currentDate = formatMessageDate(msg.createdAt);
       const showDateSeparator = currentDate !== lastDate;
       lastDate = currentDate;
-      const showSeenState = msg.senderId === currentUser.id && msg.id === lastOutgoingMessageId;
+      const showSeenState = msg.senderId === currentUserId && msg.id === lastOutgoingMessageId;
 
       return (
         <React.Fragment key={msg.id}>
           {showDateSeparator && <div className="date-separator"><span>{currentDate}</span></div>}
-          <div className={`msg-row ${msg.senderId === currentUser.id ? 'sent' : 'received'}`}>
+          <div className={`msg-row ${msg.senderId === currentUserId ? 'sent' : 'received'}`}>
             <div className="msg-bubble-container">
               <div className="msg-bubble">
                 {editingMessageId === msg.id ? (
@@ -277,7 +304,7 @@ const MessengerPage = ({ currentUser }) => {
                 </span>
                 {showSeenState && <span className="msg-status">{msg.isRead ? 'Seen' : 'Sent'}</span>}
 
-                {msg.senderId === currentUser.id && editingMessageId !== msg.id && (
+                {msg.senderId === currentUserId && editingMessageId !== msg.id && (
                   <div className="msg-menu-wrapper">
                     <button className="msg-menu-btn" onClick={() => setOpenMenuId(openMenuId === msg.id ? null : msg.id)}>
                       <MoreVertical size={14} />
@@ -361,7 +388,7 @@ const MessengerPage = ({ currentUser }) => {
                     </div>
                   </div>
                   <p className="last-msg">
-                    {conv.unreadCount > 0 ? formatUnreadLabel(conv.unreadCount, 'message') : conv.lastMessage}
+                    {formatConversationPreview(conv)}
                   </p>
                 </div>
               </div>

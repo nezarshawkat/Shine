@@ -65,39 +65,26 @@ router.post('/send', auth, async (req, res) => {
   try {
     const { receiverId, text, imageUrl } = req.body;
     const senderId = req.user.id;
+    const trimmedText = typeof text === 'string' ? text.trim() : '';
 
     if (!receiverId) return res.status(400).json({ error: "Receiver ID is required" });
-    if (!text && !imageUrl) return res.status(400).json({ error: "Message content cannot be empty" });
+    if (!trimmedText && !imageUrl) return res.status(400).json({ error: "Message content cannot be empty" });
 
     if (receiverId === senderId) {
       return res.status(400).json({ error: "You cannot message yourself." });
     }
 
-    // Check Friendship (Mutual Follow) status for restriction logic
-    const followsSender = await prisma.follows.findFirst({
-      where: { followerId: receiverId, followingId: senderId }
-    });
-    const followsReceiver = await prisma.follows.findFirst({
-      where: { followerId: senderId, followingId: receiverId }
+    const receiver = await prisma.user.findUnique({
+      where: { id: receiverId },
+      select: { id: true }
     });
 
-    const isFriends = !!(followsSender && followsReceiver);
-
-    // If not mutual friends, limit to one message until they follow back
-    if (!isFriends) {
-      const existingChat = await prisma.message.findFirst({
-        where: { senderId, receiverId }
-      });
-
-      if (existingChat) {
-        return res.status(403).json({ 
-          error: "Message pending. You can send more once they follow you back." 
-        });
-      }
+    if (!receiver) {
+      return res.status(404).json({ error: "Receiver not found" });
     }
 
     const message = await prisma.message.create({
-      data: { senderId, receiverId, text, imageUrl },
+      data: { senderId, receiverId, text: trimmedText || null, imageUrl },
       include: { sender: { select: { username: true, image: true } } }
     });
 
