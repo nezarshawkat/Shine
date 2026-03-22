@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../prisma.js');
+const fetch = require('node-fetch'); // make sure node-fetch is installed
 
+// Correct PayPal URLs for live vs sandbox
 const PAYPAL_BASE_URL = process.env.PAYPAL_ENV === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
@@ -11,6 +13,7 @@ const parseAmount = (value) => {
   return Number.isFinite(amount) ? amount : NaN;
 };
 
+// Get OAuth token from PayPal
 const getPaypalAccessToken = async () => {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const secret = process.env.PAYPAL_SECRET;
@@ -38,6 +41,7 @@ const getPaypalAccessToken = async () => {
   return data.access_token;
 };
 
+// Create PayPal order
 router.post('/paypal/create-order', express.json(), async (req, res) => {
   try {
     const amount = parseAmount(req.body?.amount);
@@ -48,6 +52,7 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
     }
 
     const accessToken = await getPaypalAccessToken();
+
     const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
@@ -66,13 +71,11 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
             custom_id: userId || 'guest',
           },
         ],
-        payment_source: {
-          paypal: {
-            experience_context: {
-              shipping_preference: 'NO_SHIPPING',
-              user_action: 'PAY_NOW',
-            },
-          },
+        application_context: {
+          brand_name: 'Shine Community',
+          landing_page: 'NO_PREFERENCE',
+          user_action: 'PAY_NOW',
+          shipping_preference: 'NO_SHIPPING',
         },
       }),
     });
@@ -84,9 +87,13 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
       return res.status(500).json({ error: 'Unable to create PayPal order.' });
     }
 
+    // Find the approve link for the frontend redirect
+    const approveLink = data.links.find(link => link.rel === 'approve')?.href;
+
     return res.json({
       orderID: data.id,
       clientId: process.env.PAYPAL_CLIENT_ID,
+      approveLink, // send this to frontend
     });
   } catch (error) {
     console.error('PayPal create order error:', error.message);
@@ -94,6 +101,7 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
   }
 });
 
+// Capture PayPal order after approval
 router.post('/paypal/capture-order', express.json(), async (req, res) => {
   try {
     const orderID = req.body?.orderID;

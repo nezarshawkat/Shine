@@ -187,10 +187,25 @@ const MessengerPage = ({ currentUser }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const resetChatState = (nextView = 'list') => {
+    setActiveTab(null);
+    setChatHistory([]);
+    setView(nextView);
+    setOpenHeaderMenu(false);
+    setOpenMenuId(null);
+    setEditingMessageId(null);
+    setEditingText("");
+    setSendError("");
+    setMessage("");
+  };
+
   const openConversation = (user) => {
     setActiveTab(user);
     setView('chat');
     setOpenHeaderMenu(false);
+    setOpenMenuId(null);
+    setEditingMessageId(null);
+    setEditingText("");
     setSendError("");
     setMessage("");
   };
@@ -256,9 +271,7 @@ const MessengerPage = ({ currentUser }) => {
         headers: getAuthHeader()
       });
       if (res.ok) {
-        setChatHistory([]);
-        setActiveTab(null);
-        setOpenHeaderMenu(false);
+        resetChatState();
         fetchConversations();
       }
     } catch (err) { console.error(err); }
@@ -439,7 +452,7 @@ const MessengerPage = ({ currentUser }) => {
           {activeTab ? (
             <>
               <div className="chat-header">
-                <button className="mobile-back-btn" onClick={() => setView('list')}>
+                <button className="mobile-back-btn" onClick={() => resetChatState()} aria-label="Back to messages">
                   <ChevronLeft size={24} />
                 </button>
 

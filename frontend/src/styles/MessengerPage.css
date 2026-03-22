@@ -146,6 +146,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 1px solid #dbdbdb;
 }
 
@@ -153,6 +154,8 @@
     display: flex; 
     align-items: center; 
     gap: 12px; 
+    min-width: 0;
+    flex: 1;
 }
 
 .user-meta img { 
@@ -441,26 +444,40 @@
     display: none; /* Hidden on desktop */
     background: none;
     border: none;
-    margin-right: 10px;
+    margin-right: 5px;
     padding: 5px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
     .messenger-fixed-layout {
         padding-top: 72px;
         height: 100dvh;
+        width: 100vw;
+        overflow: hidden;
+    }
+
+    .shine-messenger {
+        position: relative;
+        width: 100vw;
+        max-width: 100vw;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        height: 100% !important;
         overflow: hidden;
     }
 
     .ms-sidebar {
-        width: 100% !important;
+        width: 100vw !important;
+        min-width: 100vw;
         border-right: none !important;
         display: flex !important;
     }
     
     .ms-main {
-        width: 100% !important;
+        width: 100vw !important;
+        min-width: 100vw;
         position: absolute;
         left: 0;
         top: 0;
@@ -475,6 +492,7 @@
 
     .mobile-back-btn {
         display: block;
+        margin-right: 5px;
     }
 
     .ms-sidebar-header {
@@ -489,18 +507,35 @@
     }
 
     .chat-header {
-        padding: 10px 15px !important;
+        width: 100%;
+        padding: 10px 12px !important;
         min-height: 64px;
         position: sticky;
         top: 0;
         background: #fff;
         z-index: 20;
+        box-sizing: border-box;
     }
 
-    .shine-messenger {
-        border-radius: 0 !important;
-        margin: 0 !important;
-        height: 100% !important;
+    .user-meta {
+        gap: 10px;
+    }
+
+    .dropdown-container {
+        position: static;
+    }
+
+    .header-actions {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .header-dropdown {
+        top: 68px;
+        right: 12px;
+        left: auto;
+        width: min(220px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
     }
 }
 
