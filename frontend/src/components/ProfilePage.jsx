@@ -86,7 +86,7 @@ export default function ProfilePage({
   savedPosts = [],
   communities: initialCommunities = [],
 }) {
-  const { user: loggedInUser, logout, token } = useContext(AuthContext);
+  const { user: loggedInUser, logout, token, updateUser: updateAuthUser } = useContext(AuthContext);
   const navigate = useNavigate();
   
   const [user, setUser] = useState(initialUser);
@@ -185,13 +185,13 @@ export default function ProfilePage({
       });
 
       const returnedUser = res.data.user;
-      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      localStorage.setItem("user", JSON.stringify({ ...storedUser, ...returnedUser }));
-
       setUser(returnedUser);
+      if (String(loggedInUserId) === String(returnedUser.id)) {
+        updateAuthUser(returnedUser);
+      }
       setEditMode(false);
       if (user.username !== returnedUser.username) {
-        window.location.href = `/profile/${returnedUser.username}`;
+        navigate(`/profile/${returnedUser.username}`, { replace: true });
       } else {
         setImagePreview(getImageUrl(returnedUser.image));
       }
@@ -322,7 +322,12 @@ export default function ProfilePage({
           user={user} 
           onClose={() => setShowSettings(false)} 
           logout={logout}
-          onUserUpdate={(updatedUser) => setUser(updatedUser)}
+          onUserUpdate={(updatedUser) => {
+            setUser(updatedUser);
+            if (String(loggedInUserId) === String(updatedUser?.id)) {
+              updateAuthUser(updatedUser);
+            }
+          }}
         />
       )}
 

@@ -274,6 +274,14 @@
     right: 12px;
 }
 
+.msg-status {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #8e8e8e;
+    text-align: right;
+}
+
 /* Message Menu (Edit/Delete) */
 .msg-menu-wrapper {
     position: absolute;
@@ -332,6 +340,15 @@
    ========================================== */
 .chat-input-section {
     padding: 15px 20px;
+}
+
+.chat-error-banner {
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 13px;
 }
 
 .input-inner {
@@ -432,6 +449,7 @@
     .ms-sidebar {
         width: 100% !important;
         border-right: none !important;
+        display: flex !important;
     }
     
     .ms-main {
@@ -450,6 +468,17 @@
 
     .mobile-back-btn {
         display: block;
+    }
+
+    .ms-sidebar-header {
+        padding-top: 18px;
+    }
+
+    .ms-sidebar-header h2::after {
+        content: " · Inbox";
+        color: #8e8e8e;
+        font-weight: 500;
+        font-size: 16px;
     }
 
     .chat-header {

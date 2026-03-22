@@ -1,5 +1,6 @@
 const prisma = require("../../prisma");
 const { parsePagination, writeAuditLog } = require("./common");
+const { deleteCommunityWithRelations, deletePostWithRelations } = require("./deletionHelpers");
 
 const config = {
   posts: {
@@ -96,8 +97,19 @@ async function deleteContent(req, res) {
   try {
     const { type, id } = req.params;
     const found = getModel(type);
-    const model = prisma[found.model];
-    await model.delete({ where: { id } });
+
+    if (type === "posts") {
+      await prisma.$transaction(async (tx) => {
+        await deletePostWithRelations(tx, id);
+      });
+    } else if (type === "communities") {
+      await prisma.$transaction(async (tx) => {
+        await deleteCommunityWithRelations(tx, id);
+      });
+    } else {
+      const model = prisma[found.model];
+      await model.delete({ where: { id } });
+    }
 
     await writeAuditLog({
       adminId: req.admin.id,

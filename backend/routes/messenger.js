@@ -178,6 +178,16 @@ router.get('/history/:partnerId', auth, async (req, res) => {
     const userId = req.user.id;
     const { partnerId } = req.params;
 
+    // Update incoming messages as 'read'
+    await prisma.message.updateMany({
+      where: { 
+        senderId: partnerId, 
+        receiverId: userId, 
+        isRead: false 
+      },
+      data: { isRead: true }
+    });
+
     const history = await prisma.message.findMany({
       where: {
         OR: [
@@ -187,16 +197,6 @@ router.get('/history/:partnerId', auth, async (req, res) => {
         NOT: { deletedBy: { has: userId } }
       },
       orderBy: { createdAt: 'asc' }
-    });
-
-    // Update incoming messages as 'read'
-    await prisma.message.updateMany({
-      where: { 
-        senderId: partnerId, 
-        receiverId: userId, 
-        isRead: false 
-      },
-      data: { isRead: true }
     });
 
     res.json(history);

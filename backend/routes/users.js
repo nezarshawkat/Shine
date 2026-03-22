@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
 const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
+const { deleteUserWithRelations } = require("../controllers/admin/deletionHelpers");
 const DEFAULT_PROFILE_IMAGE = null;
 
 // ---------------- TEST ROUTE ----------------
@@ -221,9 +222,7 @@ router.put("/:userId/password", async (req, res) => {
 router.delete("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    // Prisma will handle relations if 'onDelete: Cascade' is in schema, 
-    // otherwise you may need to delete related records first.
-    await prisma.user.delete({ where: { id: userId } });
+    await deleteUserWithRelations(userId);
     res.json({ message: "Account deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete account" });

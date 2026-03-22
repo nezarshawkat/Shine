@@ -1,5 +1,6 @@
 const prisma = require("../../prisma");
 const { writeAuditLog } = require("./common");
+const { deleteCommunityWithRelations, deletePostWithRelations, deleteUserWithRelations } = require("./deletionHelpers");
 
 async function listReports(req, res) {
   try {
@@ -54,9 +55,19 @@ async function resolveReport(req, res) {
 
     if (deleteType && deleteId) {
       if (["POST", "COMMUNITY", "PROFILE"].includes(deleteType.toUpperCase())) {
-        if (deleteType.toUpperCase() === "POST") await prisma.post.delete({ where: { id: deleteId } });
-        if (deleteType.toUpperCase() === "COMMUNITY") await prisma.community.delete({ where: { id: deleteId } });
-        if (deleteType.toUpperCase() === "PROFILE") await prisma.user.delete({ where: { id: deleteId } });
+        if (deleteType.toUpperCase() === "POST") {
+          await prisma.$transaction(async (tx) => {
+            await deletePostWithRelations(tx, deleteId);
+          });
+        }
+        if (deleteType.toUpperCase() === "COMMUNITY") {
+          await prisma.$transaction(async (tx) => {
+            await deleteCommunityWithRelations(tx, deleteId);
+          });
+        }
+        if (deleteType.toUpperCase() === "PROFILE") {
+          await deleteUserWithRelations(deleteId);
+        }
       }
     }
 

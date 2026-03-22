@@ -1,5 +1,6 @@
 const prisma = require("../../prisma");
 const { parsePagination, writeAuditLog } = require("./common");
+const { deleteUserWithRelations } = require("./deletionHelpers");
 
 async function listUsers(req, res) {
   try {
@@ -100,7 +101,7 @@ async function toggleUserBlock(req, res) {
 async function deleteUser(req, res) {
   try {
     const { id } = req.params;
-    await prisma.user.delete({ where: { id } });
+    await deleteUserWithRelations(id);
 
     await writeAuditLog({
       adminId: req.admin.id,

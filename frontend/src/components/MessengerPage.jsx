@@ -22,6 +22,7 @@ const MessengerPage = ({ currentUser }) => {
   const [openHeaderMenu, setOpenHeaderMenu] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState("");
+  const [sendError, setSendError] = useState("");
 
   const unreadSystemCount = systemNotifications.filter((notification) => notification.isRead === false).length;
 
@@ -68,6 +69,7 @@ const MessengerPage = ({ currentUser }) => {
       if (res.ok) {
         setChatHistory(await res.json());
         fetchConversations();
+        setSendError("");
       }
     } catch (err) { console.error(err); }
   };
@@ -132,9 +134,17 @@ const MessengerPage = ({ currentUser }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const openConversation = (user) => {
+    setActiveTab(user);
+    setView('chat');
+    setOpenHeaderMenu(false);
+    setSendError("");
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim() || !activeTab || activeTab.system) return;
     try {
+      setSendError("");
       const res = await fetch('/api/messenger/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
@@ -145,6 +155,9 @@ const MessengerPage = ({ currentUser }) => {
         setChatHistory((prev) => [...prev, newMsg]);
         setMessage('');
         fetchConversations();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSendError(data.error || 'Unable to send your message right now.');
       }
     } catch (err) { console.error(err); }
   };
@@ -217,10 +230,13 @@ const MessengerPage = ({ currentUser }) => {
 
   const renderMessagesWithDates = () => {
     let lastDate = null;
+    const lastOutgoingMessageId = [...chatHistory].reverse().find((msg) => msg.senderId === currentUser.id)?.id;
+
     return chatHistory.map((msg) => {
       const currentDate = formatMessageDate(msg.createdAt);
       const showDateSeparator = currentDate !== lastDate;
       lastDate = currentDate;
+      const showSeenState = msg.senderId === currentUser.id && msg.id === lastOutgoingMessageId;
 
       return (
         <React.Fragment key={msg.id}>
@@ -259,6 +275,7 @@ const MessengerPage = ({ currentUser }) => {
                 <span className="msg-time">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
+                {showSeenState && <span className="msg-status">{msg.isRead ? 'Seen' : 'Sent'}</span>}
 
                 {msg.senderId === currentUser.id && editingMessageId !== msg.id && (
                   <div className="msg-menu-wrapper">
@@ -304,7 +321,7 @@ const MessengerPage = ({ currentUser }) => {
                     <div className="p-2">Searching...</div>
                   ) : searchResults.length > 0 ? (
                     searchResults.map((user) => (
-                      <div key={user.id} className="search-result-item" onClick={() => { setActiveTab(user); setSearchQuery(''); }}>
+                      <div key={user.id} className="search-result-item" onClick={() => { openConversation(user); setSearchQuery(''); }}>
                         <img src={getAvatar(user.image)} alt="" />
                         <div><p className="res-name">{user.name}</p><p className="res-user">@{user.username}</p></div>
                       </div>
@@ -318,7 +335,7 @@ const MessengerPage = ({ currentUser }) => {
           </div>
 
           <div className="convos-list">
-            <div className={`convo-item ${activeTab?.system ? 'active' : ''}`} onClick={() => setActiveTab({ id: '__system', system: true, name: 'System Notifications', username: 'system' })}>
+            <div className={`convo-item ${activeTab?.system ? 'active' : ''}`} onClick={() => openConversation({ id: '__system', system: true, name: 'System Notifications', username: 'system' })}>
               <img src={profileDefault} alt="" />
               <div className="convo-info">
                 <div className="convo-title">
@@ -332,7 +349,7 @@ const MessengerPage = ({ currentUser }) => {
               <div
                 key={conv.user.id}
                 className={`convo-item ${activeTab?.id === conv.user.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(conv.user)}
+                onClick={() => openConversation(conv.user)}
               >
                 <img src={getAvatar(conv.user.image)} alt="" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${conv.user.id}`); }} />
                 <div className="convo-info">
@@ -390,6 +407,7 @@ const MessengerPage = ({ currentUser }) => {
               </div>
 
               {!activeTab.system && <div className="chat-input-section">
+                {sendError ? <div className="chat-error-banner">{sendError}</div> : null}
                 <div className="input-inner">
                   <input
                     value={message}
