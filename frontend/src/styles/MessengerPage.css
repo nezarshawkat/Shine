@@ -7,6 +7,7 @@
     background-color: #fff;
     box-sizing: border-box;
     overflow: hidden; /* Prevents body scrolling */
+    position: relative;
 }
 
 .shine-messenger {
@@ -446,6 +447,12 @@
 }
 
 @media (max-width: 768px) {
+    .messenger-fixed-layout {
+        padding-top: 72px;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
     .ms-sidebar {
         width: 100% !important;
         border-right: none !important;
@@ -483,13 +490,13 @@
 
     .chat-header {
         padding: 10px 15px !important;
+        min-height: 64px;
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 20;
     }
 
-    .messenger-fixed-layout {
-        height: 100vh;
-        overflow: hidden;
-    }
-    
     .shine-messenger {
         border-radius: 0 !important;
         margin: 0 !important;

@@ -4,6 +4,7 @@ import {
   Search, Send, MoreVertical, Edit2, Trash2, ChevronLeft
 } from 'lucide-react';
 import profileDefault from "../assets/profileDefault.svg";
+import { API_BASE_URL } from "../api";
 import "../styles/MessengerPage.css";
 
 const REFRESH_INTERVAL_MS = 5000;
@@ -36,17 +37,56 @@ const MessengerPage = ({ currentUser }) => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  const getErrorMessage = async (res, fallbackMessage) => {
+    const contentType = res.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const data = await res.json().catch(() => ({}));
+      return data.error || data.message || fallbackMessage;
+    }
+
+    const rawText = await res.text().catch(() => '');
+    if (rawText.includes('<!doctype') || rawText.includes('<html')) {
+      return fallbackMessage;
+    }
+
+    return rawText || fallbackMessage;
+  };
+
+  const requestJson = async (path, options = {}, fallbackMessage = 'Request failed.') => {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        ...getAuthHeader(),
+        ...(options.headers || {}),
+      },
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
+
+    if (!res.ok) {
+      const message = typeof payload === 'string'
+        ? (payload.includes('<!doctype') || payload.includes('<html') ? fallbackMessage : payload)
+        : payload?.error || payload?.message || fallbackMessage;
+      throw new Error(message);
+    }
+
+    return payload;
+  };
+
   const fetchConversations = async () => {
     try {
-      const res = await fetch('/api/messenger/conversations', { headers: getAuthHeader() });
-      if (res.ok) setConversations(await res.json());
+      const data = await requestJson('/messenger/conversations', {}, 'Unable to load conversations right now.');
+      setConversations(Array.isArray(data) ? data : []);
     } catch (err) { console.error(err); }
   };
 
   const fetchSystemNotifications = async () => {
     try {
-      const res = await fetch('/api/messenger/system', { headers: getAuthHeader() });
-      if (res.ok) setSystemNotifications(await res.json());
+      const data = await requestJson('/messenger/system', {}, 'Unable to load system notifications right now.');
+      setSystemNotifications(Array.isArray(data) ? data : []);
     } catch (err) { console.error(err); }
   };
 
@@ -54,7 +94,7 @@ const MessengerPage = ({ currentUser }) => {
     if (unreadSystemCount === 0) return;
 
     try {
-      const res = await fetch('/api/messenger/system/read-all', {
+      const res = await fetch(`${API_BASE_URL}/messenger/system/read-all`, {
         method: 'PATCH',
         headers: getAuthHeader()
       });
@@ -67,13 +107,14 @@ const MessengerPage = ({ currentUser }) => {
 
   const fetchChatHistory = async (partnerId) => {
     try {
-      const res = await fetch(`/api/messenger/history/${partnerId}`, { headers: getAuthHeader() });
-      if (res.ok) {
-        setChatHistory(await res.json());
-        fetchConversations();
-        setSendError("");
-      }
-    } catch (err) { console.error(err); }
+      const data = await requestJson(`/messenger/history/${partnerId}`, {}, 'Unable to load this conversation right now.');
+      setChatHistory(Array.isArray(data) ? data : []);
+      fetchConversations();
+      setSendError("");
+    } catch (err) {
+      console.error(err);
+      setSendError(err.message || 'Unable to send your message right now.');
+    }
   };
 
   useEffect(() => { fetchConversations(); fetchSystemNotifications(); }, []);
@@ -126,11 +167,8 @@ const MessengerPage = ({ currentUser }) => {
       if (term.length > 0) {
         setIsSearching(true);
         try {
-          const res = await fetch(`/api/messenger/search?q=${encodeURIComponent(term)}`, { headers: getAuthHeader() });
-          if (res.ok) {
-            const data = await res.json();
-            setSearchResults(data.filter((u) => u.id !== currentUser?.id));
-          }
+          const data = await requestJson(`/messenger/search?q=${encodeURIComponent(term)}`, {}, 'Unable to search users right now.');
+          setSearchResults((Array.isArray(data) ? data : []).filter((u) => u.id !== currentUser?.id));
         } catch (err) { console.error(err); } finally { setIsSearching(false); }
       } else {
         setSearchResults([]);
@@ -161,7 +199,7 @@ const MessengerPage = ({ currentUser }) => {
     if (!message.trim() || !activeTab || activeTab.system) return;
     try {
       setSendError("");
-      const res = await fetch('/api/messenger/send', {
+      const res = await fetch(`${API_BASE_URL}/messenger/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({ receiverId: activeTab.id, text: message })
@@ -172,15 +210,14 @@ const MessengerPage = ({ currentUser }) => {
         setMessage('');
         fetchConversations();
       } else {
-        const data = await res.json().catch(() => ({}));
-        setSendError(data.error || 'Unable to send your message right now.');
+        setSendError(await getErrorMessage(res, 'Unable to send your message right now.'));
       }
     } catch (err) { console.error(err); }
   };
 
   const deleteMessage = async (msgId) => {
     try {
-      const res = await fetch(`/api/messenger/${msgId}`, { method: 'DELETE', headers: getAuthHeader() });
+      const res = await fetch(`${API_BASE_URL}/messenger/${msgId}`, { method: 'DELETE', headers: getAuthHeader() });
       if (res.ok) {
         setChatHistory((prev) => prev.filter((m) => m.id !== msgId));
         setOpenMenuId(null);
@@ -197,7 +234,7 @@ const MessengerPage = ({ currentUser }) => {
   const saveEditedMessage = async (msgId) => {
     if (!editingText.trim()) return;
     try {
-      const res = await fetch(`/api/messenger/${msgId}`, {
+      const res = await fetch(`${API_BASE_URL}/messenger/${msgId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({ text: editingText.trim() })
@@ -214,7 +251,7 @@ const MessengerPage = ({ currentUser }) => {
   const handleDeleteConversation = async () => {
     if (!activeTab?.id || activeTab.system) return;
     try {
-      const res = await fetch(`/api/messenger/conversation/${activeTab.id}`, {
+      const res = await fetch(`${API_BASE_URL}/messenger/conversation/${activeTab.id}`, {
         method: 'DELETE',
         headers: getAuthHeader()
       });

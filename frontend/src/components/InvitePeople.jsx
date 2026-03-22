@@ -83,7 +83,7 @@ export default function InvitePeople() {
 
       await Promise.all(
         friends.map((friend) =>
-          fetch(`/api/messenger/send`, {
+          fetch(`${API_BASE_URL}/messenger/send`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
