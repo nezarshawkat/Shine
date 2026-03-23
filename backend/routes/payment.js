@@ -1,53 +1,8 @@
 const express = require('express');
-const https = require('https');
 const router = express.Router();
 const prisma = require('../prisma.js');
 
-const fetchImpl = (url, options = {}) => {
-  if (typeof globalThis.fetch === 'function') {
-    return globalThis.fetch(url, options);
-  }
-
-  return new Promise((resolve, reject) => {
-    const requestUrl = new URL(url);
-    const request = https.request(
-      {
-        method: options.method || 'GET',
-        hostname: requestUrl.hostname,
-        path: `${requestUrl.pathname}${requestUrl.search}`,
-        headers: options.headers,
-      },
-      (response) => {
-        let rawBody = '';
-
-        response.setEncoding('utf8');
-        response.on('data', (chunk) => {
-          rawBody += chunk;
-        });
-        response.on('end', () => {
-          const status = response.statusCode || 500;
-          resolve({
-            ok: status >= 200 && status < 300,
-            status,
-            json: async () => (rawBody ? JSON.parse(rawBody) : {}),
-            text: async () => rawBody,
-          });
-        });
-      }
-    );
-
-    request.on('error', reject);
-
-    if (options.body) {
-      request.write(options.body);
-    }
-
-    request.end();
-  });
-};
-
-const PAYPAL_ENV = process.env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox';
-const PAYPAL_BASE_URL = PAYPAL_ENV === 'live'
+const PAYPAL_BASE_URL = process.env.PAYPAL_ENV === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
 
@@ -56,41 +11,16 @@ const parseAmount = (value) => {
   return Number.isFinite(amount) ? amount : NaN;
 };
 
-const getPaypalClientId = () => {
+const getPaypalAccessToken = async () => {
   const clientId = process.env.PAYPAL_CLIENT_ID;
-
-  if (!clientId) {
-    throw new Error('Missing PayPal client ID');
-  }
-
-  return clientId;
-};
-
-const getPaypalSecret = () => {
   const secret = process.env.PAYPAL_SECRET;
 
-  if (!secret) {
-    throw new Error('Missing PayPal secret');
+  if (!clientId || !secret) {
+    throw new Error('Missing PayPal credentials');
   }
 
-  return secret;
-};
-
-router.get('/paypal/config', (_req, res) => {
-  try {
-    return res.json({
-      clientId: getPaypalClientId(),
-      environment: PAYPAL_ENV,
-      currency: 'USD',
-    });
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'Unable to load PayPal configuration.' });
-  }
-});
-
-const getPaypalAccessToken = async () => {
-  const auth = Buffer.from(`${getPaypalClientId()}:${getPaypalSecret()}`).toString('base64');
-  const response = await fetchImpl(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+  const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${auth}`,
@@ -118,8 +48,7 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
     }
 
     const accessToken = await getPaypalAccessToken();
-
-    const response = await fetchImpl(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
+    const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -137,11 +66,13 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
             custom_id: userId || 'guest',
           },
         ],
-        application_context: {
-          brand_name: 'Shine Community',
-          landing_page: 'NO_PREFERENCE',
-          user_action: 'PAY_NOW',
-          shipping_preference: 'NO_SHIPPING',
+        payment_source: {
+          paypal: {
+            experience_context: {
+              shipping_preference: 'NO_SHIPPING',
+              user_action: 'PAY_NOW',
+            },
+          },
         },
       }),
     });
@@ -150,15 +81,12 @@ router.post('/paypal/create-order', express.json(), async (req, res) => {
 
     if (!response.ok) {
       console.error('PayPal create order error:', data);
-      return res.status(500).json({ error: data.message || 'Unable to create PayPal order.' });
+      return res.status(500).json({ error: 'Unable to create PayPal order.' });
     }
-
-    const approveLink = data.links.find((link) => link.rel === 'approve')?.href;
 
     return res.json({
       orderID: data.id,
-      clientId: getPaypalClientId(),
-      approveLink,
+      clientId: process.env.PAYPAL_CLIENT_ID,
     });
   } catch (error) {
     console.error('PayPal create order error:', error.message);
@@ -176,7 +104,7 @@ router.post('/paypal/capture-order', express.json(), async (req, res) => {
     }
 
     const accessToken = await getPaypalAccessToken();
-    const response = await fetchImpl(`${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`, {
+    const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -188,7 +116,7 @@ router.post('/paypal/capture-order', express.json(), async (req, res) => {
 
     if (!response.ok) {
       console.error('PayPal capture error:', data);
-      return res.status(500).json({ error: data.message || 'Unable to capture PayPal order.' });
+      return res.status(500).json({ error: 'Unable to capture PayPal order.' });
     }
 
     const capture = data.purchase_units?.[0]?.payments?.captures?.[0];

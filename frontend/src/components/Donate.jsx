@@ -4,6 +4,8 @@ import Header from "./Header";
 import { BACKEND_URL } from "../api";
 import "../styles/Donate.css";
 
+const PAYPAL_SDK_CURRENCY = "USD";
+const PAYPAL_CLIENT_ID = "ARTtt34v1pEgdx_jwyCqJfjmfgqw7HUhSeAje7wzOtFyYa3PIKVtXlvCDa-axvjD4OZS7pKHwFWPsqda";
 const PAYPAL_BUTTON_CONTAINER_ID = "paypal-donation-button-container";
 const presets = [5, 10, 25, 50];
 
@@ -14,7 +16,6 @@ const Donate = () => {
   const [sdkReady, setSdkReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("");
-  const [paypalConfig, setPaypalConfig] = useState(null);
   const paypalButtonsRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.id || user?._id || null;
@@ -26,38 +27,6 @@ const Donate = () => {
   }, [amount, customAmount]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadPaypalConfig = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/api/paypal/config`);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setPaypalConfig(response.data);
-      } catch (error) {
-        console.error("PayPal config error:", error);
-        if (isMounted) {
-          setStatusMessage("Unable to load PayPal checkout. Please try again later.");
-          setStatusType("error");
-        }
-      }
-    };
-
-    loadPaypalConfig();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!paypalConfig?.clientId) {
-      return undefined;
-    }
-
     if (window.paypal) {
       setSdkReady(true);
       return undefined;
@@ -72,8 +41,7 @@ const Donate = () => {
     }
 
     const script = document.createElement("script");
-    const currency = paypalConfig.currency || "USD";
-    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalConfig.clientId}&currency=${currency}&intent=capture`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=${PAYPAL_SDK_CURRENCY}`;
     script.async = true;
     script.dataset.paypalSdk = "true";
     script.onload = () => setSdkReady(true);
@@ -84,7 +52,7 @@ const Donate = () => {
     document.body.appendChild(script);
 
     return undefined;
-  }, [paypalConfig]);
+  }, []);
 
   useEffect(() => {
     const container = document.getElementById(PAYPAL_BUTTON_CONTAINER_ID);
@@ -112,28 +80,20 @@ const Donate = () => {
           throw new Error("Invalid donation amount.");
         }
 
-        try {
-          setLoading(true);
-          setStatusMessage("");
-          setStatusType("");
+        setLoading(true);
+        setStatusMessage("");
+        setStatusType("");
 
-          const response = await axios.post(`${BACKEND_URL}/api/paypal/create-order`, {
-            amount: finalAmountNumber,
-            userId,
-          });
+        const response = await axios.post(`${BACKEND_URL}/api/paypal/create-order`, {
+          amount: finalAmountNumber,
+          userId,
+        });
 
-          if (!response.data?.orderID) {
-            throw new Error("PayPal order setup failed.");
-          }
-
-          return response.data.orderID;
-        } catch (error) {
-          const message = error.response?.data?.error || error.message || "PayPal order setup failed.";
-          setStatusMessage(message);
-          setStatusType("error");
-          setLoading(false);
-          throw error;
+        if (!response.data?.orderID) {
+          throw new Error("PayPal order setup failed.");
         }
+
+        return response.data.orderID;
       },
       onApprove: async (data) => {
         try {
@@ -146,7 +106,7 @@ const Donate = () => {
           setStatusType("success");
         } catch (error) {
           console.error("PayPal capture error:", error);
-          setStatusMessage(error.response?.data?.error || "Unable to capture your donation. Please try again.");
+          setStatusMessage("Unable to capture your donation. Please try again.");
           setStatusType("error");
         } finally {
           setLoading(false);
@@ -234,11 +194,9 @@ const Donate = () => {
             >
               {loading
                 ? "Processing..."
-                : !paypalConfig?.clientId
+                : !sdkReady
                   ? "Loading PayPal..."
-                  : !sdkReady
-                    ? "Initializing PayPal..."
-                    : `Donate $${Number.isFinite(finalAmountNumber) ? finalAmountNumber : customAmount || amount}`}
+                  : `Donate $${Number.isFinite(finalAmountNumber) ? finalAmountNumber : customAmount || amount}`}
             </button>
             <div
               id={PAYPAL_BUTTON_CONTAINER_ID}
@@ -247,9 +205,7 @@ const Donate = () => {
             />
           </div>
 
-          <p className="security-note">
-            🔒 Secure transaction via PayPal {paypalConfig?.environment === "live" ? "Live" : "Sandbox"}
-          </p>
+          <p className="security-note">🔒 Secure transaction via PayPal</p>
         </div>
 
         <div className="impact-section">
