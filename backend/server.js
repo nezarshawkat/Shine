@@ -18,7 +18,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://shine-red.vercel.app", 
-  "https://shine-a77g.onrender.com"
+  "https://shine-a77g.onrender.com",
+  "https://sshine.org"
 ];
 
 app.use(
