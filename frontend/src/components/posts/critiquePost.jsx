@@ -258,6 +258,9 @@ export default function CritiquePost({ postId, initialData }) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 600 : false,
+  );
 
   const [imageIndex, setImageIndex] = useState(0);
   const [maximizedIndex, setMaximizedIndex] = useState(null);
@@ -383,6 +386,12 @@ export default function CritiquePost({ postId, initialData }) {
     }
   }, [post?.media, maximizedIndex]);
 
+  useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 600);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const handleInteraction = async (endpoint, setter, successMsg) => {
     if (!user) return showToast("Please login first", "error");
     const currentPostId = post.id || post._id;
@@ -498,62 +507,67 @@ export default function CritiquePost({ postId, initialData }) {
   return (
     <>
       <style>{`
-        .post-content-layout {
+        .critique-post-content-layout {
           align-items: flex-start;
         }
         @media (max-width: 768px) {
-          .post-main-layout {
+          .critique-post-main-layout {
             flex-direction: column !important;
             flex-wrap: nowrap !important;
           }
-          .post-media-block {
+          .critique-post-media-block {
             width: 100% !important;
             height: auto !important;
             aspect-ratio: 16 / 9;
             flex: unset !important;
           }
-          .post-desktop-keywords {
+          .critique-post-desktop-keywords {
             display: none !important;
           }
-          .post-mobile-keywords {
+          .critique-post-mobile-keywords {
             display: flex !important;
             gap: 7px;
             flex-wrap: wrap;
             margin-top: 10px;
             order: 2;
           }
-          .post-main-content {
+          .critique-post-main-content {
             order: 3;
           }
-          .post-media-block {
+          .critique-post-media-block {
             order: 4;
           }
         }
         @media (max-width: 600px) {
-          .post-timestamp {
+          .critique-post-timestamp {
             display: none !important;
           }
-          .sources-btn-label {
-            display: none !important;
-          }
-          .sources-btn-root::after {
-            content: "Sources";
-          }
-          .post-content-layout {
+          .critique-post-content-layout {
             flex-direction: column;
           }
-          .post-text-pane {
+          .critique-post-text-pane {
             width: 100%;
           }
-          .post-media-block {
+          .critique-post-media-block {
             width: 100% !important;
             max-width: 100% !important;
           }
-          .sources-btn-full {
+          .critique-post-sources-btn-full {
             display: none !important;
           }
-          .sources-btn-mobile {
+          .critique-post-sources-btn-mobile {
             display: inline !important;
+          }
+          .critique-post-action-row {
+            gap: 10px !important;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+          }
+          .critique-post-header-meta {
+            gap: 10px !important;
+          }
+          .critique-post-view-text {
+            font-size: 14px !important;
           }
         }
       `}</style>
@@ -665,8 +679,14 @@ export default function CritiquePost({ postId, initialData }) {
               </span>
             )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-            <div style={{ fontSize: 16, fontWeight: 500, color: "#1C274C" }}>
+          <div
+            className="critique-post-header-meta"
+            style={{ display: "flex", alignItems: "center", gap: 15 }}
+          >
+            <div
+              className="critique-post-view-text"
+              style={{ fontSize: 16, fontWeight: 500, color: "#1C274C" }}
+            >
               {post.viewsCount || 0} views
             </div>
             <div
@@ -696,11 +716,14 @@ export default function CritiquePost({ postId, initialData }) {
               justifyContent: "space-between",
               background: "#F6F6F6",
               border: "0.5px solid #1C274C",
-              height: 49,
+              minHeight: 49,
               borderRadius: 13,
-              fontSize: 16,
+              fontSize: isMobileView ? 14 : 16,
               color: "#1C274C",
               cursor: "pointer",
+              width: "100%",
+              boxSizing: "border-box",
+              gap: 8,
             }}
           >
             <div
@@ -708,7 +731,8 @@ export default function CritiquePost({ postId, initialData }) {
                 overflow: "hidden",
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
-                maxWidth: "calc(100% - 85px)",
+                flex: 1,
+                minWidth: 0,
               }}
             >
               {originalPost.text}
@@ -718,19 +742,20 @@ export default function CritiquePost({ postId, initialData }) {
                 background: "transparent",
                 border: "none",
                 color: "#1C274C",
-                fontSize: 16,
+                fontSize: isMobileView ? 14 : 16,
                 fontWeight: 500,
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
-              See Post
+              {isMobileView ? "View" : "View Post"}
             </button>
           </div>
         )}
 
-        <div className="post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div className="post-main-content" style={{ flex: "1 1 320px", minWidth: 0 }}>
-            <div className="post-desktop-keywords"
+        <div className="critique-post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <div className="critique-post-main-content" style={{ flex: "1 1 320px", minWidth: 0 }}>
+            <div className="critique-post-desktop-keywords"
               style={{
                 display: "flex",
                 gap: 7,
@@ -755,7 +780,7 @@ export default function CritiquePost({ postId, initialData }) {
             </div>
 
           <div
-            className="post-mobile-keywords"
+            className="critique-post-mobile-keywords"
             style={{ display: "none", marginBottom: 12, }}
           >
             {post.keywords?.map((k, i) => (
@@ -853,7 +878,7 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
           {mediaList.length > 0 && !isEditing && (
             <div
-              className="post-media-block"
+              className="critique-post-media-block"
               style={{
                 width: "min(277px, 100%)",
                 height: "auto",
@@ -921,7 +946,7 @@ export default function CritiquePost({ postId, initialData }) {
           >
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <div
-                className="post-timestamp"
+                className="critique-post-timestamp"
                 style={{ fontSize: 12, color: "#6b7280" }}
               >
                 {isPostUpdated() && "(Updated) "}
@@ -942,11 +967,11 @@ export default function CritiquePost({ postId, initialData }) {
                     cursor: "pointer",
                   }}
                 >
-                  <span className="sources-btn-full">
+                  <span className="critique-post-sources-btn-full">
                     {showSources ? "Hide Sources" : "View Sources"}
                   </span>
                   <span
-                    className="sources-btn-mobile"
+                    className="critique-post-sources-btn-mobile"
                     style={{ display: "none" }}
                   >
                     Sources
@@ -955,7 +980,10 @@ export default function CritiquePost({ postId, initialData }) {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 17, alignItems: "center" }}>
+            <div
+              className="critique-post-action-row"
+              style={{ display: "flex", gap: 17, alignItems: "center" }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img
                   src={isLiked ? HeartClickedIcon : HeartIcon}
