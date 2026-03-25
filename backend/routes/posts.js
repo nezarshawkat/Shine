@@ -52,10 +52,20 @@ router.get("/", async (req, res) => {
     if (isNaN(pageSize) || pageSize < 1) pageSize = 10;
 
     const visiblePostWhere = {
-      OR: [
-        { communityId: null },
-        { community: { status: "PUBLIC" } },
-        ...(userId ? [{ community: { communityMembers: { some: { userId } } } }] : []),
+      AND: [
+        {
+          OR: [
+            { communityId: null },
+            { community: { status: "PUBLIC" } },
+            ...(userId ? [{ community: { communityMembers: { some: { userId } } } }] : []),
+          ],
+        },
+        ...(userId
+          ? [
+              { author: { blockedUsers: { none: { blockedId: userId } } } },
+              { author: { blockedBy: { none: { blockerId: userId } } } },
+            ]
+          : []),
       ],
     };
 

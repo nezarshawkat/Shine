@@ -26,6 +26,8 @@ const MessengerPage = ({ currentUser }) => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [sendError, setSendError] = useState("");
+  const [toast, setToast] = useState(null);
+  const unreadSnapshotRef = useRef({ system: 0, byUser: {} });
 
   const unreadSystemCount = systemNotifications.filter((notification) => notification.isRead === false).length;
 
@@ -79,14 +81,18 @@ const MessengerPage = ({ currentUser }) => {
   const fetchConversations = async () => {
     try {
       const data = await requestJson('/messenger/conversations', {}, 'Unable to load conversations right now.');
-      setConversations(Array.isArray(data) ? data : []);
+      const next = Array.isArray(data) ? data : [];
+      setConversations(next);
+      maybeNotifyBrowser(next, systemNotifications);
     } catch (err) { console.error(err); }
   };
 
   const fetchSystemNotifications = async () => {
     try {
       const data = await requestJson('/messenger/system', {}, 'Unable to load system notifications right now.');
-      setSystemNotifications(Array.isArray(data) ? data : []);
+      const next = Array.isArray(data) ? data : [];
+      setSystemNotifications(next);
+      maybeNotifyBrowser(conversations, next);
     } catch (err) { console.error(err); }
   };
 
@@ -118,6 +124,11 @@ const MessengerPage = ({ currentUser }) => {
   };
 
   useEffect(() => { fetchConversations(); fetchSystemNotifications(); }, []);
+  useEffect(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -277,6 +288,40 @@ const MessengerPage = ({ currentUser }) => {
     } catch (err) { console.error(err); }
   };
 
+  const maybeNotifyBrowser = (nextConversations, nextSystemNotifications) => {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const was = unreadSnapshotRef.current;
+    const systemUnread = (nextSystemNotifications || []).filter((n) => n.isRead === false).length;
+    if (systemUnread > (was.system || 0)) {
+      new Notification('New system notification', { body: 'Open Messenger to view updates.' });
+    }
+
+    const byUser = {};
+    (nextConversations || []).forEach((c) => {
+      byUser[c.user.id] = c.unreadCount || 0;
+      if ((c.unreadCount || 0) > (was.byUser?.[c.user.id] || 0)) {
+        new Notification(`New message from ${c.user.name || c.user.username}`, {
+          body: c.lastMessage || 'You received a new message.',
+        });
+      }
+    });
+    unreadSnapshotRef.current = { system: systemUnread, byUser };
+  };
+
+  const handleBlockUser = async () => {
+    if (!activeTab?.id || activeTab.system) return;
+    try {
+      await requestJson(`/follow/block/${activeTab.id}`, { method: 'POST' }, 'Unable to block user.');
+      setToast({ type: 'success', message: 'User blocked.' });
+      resetChatState();
+      fetchConversations();
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Unable to block user.' });
+    } finally {
+      setOpenHeaderMenu(false);
+    }
+  };
+
   const formatMessageDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -378,8 +423,9 @@ const MessengerPage = ({ currentUser }) => {
   if (!currentUser) return <div className="loading">Loading...</div>;
 
   return (
-    <div className={`messenger-fixed-layout ${view === 'chat' ? 'mobile-chat-active' : 'mobile-list-active'}`}>
-      <div className="shine-messenger">
+    <>
+      <div className={`messenger-fixed-layout ${view === 'chat' ? 'mobile-chat-active' : 'mobile-list-active'}`}>
+        <div className="shine-messenger">
         <div className={`ms-sidebar ${view === 'chat' ? 'mobile-hide' : ''}`}>
           <div className="ms-sidebar-header">
             <h2>Messages</h2>
@@ -470,7 +516,7 @@ const MessengerPage = ({ currentUser }) => {
                       {openHeaderMenu && (
                         <div className="header-dropdown">
                           <button className="danger" onClick={handleDeleteConversation}>Delete Conversation</button>
-                          <button>Block User</button>
+                          <button className="danger" onClick={handleBlockUser}>Block User</button>
                         </div>
                       )}
                     </div>
@@ -506,8 +552,15 @@ const MessengerPage = ({ currentUser }) => {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+      {toast && (
+        <div style={{ position: 'fixed', right: 16, top: 16, zIndex: 2000, background: toast.type === 'error' ? '#FF4C4C' : '#1C274C', color: toast.type === 'error' ? '#fff' : '#FFC847', padding: '10px 14px', borderRadius: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -6,6 +6,18 @@ const prisma = require("../prisma");
 const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
 const { deleteUserWithRelations } = require("../controllers/admin/deletionHelpers");
 const DEFAULT_PROFILE_IMAGE = null;
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
+
+const getRequesterId = (req) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  try {
+    const decoded = jwt.verify(authHeader.split(" ")[1], JWT_SECRET);
+    return decoded.userId || decoded.id || null;
+  } catch {
+    return null;
+  }
+};
 
 // ---------------- TEST ROUTE ----------------
 router.get("/test", (req, res) => {
@@ -96,10 +108,24 @@ router.post("/login", async (req, res) => {
 router.get("/search", async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json([]);
+  const requesterId = getRequesterId(req);
 
   try {
     const users = await prisma.user.findMany({
       where: {
+        ...(requesterId
+          ? {
+              AND: [
+                { id: { not: requesterId } },
+                {
+                  blockedUsers: { none: { blockedId: requesterId } },
+                },
+                {
+                  blockedBy: { none: { blockerId: requesterId } },
+                },
+              ],
+            }
+          : {}),
         username: {
           contains: q,
           mode: 'insensitive',
@@ -122,17 +148,41 @@ router.get("/search", async (req, res) => {
 // ---------------- GET USER BY USERNAME ----------------
 router.get("/:username", async (req, res) => {
   try {
+    const requesterId = getRequesterId(req);
     const user = await prisma.user.findUnique({
       where: { username: req.params.username },
       include: { 
         memberships: { include: { community: true } },
         followers: true,
-        following: true
+        following: true,
+        blockedUsers: {
+          include: {
+            blocked: {
+              select: { id: true, username: true, name: true, image: true },
+            },
+          },
+        },
       },
     });
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (requesterId && requesterId !== user.id) {
+      const blockedRelation = await prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: requesterId, blockedId: user.id },
+            { blockerId: user.id, blockedId: requesterId },
+          ],
+        },
+      });
+
+      if (blockedRelation) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    }
     
-    const { password, ...userWithoutPassword } = user;
+    const { password, blockedUsers, ...userWithoutPassword } = user;
+    userWithoutPassword.blockedUsers = (blockedUsers || []).map((entry) => entry.blocked).filter(Boolean);
     res.json(userWithoutPassword);
   } catch (err) {
     console.error(err);
@@ -240,6 +290,19 @@ router.post("/unblock/:targetId", async (req, res) => {
 // ---------------- GET USER POSTS ----------------
 router.get("/:userId/posts", async (req, res) => {
   try {
+    const requesterId = getRequesterId(req);
+    if (requesterId && requesterId !== req.params.userId) {
+      const blockedRelation = await prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: requesterId, blockedId: req.params.userId },
+            { blockerId: req.params.userId, blockedId: requesterId },
+          ],
+        },
+      });
+      if (blockedRelation) return res.json([]);
+    }
+
     const posts = await prisma.post.findMany({
       where: { authorId: req.params.userId },
       include: {

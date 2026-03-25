@@ -149,7 +149,9 @@ const RightSidebar = ({ showOnly = null }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            cursor: "pointer",
           }}
+          onClick={() => navigate("/events")}
         >
           {!activeEvent ? (
             <div style={{ fontSize: "14px", fontWeight: 300, color: "#000", opacity: 0.8 }}>

@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../prisma');
 const auth = require('../middleware/auth');
+const blockFilterFor = (userId) => ({
+  AND: [
+    { sender: { blockedUsers: { none: { blockedId: userId } } } },
+    { sender: { blockedBy: { none: { blockerId: userId } } } },
+    { receiver: { blockedUsers: { none: { blockedId: userId } } } },
+    { receiver: { blockedBy: { none: { blockerId: userId } } } },
+  ],
+});
 
 /**
  * 1. GET INBOX SUMMARY (For Sidebar)
@@ -15,7 +23,8 @@ router.get('/inbox', auth, async (req, res) => {
     const messages = await prisma.message.findMany({
       where: {
         OR: [{ senderId: userId }, { receiverId: userId }],
-        NOT: { deletedBy: { has: userId } }
+        NOT: { deletedBy: { has: userId } },
+        ...blockFilterFor(userId),
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -83,6 +92,18 @@ router.post('/send', auth, async (req, res) => {
       return res.status(404).json({ error: "Receiver not found" });
     }
 
+    const blockedRelation = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: senderId, blockedId: receiverId },
+          { blockerId: receiverId, blockedId: senderId },
+        ],
+      },
+    });
+    if (blockedRelation) {
+      return res.status(403).json({ error: "Messaging is unavailable for this user." });
+    }
+
     const message = await prisma.message.create({
       data: { senderId, receiverId, text: trimmedText || null, imageUrl },
       include: { sender: { select: { username: true, image: true } } }
@@ -119,7 +140,8 @@ router.get('/conversations', auth, async (req, res) => {
     const messages = await prisma.message.findMany({
       where: {
         OR: [{ senderId: userId }, { receiverId: userId }],
-        NOT: { deletedBy: { has: userId } }
+        NOT: { deletedBy: { has: userId } },
+        ...blockFilterFor(userId),
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -181,7 +203,8 @@ router.get('/history/:partnerId', auth, async (req, res) => {
           { senderId: userId, receiverId: partnerId },
           { senderId: partnerId, receiverId: userId }
         ],
-        NOT: { deletedBy: { has: userId } }
+        NOT: { deletedBy: { has: userId } },
+        ...blockFilterFor(userId),
       },
       orderBy: { createdAt: 'asc' }
     });
@@ -275,11 +298,17 @@ router.get('/search', auth, async (req, res) => {
 
     const users = await prisma.user.findMany({
       where: {
-        id: { not: userId },
-        OR: [
-          { username: { contains: term, mode: 'insensitive' } },
-          { name: { contains: term, mode: 'insensitive' } }
-        ]
+        AND: [
+          { id: { not: userId } },
+          {
+            OR: [
+              { username: { contains: term, mode: 'insensitive' } },
+              { name: { contains: term, mode: 'insensitive' } }
+            ],
+          },
+          { blockedUsers: { none: { blockedId: userId } } },
+          { blockedBy: { none: { blockerId: userId } } },
+        ],
       },
       select: { id: true, username: true, name: true, image: true },
       take: 20,

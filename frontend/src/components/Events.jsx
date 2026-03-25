@@ -11,7 +11,13 @@ export default function Events() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [textColor, setTextColor] = useState("dark-text");
   const [isPlaying, setIsPlaying] = useState(true);
+  const [toast, setToast] = useState(null);
   const intervalRef = useRef(null);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    window.clearTimeout(window.__eventsToastTimer);
+    window.__eventsToastTimer = window.setTimeout(() => setToast(null), 2600);
+  };
 
   useEffect(() => {
     axios
@@ -37,7 +43,7 @@ export default function Events() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please log in to participate in events.");
+        showToast("Please log in to participate in events.", "error");
         return;
       }
 
@@ -48,13 +54,13 @@ export default function Events() {
       );
 
       if (res.data?.alreadyParticipating) {
-        alert("You have already requested participation details for this event.");
+        showToast("You already requested participation details.");
       } else {
-        alert("Participation confirmed. Event details were sent to your notifications.");
+        showToast("Participation confirmed.");
       }
     } catch (err) {
       console.error("Event participation failed:", err);
-      alert("We could not submit your participation right now. Please try again.");
+      showToast("Could not submit participation right now.", "error");
     }
   };
 
@@ -135,6 +141,15 @@ export default function Events() {
           and think differently.
         </p>
       </div>
+      {toast && (
+        <div style={{
+          position: "fixed", right: 16, top: 16, zIndex: 1000, background: toast.type === "error" ? "#FF4C4C" : "#1C274C",
+          color: toast.type === "error" ? "#fff" : "#FFC847", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12
+        }}>
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer" }}>✕</button>
+        </div>
+      )}
 
       <div className="event-banner">
         {!activeIsVideo && activeMedia && (

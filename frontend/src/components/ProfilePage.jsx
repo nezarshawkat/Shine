@@ -255,6 +255,20 @@ export default function ProfilePage({
     setMenuOpen(false);
   };
 
+  const handleBlockUser = async () => {
+    if (!token || !userId || isCurrentUser) return;
+    try {
+      await API.post(`/follow/block/${userId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("User blocked.");
+      setMenuOpen(false);
+      navigate("/forum");
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to block user.");
+    }
+  };
+
   const renderPostByType = (post, index) => {
     const componentMap = { opinion: OpinionPost, analysis: AnalysisPost, critique: CritiquePost, poll: PollPost };
     const Component = componentMap[post.type] || OpinionPost;
@@ -293,6 +307,7 @@ export default function ProfilePage({
             ) : (
               <>
                 <div onClick={handleMessageUser}>Message</div>
+                <div onClick={handleBlockUser}>Block User</div>
                 <div className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }} style={{ color: "#FF4D4D" }}>Report Profile</div>
               </>
             )}

@@ -498,6 +498,9 @@ export default function CritiquePost({ postId, initialData }) {
   return (
     <>
       <style>{`
+        .post-content-layout {
+          align-items: flex-start;
+        }
         @media (max-width: 768px) {
           .post-main-layout {
             flex-direction: column !important;
@@ -529,6 +532,22 @@ export default function CritiquePost({ postId, initialData }) {
         @media (max-width: 600px) {
           .post-timestamp {
             display: none !important;
+          }
+          .sources-btn-label {
+            display: none !important;
+          }
+          .sources-btn-root::after {
+            content: "Sources";
+          }
+          .post-content-layout {
+            flex-direction: column;
+          }
+          .post-text-pane {
+            width: 100%;
+          }
+          .post-media-block {
+            width: 100% !important;
+            max-width: 100% !important;
           }
           .sources-btn-full {
             display: none !important;

@@ -10,6 +10,9 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const [newEmail, setNewEmail] = useState(user?.email || "");
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState(user?.blockedUsers || []);
+  const showToast = (message, type = "success") => setToast({ message, type });
 
   const sections = [
     { id: "Account", icon: "👤" },
@@ -20,20 +23,20 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   ];
 
   const handleEmailUpdate = async () => {
-    if (!newEmail.includes("@")) return alert("Invalid email");
+    if (!newEmail.includes("@")) return showToast("Invalid email", "error");
     setLoading(true);
     try {
       const res = await API.put(`/users/${user.id || user._id}`, { email: newEmail });
       onUserUpdate(res.data.user);
       setIsEditingEmail(false);
-      alert("Email updated!");
+      showToast("Email updated!");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update email.");
+      showToast(err.response?.data?.message || "Failed to update email.", "error");
     } finally { setLoading(false); }
   };
 
   const handlePasswordUpdate = async () => {
-    if (passwords.next !== passwords.confirm) return alert("Passwords do not match");
+    if (passwords.next !== passwords.confirm) return showToast("Passwords do not match", "error");
     setLoading(true);
     try {
       await API.put(`/users/${user.id || user._id}/password`, {
@@ -42,9 +45,9 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
       });
       setIsEditingPassword(false);
       setPasswords({ current: "", next: "", confirm: "" });
-      alert("Password updated successfully!");
+      showToast("Password updated successfully!");
     } catch (err) {
-      alert(err.response?.data?.message || "Error updating password.");
+      showToast(err.response?.data?.message || "Error updating password.", "error");
     } finally { setLoading(false); }
   };
 
@@ -54,7 +57,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
         await API.delete(`/users/${user.id || user._id}`);
         logout();
       } catch (err) {
-        alert("Error deleting account.");
+        showToast("Error deleting account.", "error");
       }
     }
   };
@@ -62,16 +65,37 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const handleUnblock = async (blockedUserId) => {
     try {
       await API.delete(`/follow/block/${blockedUserId}`);
-      const updatedBlockedList = user.blockedUsers.filter(u => (u.id || u._id) !== blockedUserId);
+      const updatedBlockedList = blockedUsers.filter(u => (u.id || u._id) !== blockedUserId);
+      setBlockedUsers(updatedBlockedList);
       onUserUpdate({ ...user, blockedUsers: updatedBlockedList });
-      alert("User unblocked.");
+      showToast("User unblocked.");
     } catch (err) {
-      alert("Failed to unblock user.");
+      showToast("Failed to unblock user.", "error");
     }
   };
 
+  React.useEffect(() => {
+    let mounted = true;
+    API.get("/follow/blocked")
+      .then((res) => {
+        if (mounted) setBlockedUsers(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        if (mounted) setBlockedUsers(user?.blockedUsers || []);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id, user?._id]);
+
   return (
     <div className="full-settings-layer">
+      {toast && (
+        <div className={`settings-toast ${toast.type || "success"}`}>
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)}>✕</button>
+        </div>
+      )}
       <div className="settings-container">
         <aside className="settings-sidebar">
           <button className="settings-back-btn" onClick={onClose}>
@@ -158,8 +182,8 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
 
             {activeSection === "Blocked" && (
               <div className="settings-card-group">
-                {user?.blockedUsers?.length > 0 ? (
-                    user.blockedUsers.map(u => (
+                {blockedUsers?.length > 0 ? (
+                    blockedUsers.map(u => (
                         <div key={u.id || u._id} className="setting-row">
                              <p>@{u.username}</p>
                              <button className="action-btn" onClick={() => handleUnblock(u.id || u._id)}>Unblock</button>
@@ -221,6 +245,9 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
         .danger-action-btn { padding: 10px 20px; background: #ff4d4d; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .sidebar-footer { padding-top: 20px; border-top: 1px solid #eee; }
         .logout-button { width: 100%; padding: 12px; border: 1px solid #eee; background: #fff; border-radius: 10px; color: #ff4d4d; font-weight: 700; cursor: pointer; }
+        .settings-toast { position: fixed; right: 20px; top: 20px; z-index: 10001; background: #1C274C; color: #FFC847; border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
+        .settings-toast.error { background: #FF4C4C; color: #fff; }
+        .settings-toast button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 14px; }
 
         /* RESPONSIVE OVERRIDES */
         @media (max-width: 850px) {
