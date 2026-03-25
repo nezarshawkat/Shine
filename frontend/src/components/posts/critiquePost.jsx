@@ -514,6 +514,8 @@ export default function CritiquePost({ postId, initialData }) {
           .critique-post-main-layout {
             flex-direction: column !important;
             flex-wrap: nowrap !important;
+            width: 100% !important;
+            min-width: 0 !important;
           }
           .critique-post-media-block {
             width: 100% !important;
@@ -533,6 +535,8 @@ export default function CritiquePost({ postId, initialData }) {
           }
           .critique-post-main-content {
             order: 3;
+            width: 100% !important;
+            min-width: 0 !important;
           }
           .critique-post-media-block {
             order: 4;
@@ -753,8 +757,8 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
         )}
 
-        <div className="critique-post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div className="critique-post-main-content" style={{ flex: "1 1 320px", minWidth: 0 }}>
+        <div className="critique-post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start", width: "100%", minWidth: 0 }}>
+          <div className="critique-post-main-content" style={{ flex: "1 1 320px", minWidth: 0, alignSelf: "flex-start" }}>
             <div className="critique-post-desktop-keywords"
               style={{
                 display: "flex",

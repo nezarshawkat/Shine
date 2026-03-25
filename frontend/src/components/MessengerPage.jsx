@@ -290,6 +290,7 @@ const MessengerPage = ({ currentUser }) => {
 
   const maybeNotifyBrowser = (nextConversations, nextSystemNotifications) => {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
     const was = unreadSnapshotRef.current;
     const systemUnread = (nextSystemNotifications || []).filter((n) => n.isRead === false).length;
     if (systemUnread > (was.system || 0)) {
@@ -297,14 +298,39 @@ const MessengerPage = ({ currentUser }) => {
     }
 
     const byUser = {};
+    let totalNewMessages = 0;
+    const sendersWithNewMessages = [];
+
     (nextConversations || []).forEach((c) => {
-      byUser[c.user.id] = c.unreadCount || 0;
-      if ((c.unreadCount || 0) > (was.byUser?.[c.user.id] || 0)) {
-        new Notification(`New message from ${c.user.name || c.user.username}`, {
-          body: c.lastMessage || 'You received a new message.',
-        });
+      const userId = c.user?.id;
+      if (!userId) return;
+
+      const nextUnreadCount = c.unreadCount || 0;
+      const previousUnreadCount = was.byUser?.[userId] || 0;
+      byUser[userId] = nextUnreadCount;
+
+      if (nextUnreadCount > previousUnreadCount) {
+        const newMessagesCount = nextUnreadCount - previousUnreadCount;
+        totalNewMessages += newMessagesCount;
+        sendersWithNewMessages.push(c.user.name || c.user.username || 'Someone');
       }
     });
+
+    if (totalNewMessages > 0) {
+      const uniqueSenders = [...new Set(sendersWithNewMessages)];
+      const senderLabel =
+        uniqueSenders.length === 1
+          ? uniqueSenders[0]
+          : `${uniqueSenders.slice(0, 2).join(', ')}${uniqueSenders.length > 2 ? ` and ${uniqueSenders.length - 2} others` : ''}`;
+
+      new Notification(
+        totalNewMessages === 1 ? 'You got 1 new message' : `You got ${totalNewMessages} new messages`,
+        {
+          body: `From ${senderLabel}`,
+        },
+      );
+    }
+
     unreadSnapshotRef.current = { system: systemUnread, byUser };
   };
 

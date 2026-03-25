@@ -13,6 +13,10 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const [toast, setToast] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState(user?.blockedUsers || []);
   const showToast = (message, type = "success") => setToast({ message, type });
+  const authHeaders = React.useMemo(() => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
 
   const sections = [
     { id: "Account", icon: "👤" },
@@ -63,9 +67,15 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   };
 
   const handleUnblock = async (blockedUserId) => {
+    if (!blockedUserId) {
+      showToast("Failed to unblock user.", "error");
+      return;
+    }
+
+    const normalizedBlockedUserId = String(blockedUserId);
     try {
-      await API.delete(`/follow/block/${blockedUserId}`);
-      const updatedBlockedList = blockedUsers.filter(u => (u.id || u._id) !== blockedUserId);
+      await API.delete(`/follow/block/${normalizedBlockedUserId}`, { headers: authHeaders });
+      const updatedBlockedList = blockedUsers.filter((u) => String(u.id || u._id) !== normalizedBlockedUserId);
       setBlockedUsers(updatedBlockedList);
       onUserUpdate({ ...user, blockedUsers: updatedBlockedList });
       showToast("User unblocked.");
@@ -76,7 +86,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
 
   React.useEffect(() => {
     let mounted = true;
-    API.get("/follow/blocked")
+    API.get("/follow/blocked", { headers: authHeaders })
       .then((res) => {
         if (mounted) setBlockedUsers(Array.isArray(res.data) ? res.data : []);
       })
@@ -86,7 +96,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
     return () => {
       mounted = false;
     };
-  }, [user?.id, user?._id]);
+  }, [authHeaders, user?.id, user?._id]);
 
   return (
     <div className="full-settings-layer">

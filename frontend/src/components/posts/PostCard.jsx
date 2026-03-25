@@ -7,6 +7,7 @@ const PostCard = forwardRef(({ children, ...props }, ref) => {
       {...props}
       style={{
         width: "100%",
+        boxSizing: "border-box",
         background: "#fff",
         borderRadius: 18,
         border: "0.5px solid #1C274C",
