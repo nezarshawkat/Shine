@@ -260,3 +260,22 @@
     min-height: 0 !important;
   }
 }
+@media (max-width: 768px) {
+  .critique-post-main-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important; /* Forces layout to respect screen width */
+    overflow: hidden !important; 
+  }
+  .critique-post-main-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important; /* Prevents ghost stretching */
+  }
+  .critique-post-original-preview-text {
+    max-width: 75% !important; /* Prevents text from hitting the View button */
+  }
+}
