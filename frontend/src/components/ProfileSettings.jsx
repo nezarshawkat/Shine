@@ -13,10 +13,10 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const [toast, setToast] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState(user?.blockedUsers || []);
   const showToast = (message, type = "success") => setToast({ message, type });
-  const authHeaders = React.useMemo(() => {
+  const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
+  };
 
   const sections = [
     { id: "Account", icon: "👤" },
@@ -74,19 +74,22 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
 
     const normalizedBlockedUserId = String(blockedUserId);
     try {
-      await API.delete(`/follow/block/${normalizedBlockedUserId}`, { headers: authHeaders });
+      await API.delete(`/follow/block/${normalizedBlockedUserId}`, {
+        headers: getAuthHeaders(),
+      });
       const updatedBlockedList = blockedUsers.filter((u) => String(u.id || u._id) !== normalizedBlockedUserId);
       setBlockedUsers(updatedBlockedList);
       onUserUpdate({ ...user, blockedUsers: updatedBlockedList });
       showToast("User unblocked.");
     } catch (err) {
+      console.error("Failed to unblock user", err?.response?.data || err);
       showToast("Failed to unblock user.", "error");
     }
   };
 
   React.useEffect(() => {
     let mounted = true;
-    API.get("/follow/blocked", { headers: authHeaders })
+    API.get("/follow/blocked", { headers: getAuthHeaders() })
       .then((res) => {
         if (mounted) setBlockedUsers(Array.isArray(res.data) ? res.data : []);
       })
@@ -96,7 +99,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
     return () => {
       mounted = false;
     };
-  }, [authHeaders, user?.id, user?._id]);
+  }, [user?.id, user?._id]);
 
   return (
     <div className="full-settings-layer">

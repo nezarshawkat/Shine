@@ -189,6 +189,8 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
         key={post.id || index}
         style={{
           width: "100%",
+          maxWidth: "765px",
+          overflow: "hidden",
           marginBottom: isMobile ? "2px" : "12px",
         }}
       >

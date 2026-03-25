@@ -520,7 +520,7 @@ export default function CritiquePost({ postId, initialData }) {
           .critique-post-media-block {
             width: 100% !important;
             height: auto !important;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 16 / 10;
             flex: unset !important;
           }
           .critique-post-desktop-keywords {
@@ -735,6 +735,7 @@ export default function CritiquePost({ postId, initialData }) {
                 overflow: "hidden",
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
+                overflowWrap: "anywhere",
                 flex: 1,
                 minWidth: 0,
               }}
@@ -857,7 +858,15 @@ export default function CritiquePost({ postId, initialData }) {
                 onClick={() => navigate(`/post/${post.id || post._id}`)}
                 style={{ cursor: "pointer" }}
               >
-                <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>
+                <div
+                  style={{
+                    fontSize: 16,
+                    color: "#000",
+                    lineHeight: 1.5,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
                   {displayText}
                 </div>
                 {post.text?.length > MAX_CHARS && (
