@@ -573,6 +573,19 @@ export default function CritiquePost({ postId, initialData }) {
           .critique-post-view-text {
             font-size: 14px !important;
           }
+          .critique-post-original-preview {
+            height: 49px !important;
+            min-height: 49px !important;
+            max-height: 49px !important;
+            overflow: hidden;
+          }
+          .critique-post-original-preview-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            word-break: normal;
+            overflow-wrap: normal;
+          }
         }
       `}</style>
 
@@ -708,6 +721,7 @@ export default function CritiquePost({ postId, initialData }) {
 
         {originalPost && (
           <div
+            className="critique-post-original-preview"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/post/${originalPost.id || originalPost._id}`);
@@ -720,7 +734,7 @@ export default function CritiquePost({ postId, initialData }) {
               justifyContent: "space-between",
               background: "#F6F6F6",
               border: "0.5px solid #1C274C",
-              minHeight: 49,
+              height: 49,
               borderRadius: 13,
               fontSize: isMobileView ? 14 : 16,
               color: "#1C274C",
@@ -731,11 +745,11 @@ export default function CritiquePost({ postId, initialData }) {
             }}
           >
             <div
+              className="critique-post-original-preview-text"
               style={{
                 overflow: "hidden",
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
-                overflowWrap: "anywhere",
                 flex: 1,
                 minWidth: 0,
               }}
