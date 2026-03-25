@@ -259,7 +259,7 @@ export default function CritiquePost({ postId, initialData }) {
   const [isLiked, setIsLiked] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
   const [isMobileView, setIsMobileView] = useState(
-    typeof window !== "undefined" ? window.innerWidth <= 600 : false,
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false,
   );
 
   const [imageIndex, setImageIndex] = useState(0);
@@ -387,7 +387,7 @@ export default function CritiquePost({ postId, initialData }) {
   }, [post?.media, maximizedIndex]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 600);
+    const onResize = () => setIsMobileView(window.innerWidth <= 768);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -518,6 +518,7 @@ export default function CritiquePost({ postId, initialData }) {
             gap: 10px !important;
             width: 100% !important;
             min-width: 0 !important;
+            overflow: hidden !important;
             min-height: 0 !important;
             height: auto !important;
           }
@@ -594,7 +595,7 @@ export default function CritiquePost({ postId, initialData }) {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            max-width: 70% !important;
+            max-width: 75% !important;
             word-break: normal !important;
             overflow-wrap: normal !important;
           }
@@ -774,6 +775,8 @@ export default function CritiquePost({ postId, initialData }) {
                 textOverflow: "ellipsis",
                 flex: 1,
                 minWidth: 0,
+                wordBreak: "normal",
+                overflowWrap: "normal",
               }}
             >
               {originalPost.text}
@@ -795,8 +798,8 @@ export default function CritiquePost({ postId, initialData }) {
           </div>
         )}
 
-        <div className="critique-post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start", width: "100%", minWidth: 0 }}>
-          <div className="critique-post-main-content" style={{ flex: "1 1 320px", minWidth: 0, alignSelf: "flex-start" }}>
+        <div className="critique-post-main-layout" style={{ marginTop: 0, display: "flex", gap: 20, flexWrap: isMobileView ? "nowrap" : "wrap", flexDirection: isMobileView ? "column" : "row", alignItems: "flex-start", width: "100%", minWidth: 0 }}>
+          <div className="critique-post-main-content" style={{ flex: isMobileView ? "0 0 auto" : "1 1 320px", width: isMobileView ? "100%" : "auto", minWidth: 0, alignSelf: "flex-start" }}>
             <div className="critique-post-desktop-keywords"
               style={{
                 display: "flex",
@@ -930,9 +933,9 @@ export default function CritiquePost({ postId, initialData }) {
             <div
               className="critique-post-media-block"
               style={{
-                width: "min(277px, 100%)",
+                width: isMobileView ? "100%" : "min(277px, 100%)",
                 height: "auto",
-                aspectRatio: "16 / 10",
+                aspectRatio: isMobileView ? "auto" : "16 / 10",
                 flex: "1 1 260px",
                 borderRadius: 12,
                 overflow: "hidden",
