@@ -512,16 +512,30 @@ export default function CritiquePost({ postId, initialData }) {
         }
         @media (max-width: 768px) {
           .critique-post-main-layout {
+            display: flex !important;
             flex-direction: column !important;
             flex-wrap: nowrap !important;
+            gap: 10px !important;
             width: 100% !important;
             min-width: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+          }
+          .critique-post-main-content {
+            order: 3;
+            width: 100% !important;
+            min-width: 0 !important;
+            margin-bottom: 0 !important;
+            flex: 0 0 auto !important;
           }
           .critique-post-media-block {
             width: 100% !important;
             height: auto !important;
-            aspect-ratio: 16 / 10;
-            flex: unset !important;
+            max-height: none !important;
+            aspect-ratio: auto !important;
+            flex: 0 0 auto !important;
+            align-self: stretch !important;
+            min-height: 0 !important;
           }
           .critique-post-desktop-keywords {
             display: none !important;
@@ -532,11 +546,6 @@ export default function CritiquePost({ postId, initialData }) {
             flex-wrap: wrap;
             margin-top: 10px;
             order: 2;
-          }
-          .critique-post-main-content {
-            order: 3;
-            width: 100% !important;
-            min-width: 0 !important;
           }
           .critique-post-media-block {
             order: 4;
@@ -577,14 +586,17 @@ export default function CritiquePost({ postId, initialData }) {
             height: 49px !important;
             min-height: 49px !important;
             max-height: 49px !important;
-            overflow: hidden;
+            display: flex !important;
+            align-items: center !important;
+            overflow: hidden !important;
           }
           .critique-post-original-preview-text {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            word-break: normal;
-            overflow-wrap: normal;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 70% !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
           }
         }
       `}</style>
@@ -765,6 +777,7 @@ export default function CritiquePost({ postId, initialData }) {
                 fontWeight: 500,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {isMobileView ? "View" : "View Post"}

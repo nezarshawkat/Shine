@@ -240,17 +240,23 @@
   .critique-post-main-layout {
     display: flex !important;
     flex-direction: column !important; /* Stack vertically */
-    gap: 12px !important; /* Tighten gaps */
+    gap: 10px !important; /* Tighten gaps */
+    min-height: 0 !important;
+    height: auto !important;
   }
   
   .critique-post-main-content {
     width: 100% !important;
     margin-bottom: 0 !important; /* Remove bottom margin */
+    flex: 0 0 auto !important;
   }
 
   .critique-post-media-block {
     width: 100% !important;
     height: auto !important; /* Let it be defined by aspect ratio */
-    max-height: 250px; /* Optional: cap the height so it doesn't take the whole screen */
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
   }
 }
