@@ -623,7 +623,14 @@ export default function CritiquePost({ postId, initialData }) {
         }
       />
 
-      <PostCard ref={postRef}>
+      <PostCard
+        ref={postRef}
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          minWidth: 0,
+        }}
+      >
         <div
           style={{
             display: "flex",
@@ -746,21 +753,24 @@ export default function CritiquePost({ postId, initialData }) {
               justifyContent: "space-between",
               background: "#F6F6F6",
               border: "0.5px solid #1C274C",
-              height: 49,
               borderRadius: 13,
-              fontSize: isMobileView ? 14 : 16,
-              color: "#1C274C",
-              cursor: "pointer",
               width: "100%",
+              maxWidth: "100%",
+              minWidth: 0,
               boxSizing: "border-box",
+              height: 49,
+              overflow: "hidden",
               gap: 8,
+              cursor: "pointer",
             }}
           >
             <div
               className="critique-post-original-preview-text"
               style={{
-                overflow: "hidden",
+                fontSize: isMobileView ? 14 : 16,
+                color: "#1C274C",
                 whiteSpace: "nowrap",
+                overflow: "hidden",
                 textOverflow: "ellipsis",
                 flex: 1,
                 minWidth: 0,
