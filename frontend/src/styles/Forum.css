@@ -221,3 +221,36 @@
     margin-top: 10px;
   }
 }
+.critique-post-original-preview {
+  height: 49px !important;
+  max-height: 49px !important;
+  min-height: 49px !important;
+  display: flex !important;
+  align-items: center;
+  overflow: hidden;
+}
+
+.critique-post-original-preview-text {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 70%; /* Ensures the 'View' button isn't pushed out */
+}
+@media (max-width: 768px) {
+  .critique-post-main-layout {
+    display: flex !important;
+    flex-direction: column !important; /* Stack vertically */
+    gap: 12px !important; /* Tighten gaps */
+  }
+  
+  .critique-post-main-content {
+    width: 100% !important;
+    margin-bottom: 0 !important; /* Remove bottom margin */
+  }
+
+  .critique-post-media-block {
+    width: 100% !important;
+    height: auto !important; /* Let it be defined by aspect ratio */
+    max-height: 250px; /* Optional: cap the height so it doesn't take the whole screen */
+  }
+}
