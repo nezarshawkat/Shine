@@ -7,18 +7,13 @@ import missionImg from "../assets/mission.png";
 import visionImg from "../assets/vision.png";
 import shineLogo from "../assets/shineLogo.png";
 
-const activities = [
-  "We organize events, intiatives, and training sessions to help individuals and organizations make effect for society.",
-  "We provide a space for communities to connect, share ideas, and speak freely.",
-  "We allow people to post articles about what they are passionate about.",
-  "We conduct research to provide insights and solutions for real-world challenges.",
-];
+const whatWeDoText =
+  "Shine is a platform built for political discussion, debate, and analysis. Members can share ideas, publish opinions, explore global events, and engage in meaningful conversations about politics and history.";
 
 const testimonials = [
-  "Shine has transformed the way I approach events, providing invaluable skills and thinking.",
-  "The collaborative environment at Shine has been instrumental in my professional growth.",
-  "Thanks to Shine, I\'ve been able to think, analyze, understand policies",
-  "Shine\'s commitment to innovation is truly inspiring and has helped me learn more.",
+  '"I love how easy it is to discover news and insights from around the world."',
+  '"The articles section is my favorite—I always learn something new there."',
+  '"I really appreciate the respectful discussions; it’s rare to find that online."',
 ];
 
 export default function LandingPage() {
@@ -50,11 +45,13 @@ export default function LandingPage() {
       <section className="banner-hero">
         <h2>What is Shine?</h2>
         <p>
-          Shine is a forward-thinking platform designed to foster innovation and
-          collaboration among global communities. With a focus on empowerment
-          and technology, Shine aims to bridge the gap between ideas and
-          implementation, offering tools and resources to turn visions into
-          reality.
+          Shine is a digital platform designed for anyone interested in
+          politics, history, and global events. It brings together people from
+          around the world to share ideas, discuss current issues, and explore
+          diverse perspectives. Whether you want to read insightful articles,
+          participate in debates, join communities, or attend events, SHINE
+          provides a space where thoughtful conversation and learning come
+          first.
         </p>
       </section>
 
@@ -62,11 +59,7 @@ export default function LandingPage() {
 
       <section className="banner-do">
         <h2>What We Do</h2>
-        <ul className="activities-list">
-          {activities.map((activity) => (
-            <li key={activity}>{activity}</li>
-          ))}
-        </ul>
+        <p>{whatWeDoText}</p>
       </section>
 
       <div className="divider"></div>
@@ -76,8 +69,9 @@ export default function LandingPage() {
           <div className="text-group">
             <h3>Our Mission</h3>
             <p>
-              To empower communities through innovation and collaboration,
-              enabling them to make a positive impact on the world.
+              Our mission is to create a space where open discussion and
+              diverse perspectives help people better understand politics,
+              society, and the world around them.
             </p>
           </div>
           <img src={missionImg} alt="Mission" />
@@ -87,9 +81,9 @@ export default function LandingPage() {
           <div className="text-group">
             <h3>Our Vision</h3>
             <p>
-              To become a global leader in fostering innovation and
-              collaboration, driving positive change across industries and
-              communities.
+              We envision a global community where thoughtful debate, shared
+              knowledge, and respectful dialogue shape a deeper understanding of
+              political issues.
             </p>
           </div>
           <img src={visionImg} alt="Vision" />
