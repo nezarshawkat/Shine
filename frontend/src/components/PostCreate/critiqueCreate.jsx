@@ -70,6 +70,7 @@ export default function CritiqueCreate() {
   const [audience, setAudience] = useState({ name: "Personally", id: null });
   const [showAudience, setShowAudience] = useState(false);
   const [toast, setToast] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
 
   const myCommunities = user?.memberships?.map(m => m.community).filter(Boolean) || [];
 
@@ -112,6 +113,12 @@ export default function CritiqueCreate() {
       });
     }
   }, [location.state]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
@@ -296,7 +303,12 @@ export default function CritiqueCreate() {
             <div style={{ display: "flex", alignItems: "center", gap: 17, overflow: "hidden" }}>
               <img src={ArrowIcon} width={25} height={25} alt="arrow" />
               <span style={{ fontSize: 18, color: PRIMARY, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {selectedPost ? (selectedPost.content?.length > 40 ? selectedPost.content.slice(0, 39) + "..." : selectedPost.content || "Post Selected") : "Reply on a post"}
+                {selectedPost
+                  ? (() => {
+                      const maxPreviewChars = isMobileView ? 20 : 40;
+                      return (selectedPost.content || "Post Selected").slice(0, maxPreviewChars);
+                    })()
+                  : "Reply on a post"}
               </span>
             </div>
             <button
