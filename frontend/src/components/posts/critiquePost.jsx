@@ -780,7 +780,14 @@ export default function CritiquePost({ postId, initialData }) {
                 overflowWrap: "normal",
               }}
             >
-              {originalPost.text}
+              {isMobileView
+                ? (() => {
+                    const mobilePreviewText = (originalPost.text || "").slice(0, 20);
+                    return (originalPost.text || "").length > 20
+                      ? `${mobilePreviewText}...`
+                      : mobilePreviewText;
+                  })()
+                : originalPost.text}
             </div>
             <button
               style={{
