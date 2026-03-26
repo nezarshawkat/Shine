@@ -1,9 +1,10 @@
 {
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run generate:sitemap && vite build",
     "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate:sitemap": "node ./scripts/generate-sitemap.mjs"
   },
   "name": "shine-frontend",
   "version": "1.0.0",
