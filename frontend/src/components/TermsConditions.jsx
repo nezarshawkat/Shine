@@ -1,7 +1,7 @@
 import React from "react";
 
 const termsConditionsText = `Shine Terms & Conditions
-Effective Date: [Insert Date]
+Effective Date: 3/6/2026
 1. Acceptance of Terms
 By using Shine, you agree to these Terms & Conditions. If you do not agree, you may not use the platform.
 2. Eligibility

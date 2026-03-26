@@ -1,7 +1,7 @@
 import React from "react";
 
 const privacyPolicyText = `Shine Privacy Policy
-Effective Date: [Insert Date]
+Effective Date: 3/6/2026
 1. Introduction
 Welcome to Shine (“we,” “our,” or “us”). Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our website and services. By using Shine, you agree to the terms outlined here.
 2. Information We Collect
