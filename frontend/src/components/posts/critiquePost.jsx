@@ -587,6 +587,7 @@ export default function CritiquePost({ postId, initialData }) {
             height: 49px !important;
             min-height: 49px !important;
             max-height: 49px !important;
+            box-sizing: border-box !important;
             display: flex !important;
             align-items: center !important;
             overflow: hidden !important;
