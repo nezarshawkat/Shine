@@ -42,12 +42,12 @@ Shine may use third-party services (e.g., analytics, embedded media). These serv
 11. Changes to Privacy Policy
 We may update this Privacy Policy. Major changes will be communicated via email or website notification.
 12. Contact Us
-Questions about this Privacy Policy can be directed to: [Insert Email]`;
+Questions about this Privacy Policy can be directed to: contact@sshine.org`;
 
 export default function PrivacyPolicy() {
   return (
     <main style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1rem" }}>
-      <pre style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, fontFamily: "inherit" }}>
+      <pre style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, fontFamily: "inherit", paddingTop: "60px" }}>
         {privacyPolicyText}
       </pre>
     </main>

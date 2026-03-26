@@ -46,7 +46,7 @@ For questions about these Terms, contact: contact@sshine.org`;
 export default function TermsConditions() {
   return (
     <main style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1rem" }}>
-      <pre style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, fontFamily: "inherit" }}>
+      <pre style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, fontFamily: "inherit", paddingTop: "60px" }}>
         {termsConditionsText}
       </pre>
     </main>
