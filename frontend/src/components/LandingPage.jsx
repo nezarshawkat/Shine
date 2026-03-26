@@ -44,7 +44,7 @@ export default function LandingPage() {
 
       <section className="banner-hero">
         <h2>What is Shine?</h2>
-        <p>
+        <p className="banner-text">
           Shine is a digital platform designed for anyone interested in
           politics, history, and global events. It brings together people from
           around the world to share ideas, discuss current issues, and explore
@@ -59,7 +59,7 @@ export default function LandingPage() {
 
       <section className="banner-do">
         <h2>What We Do</h2>
-        <p>{whatWeDoText}</p>
+        <p className="banner-text">{whatWeDoText}</p>
       </section>
 
       <div className="divider"></div>
@@ -68,7 +68,7 @@ export default function LandingPage() {
         <div className="group">
           <div className="text-group">
             <h3>Our Mission</h3>
-            <p>
+            <p className="banner-text">
               Our mission is to create a space where open discussion and
               diverse perspectives help people better understand politics,
               society, and the world around them.
@@ -80,7 +80,7 @@ export default function LandingPage() {
         <div className="group reverse">
           <div className="text-group">
             <h3>Our Vision</h3>
-            <p>
+            <p className="banner-text">
               We envision a global community where thoughtful debate, shared
               knowledge, and respectful dialogue shape a deeper understanding of
               political issues.
@@ -113,8 +113,19 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
+
+        {/* Divider with top margin to prevent touching logo */}
+        <div className="footer-line first-divider"></div>
+
+        <div className="footer-links">
+          <Link to="/privacypolicy">Privacy Policy</Link>
+          <span className="footer-separator">|</span>
+          <Link to="/terms&conditions">Terms & Conditions</Link>
+        </div>
+
         <div className="footer-line"></div>
-        <div className="footer-bottom">Shine © 2025, all rights reserved</div>
+        
+        <div className="footer-bottom">Shine © 2026, all rights reserved</div>
       </footer>
     </div>
   );

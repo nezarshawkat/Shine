@@ -292,3 +292,181 @@ footer .footer-bottom {
     text-align: left;
   }
 }
+/* Ensure consistent line height across all sections */
+.banner-text, 
+.banner-hero p, 
+.banner-do p, 
+.banner-mv .text-group p {
+  line-height: 1.85 !important;
+  font-size: clamp(1rem, 1.7vw, 1.15rem);
+  color: #415070;
+}
+
+/* Footer Container Adjustment */
+footer {
+  width: 100%;
+  background-color: #1c274c;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 8vw 0;
+  box-sizing: border-box;
+  
+}
+
+/* Dividers in Footer */
+footer .footer-line {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0; /* Remove top margin so we control space via the containers */
+}
+
+/* The Links Area */
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 0; /* Vertical spacing between dividers */
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: #ffc847;
+}
+
+.footer-separator {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Bottom Text Area */
+.footer-bottom {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 300;
+  padding: 25px 0; /* Matches the padding of footer-links for symmetry */
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mobile View adjustments */
+@media (max-width: 900px) {
+  .footer-links {
+    flex-direction: column; /* Stack links on mobile */
+    gap: 12px;
+    padding: 20px 0;
+  }
+
+  .footer-separator {
+    display: none; /* Hide the "|" pipe symbol on mobile */
+  }
+
+  footer .footer-center {
+    align-items: center; /* Center buttons on mobile footer */
+    text-align: center;
+  }
+  
+  footer .footer-top {
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+}
+/* Spacing fix for "What we do" and other banner paragraphs */
+.banner-text {
+  line-height: 1.85 !important;
+  font-size: clamp(1rem, 1.7vw, 1.15rem);
+  color: #415070;
+}
+
+/* Footer Container */
+footer {
+  width: 100%;
+  background-color: #1c274c;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 8vw 0;
+  box-sizing: border-box;
+}
+
+/* Base style for both dividers in footer */
+footer .footer-line {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0;
+}
+
+/* Space specifically above the first divider to separate from logo/contact */
+.first-divider {
+  margin-top: 25px !important;
+}
+
+/* The Links Area - Balanced vertical spacing between dividers */
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 25px 0; 
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: #ffc847;
+}
+
+.footer-separator {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Bottom Text Area - Balanced vertical spacing */
+.footer-bottom {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 300;
+  padding: 25px 0; 
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mobile View adjustments */
+@media (max-width: 900px) {
+  .footer-links {
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 0;
+  }
+
+  .footer-separator {
+    display: none;
+  }
+
+  footer .footer-center {
+    align-items: center;
+    text-align: center;
+  }
+  
+  footer .footer-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+    gap: 24px;
+  }
+
+  /* Extra space for logo on mobile so it doesn't touch divider */
+  .first-divider {
+    margin-top: 24px !important;
+  }
+}
