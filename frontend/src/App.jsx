@@ -13,6 +13,8 @@ import Articles from "./components/Articles.jsx";
 import Article from "./components/articles/article.jsx";
 import Events from "./components/Events.jsx";
 import ContactPage from "./components/ContactPage.jsx";
+import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
+import TermsConditions from "./components/TermsConditions.jsx";
 import FollowersPage from "./components/FollowersPage.jsx";
 import FollowingPage from "./components/FollowingPage.jsx";
 import FriendsPage from "./components/FriendsPage.jsx";
@@ -167,6 +169,8 @@ function AppRoutes() {
         <Route path="/communities" element={<Communities />} />
         <Route path="/events" element={<Events />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/terms&conditions" element={<TermsConditions />} />
 
         {/* Auth */}
         <Route path="/login" element={<LogIn />} />
