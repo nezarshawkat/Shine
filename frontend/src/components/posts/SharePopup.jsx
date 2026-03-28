@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { BACKEND_URL } from "../../api";
 
 /**
  * @param {string} id - The ID of the content
@@ -6,13 +7,9 @@ import React, { useEffect, useState } from "react";
  * @param {function} onClose - Function to close the popup
  */
 export default function SharePopup({ id, type = "article", onClose }) {
-  const sharePathByType = {
-    post: `/post/${id}`,
-    article: `/article/${id}`,
-    community: `/community/${id}`,
-    profile: `/profile/${id}`,
-  };
-  const shareUrl = `${window.location.origin}${sharePathByType[type] || `/article/${id}`}`;
+  const shareType = (type || "article").toLowerCase();
+  const previewOrigin = BACKEND_URL || window.location.origin;
+  const shareUrl = `${previewOrigin}/share/${shareType}/${id}`;
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {

@@ -97,6 +97,7 @@ app.use("/api", require("./routes/comments"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
+app.use("/share", require("./routes/sharePreview"));
 
 // Health Check
 app.get("/health", async (req, res) => {
