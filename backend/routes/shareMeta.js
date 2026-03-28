@@ -5,7 +5,6 @@ const router = express.Router();
 
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://sshine.org").replace(/\/$/, "");
 const BACKEND_URL = (process.env.BACKEND_URL || "https://shine-a77g.onrender.com").replace(/\/$/, "");
-const DEFAULT_IMAGE = `${FRONTEND_URL}/og-default.png`;
 
 function escapeHtml(value = "") {
   return String(value)
@@ -38,7 +37,23 @@ function getMediaImage(media = []) {
   const imageByUrl = items.find((item) => looksLikeImageUrl(item?.url || ""));
   if (imageByUrl?.url) return imageByUrl.url;
 
-  return items[0]?.url || "";
+  return "";
+}
+
+function getFirstImageFromText(text = "") {
+  const raw = String(text || "");
+  if (!raw) return "";
+
+  const htmlImgMatch = raw.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (htmlImgMatch?.[1]) return htmlImgMatch[1];
+
+  const markdownImgMatch = raw.match(/!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/i);
+  if (markdownImgMatch?.[1]) return markdownImgMatch[1];
+
+  const directImageUrlMatch = raw.match(/https?:\/\/[^\s"'<>]+\.(?:avif|gif|jpe?g|png|svg|webp)(?:\?[^\s"'<>]*)?/i);
+  if (directImageUrlMatch?.[0]) return directImageUrlMatch[0];
+
+  return "";
 }
 
 function toAbsoluteUrl(value = "") {
@@ -47,9 +62,33 @@ function toAbsoluteUrl(value = "") {
   if (/^https?:\/\//i.test(raw)) return raw;
   if (raw.startsWith("//")) return `https:${raw}`;
 
-  if (raw.startsWith("/uploads/") || raw.startsWith("/api/upload")) {
-    return `${BACKEND_URL}${raw}`;
+  if (
+    raw.startsWith("/uploads/") ||
+    raw.startsWith("/api/upload") ||
+    raw.startsWith("uploads/") ||
+    raw.startsWith("api/upload")
+  ) {
+    const normalized = raw.startsWith("/") ? raw : `/${raw}`;
+    return `${BACKEND_URL}${normalized}`;
   }
+
+  if (
+    raw.startsWith("/posts/") ||
+    raw.startsWith("/articles/") ||
+    raw.startsWith("/communities/") ||
+    raw.startsWith("/profiles/") ||
+    raw.startsWith("/events/") ||
+    raw.startsWith("posts/") ||
+    raw.startsWith("articles/") ||
+    raw.startsWith("communities/") ||
+    raw.startsWith("profiles/") ||
+    raw.startsWith("events/")
+  ) {
+    const normalized = raw.startsWith("/") ? raw : `/${raw}`;
+    return `${BACKEND_URL}${normalized}`;
+  }
+
+  if (raw.startsWith("blob:") || raw.startsWith("data:")) return raw;
 
   if (raw.startsWith("/")) return `${FRONTEND_URL}${raw}`;
   return `${FRONTEND_URL}/${raw}`;
@@ -59,8 +98,18 @@ function buildMetaHtml({ title, description, image, url }) {
   const redirectUrl = url || FRONTEND_URL;
   const safeTitle = escapeHtml(title || "Shine");
   const safeDescription = escapeHtml(description || "Discover content on Shine.");
-  const safeImage = escapeHtml(image || DEFAULT_IMAGE);
+  const absoluteImage = toAbsoluteUrl(image);
+  const safeImage = absoluteImage ? escapeHtml(absoluteImage) : "";
   const safeUrl = escapeHtml(redirectUrl);
+  const hasImage = Boolean(safeImage);
+  const twitterCardType = hasImage ? "summary_large_image" : "summary";
+  const imageMeta = hasImage
+    ? `
+    <meta property="og:image" content="${safeImage}" />
+    <meta property="og:image:secure_url" content="${safeImage}" />
+    <meta property="og:image:alt" content="${safeTitle}" />
+    <meta name="twitter:image" content="${safeImage}" />`
+    : "";
 
   return `<!doctype html>
 <html lang="en">
@@ -70,16 +119,13 @@ function buildMetaHtml({ title, description, image, url }) {
     <title>${safeTitle}</title>
     <meta property="og:title" content="${safeTitle}" />
     <meta property="og:description" content="${safeDescription}" />
-    <meta property="og:image" content="${safeImage}" />
-    <meta property="og:image:secure_url" content="${safeImage}" />
-    <meta property="og:image:alt" content="${safeTitle}" />
+    ${imageMeta}
     <meta property="og:url" content="${safeUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Shine" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="${twitterCardType}" />
     <meta name="twitter:title" content="${safeTitle}" />
     <meta name="twitter:description" content="${safeDescription}" />
-    <meta name="twitter:image" content="${safeImage}" />
     <meta http-equiv="refresh" content="0;url=${safeUrl}" />
     <link rel="canonical" href="${safeUrl}" />
   </head>
@@ -102,7 +148,7 @@ router.get("/share/post/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: `${authorName} on Shine`,
       description: truncate(post.text || "View this post on Shine."),
-      image: toAbsoluteUrl(getMediaImage(post.media)),
+      image: getMediaImage(post.media),
       url: `${FRONTEND_URL}/post/${post.id}`,
     });
 
@@ -126,7 +172,7 @@ router.get("/share/article/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: article.title || "Shine Article",
       description: truncate(article.content || "Read this article on Shine."),
-      image: toAbsoluteUrl(getMediaImage(article.media)),
+      image: getMediaImage(article.media) || getFirstImageFromText(article.content),
       url: `${FRONTEND_URL}/article/${article.id}`,
     });
 
@@ -147,7 +193,7 @@ router.get("/share/community/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: community.name || "Shine Community",
       description: truncate(community.slogan || community.discription || "Join this community on Shine."),
-      image: toAbsoluteUrl(community.icon || community.banner),
+      image: community.icon || community.banner,
       url: `${FRONTEND_URL}/community/${community.id}`,
     });
 
@@ -183,7 +229,7 @@ router.get("/share/profile/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: `${displayName} on Shine`,
       description: truncate(user.description || `View ${displayName}'s profile on Shine.`),
-      image: toAbsoluteUrl(user.image),
+      image: user.image,
       url: `${FRONTEND_URL}/profile/${user.username || user.id}`,
     });
 
@@ -204,7 +250,7 @@ router.get("/share/event/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: event.title || "Shine Event",
       description: truncate(event.description || "See this event on Shine."),
-      image: toAbsoluteUrl(event.image),
+      image: event.image,
       url: `${FRONTEND_URL}/events`,
     });
 
