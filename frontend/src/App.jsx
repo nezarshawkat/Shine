@@ -42,7 +42,6 @@ import Donate from "./components/Donate.jsx";
 import MessengerPage from "./components/MessengerPage.jsx";
 import TrendingHashtagsPage from "./components/TrendingHashtagsPage.jsx";
 import AdminApp from "./admin/AdminApp/AdminApp.jsx";
-import ShareRedirect from "./components/ShareRedirect.jsx";
 
 // Auth & Profile
 import ProfilePageWrapper from "./components/ProfilePageWrapper.jsx";
@@ -181,7 +180,6 @@ function AppRoutes() {
         {/* Articles */}
         <Route path="/articles" element={<Articles />} />
         <Route path="/article/:id" element={<Article />} />
-        <Route path="/share/:type/:id" element={<ShareRedirect />} />
 
         {/* Dynamic Profiles & Views */}
         <Route path="/community/:communityId" element={<CommunityProfile />} />
