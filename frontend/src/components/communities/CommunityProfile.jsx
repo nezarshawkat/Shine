@@ -18,6 +18,7 @@ import CritiquePost from "../posts/critiquePost.jsx";
 import AnalysisPost from "../posts/analysisPost.jsx";
 import PollPost from "../posts/pollPost.jsx";
 import SkeletonPost from "../posts/SkeletonPost.jsx";
+import SharePopup from "../posts/SharePopup.jsx";
 
 // Assets for mobile UI consistency
 import magnifier from "../../assets/magnifier.svg";
@@ -61,6 +62,7 @@ export default function CommunityProfile() {
   const [iconFile, setIconFile] = useState(null);
   const [membership, setMembership] = useState({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
   const [showMembersPopup, setShowMembersPopup] = useState(false);
+  const [showSharePopup, setShowSharePopup] = useState(false);
 
   const observer = useRef();
   const postPopupRef = useRef(null);
@@ -357,11 +359,13 @@ export default function CommunityProfile() {
                     <div className="popup-menu settings-menu mobile-popup">
                       {roleData.isAdmin || roleData.isMainAdmin ? (
                         <>
+                          <div className="side-menu-item" onClick={() => { setShowSharePopup(true); setShowSettingsPopup(false); }}>Share Community</div>
                           <div className="side-menu-item" onClick={() => { setSettingsTab("Members"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Community Manager</div>
                           <div className="side-menu-item" onClick={() => { setSettingsTab("General"); setShowSettingsOverlay(true); setShowSettingsPopup(false); }}>Community Settings</div>
                         </>
                       ) : (
                         <>
+                          <div className="side-menu-item" onClick={() => { setShowSharePopup(true); setShowSettingsPopup(false); }}>Share Community</div>
                           <div className="side-menu-item" onClick={() => alert("Reported")}>Report</div>
                           <div className="side-menu-item delete" onClick={handleLeave}>Leave Group</div>
                         </>
@@ -418,6 +422,7 @@ export default function CommunityProfile() {
               setSettingsTab(tab);
               setShowSettingsOverlay(true);
             }}
+            onOpenShare={() => setShowSharePopup(true)}
             isPrivate={isPrivateCommunity}
           />
         </div>
@@ -522,6 +527,17 @@ export default function CommunityProfile() {
             </div>
           </div>
         </div>
+      )}
+
+      {showSharePopup && (
+        <SharePopup
+          id={community.id}
+          type="community"
+          title={community.name}
+          description={community.slogan}
+          image={getFullUrl(community.icon || community.banner, "")}
+          onClose={() => setShowSharePopup(false)}
+        />
       )}
     </div>
   );

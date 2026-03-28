@@ -19,6 +19,7 @@ const CommunitySidebar = ({
   isMainAdmin, 
   communityName, 
   onOpenSettings,
+  onOpenShare,
   isPrivate
 }) => {
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
@@ -147,6 +148,9 @@ const CommunitySidebar = ({
               <div className="popup-menu settings-menu">
                 {isAdmin || isMainAdmin ? (
                   <>
+                    <div className="side-menu-item" onClick={() => { onOpenShare?.(); setShowSettingsPopup(false); }}>
+                        Share Community
+                    </div>
                     <div className="side-menu-item" onClick={() => { onOpenSettings("Members"); setShowSettingsPopup(false); }}>
                         Community Manager
                     </div>
@@ -156,6 +160,7 @@ const CommunitySidebar = ({
                   </>
                 ) : (
                   <>
+                    <div className="side-menu-item" onClick={() => { onOpenShare?.(); setShowSettingsPopup(false); }}>Share Community</div>
                     <div className="side-menu-item" onClick={() => setShowReportModal(true)}>Report</div>
                     <div className="side-menu-item delete" onClick={handleLeave}>Leave Group</div>
                   </>

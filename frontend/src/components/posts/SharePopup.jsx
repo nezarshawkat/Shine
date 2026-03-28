@@ -6,11 +6,13 @@ import { BACKEND_URL } from "../../api";
  * @param {string} type - One of 'post', 'community', 'article', or 'profile'
  * @param {function} onClose - Function to close the popup
  */
-export default function SharePopup({ id, type = "article", onClose }) {
+export default function SharePopup({ id, type = "article", title = "", description = "", image = "", onClose }) {
   const shareType = (type || "article").toLowerCase();
   const previewOrigin = BACKEND_URL || window.location.origin;
   const shareUrl = `${previewOrigin}/share/${shareType}/${id}`;
   const [showToast, setShowToast] = useState(false);
+  const readableType = shareType.charAt(0).toUpperCase() + shareType.slice(1);
+  const isCommunityShare = shareType === "community";
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -100,7 +102,7 @@ export default function SharePopup({ id, type = "article", onClose }) {
           }}
         >
           <div style={{ fontSize: 22, fontWeight: 600, color: "#1C274C" }}>
-            Share {type.charAt(0).toUpperCase() + type.slice(1)}
+            Share {readableType}
           </div>
           <button
             onClick={onClose}
@@ -117,6 +119,36 @@ export default function SharePopup({ id, type = "article", onClose }) {
         </div>
 
         {/* Share options */}
+        {isCommunityShare && (
+          <button
+            onClick={copyLink}
+            style={{
+              width: "100%",
+              marginBottom: 18,
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+              background: "#f9fafb",
+              color: "#1C274C",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            Share community
+            {(title || description) && (
+              <div style={{ marginTop: 6, fontWeight: 500, color: "#6B7280", fontSize: 13 }}>
+                {[title, description].filter(Boolean).join(" • ")}
+              </div>
+            )}
+            {image && (
+              <div style={{ marginTop: 6, fontWeight: 500, color: "#9CA3AF", fontSize: 12 }}>
+                Community icon included in preview
+              </div>
+            )}
+          </button>
+        )}
         <div
           style={{
             display: "flex",
@@ -172,7 +204,7 @@ export default function SharePopup({ id, type = "article", onClose }) {
             gap: 10,
           }}
         >
-          🔗 Copy {type} link
+          🔗 Copy {readableType.toLowerCase()} link
         </button>
       </div>
 
@@ -195,7 +227,7 @@ export default function SharePopup({ id, type = "article", onClose }) {
             animation: "slideUp 0.3s ease",
           }}
         >
-          {type.charAt(0).toUpperCase() + type.slice(1)} Link Copied
+          {readableType} Link Copied
         </div>
       )}
 

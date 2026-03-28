@@ -20,6 +20,12 @@ const trimText = (text = "", limit = 180) => {
   return `${normalized.slice(0, limit - 1).trimEnd()}…`;
 };
 
+const pickBestPreviewImage = (mediaItems = []) => {
+  if (!Array.isArray(mediaItems) || mediaItems.length === 0) return null;
+  const imageMedia = mediaItems.find((item) => String(item?.type || "").toLowerCase().startsWith("image"));
+  return imageMedia?.url || mediaItems[0]?.url || null;
+};
+
 const toAbsoluteMediaUrl = (pathOrUrl, req) => {
   if (!pathOrUrl) return DEFAULT_OG_IMAGE;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
@@ -85,7 +91,7 @@ router.get("/:type/:id", async (req, res) => {
         where: { id },
         include: {
           author: { select: { name: true, username: true } },
-          media: { select: { url: true }, orderBy: { createdAt: "asc" }, take: 1 },
+          media: { select: { url: true, type: true }, orderBy: { createdAt: "asc" } },
         },
       });
 
@@ -95,7 +101,7 @@ router.get("/:type/:id", async (req, res) => {
       preview = {
         title: `${authorName} on Shine`,
         description: trimText(post.text || "Shared a post on Shine."),
-        image: toAbsoluteMediaUrl(post.media?.[0]?.url, req),
+        image: toAbsoluteMediaUrl(pickBestPreviewImage(post.media), req),
         redirectUrl: `${APP_BASE_URL}/post/${post.id}`,
       };
     }
@@ -123,7 +129,7 @@ router.get("/:type/:id", async (req, res) => {
           id: true,
           title: true,
           content: true,
-          media: { select: { url: true }, orderBy: { createdAt: "asc" }, take: 1 },
+          media: { select: { url: true, type: true }, orderBy: { createdAt: "asc" } },
         },
       });
 
@@ -132,7 +138,7 @@ router.get("/:type/:id", async (req, res) => {
       preview = {
         title: article.title,
         description: trimText(article.content || "Read this article on Shine."),
-        image: toAbsoluteMediaUrl(article.media?.[0]?.url, req),
+        image: toAbsoluteMediaUrl(pickBestPreviewImage(article.media), req),
         redirectUrl: `${APP_BASE_URL}/article/${article.id}`,
       };
     }
