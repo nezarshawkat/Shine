@@ -84,6 +84,9 @@ if (process.env.ENABLE_SOCKET_IO === "true") {
 }
 
 // ================= 6. ROUTES =================
+// Public content-page Open Graph previews for shared URLs
+app.use("/", require("./routes/shareMeta"));
+
 app.use("/api/users", require("./routes/auth.routes.js"));
 app.use("/api/users", require("./routes/users.js"));
 app.use("/api/follow", require("./routes/follow"));
