@@ -256,11 +256,21 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Delete poll options associated with this post (if any)
-    await prisma.pollOption.deleteMany({ where: { postId: id } });
+    const existingPost = await prisma.post.findUnique({ where: { id }, select: { id: true } });
+    if (!existingPost) return res.status(404).json({ error: "Post not found" });
 
-    // 2. Delete the post itself
-    await prisma.post.delete({ where: { id: id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.adminReport.deleteMany({ where: { postId: id } });
+      await tx.share.deleteMany({ where: { postId: id } });
+      await tx.postView.deleteMany({ where: { postId: id } });
+      await tx.media.deleteMany({ where: { postId: id } });
+      await tx.pollOption.deleteMany({ where: { postId: id } });
+      await tx.post.updateMany({
+        where: { parentId: id },
+        data: { parentId: null },
+      });
+      await tx.post.delete({ where: { id } });
+    });
 
     res.json({ message: "Post deleted successfully" });
   } catch (err) {
