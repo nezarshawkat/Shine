@@ -49,13 +49,18 @@ function buildMetaHtml({ title, description, image, url }) {
     <meta property="og:title" content="${safeTitle}" />
     <meta property="og:description" content="${safeDescription}" />
     <meta property="og:image" content="${safeImage}" />
+    <meta property="og:image:secure_url" content="${safeImage}" />
     <meta property="og:url" content="${safeUrl}" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Shine" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${safeTitle}" />
     <meta name="twitter:description" content="${safeDescription}" />
     <meta name="twitter:image" content="${safeImage}" />
-    <meta http-equiv="refresh" content="0;url=${safeUrl}" />
+    <link rel="canonical" href="${safeUrl}" />
+    <script>
+      window.location.replace(${JSON.stringify(url || FRONTEND_URL)});
+    </script>
   </head>
   <body>
     <p>Redirecting to <a href="${safeUrl}">${safeUrl}</a>…</p>
