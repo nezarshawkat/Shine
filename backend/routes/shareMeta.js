@@ -4,7 +4,8 @@ const prisma = require("../prisma");
 const router = express.Router();
 
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://sshine.org").replace(/\/$/, "");
-const DEFAULT_IMAGE = `${FRONTEND_URL}/images/logo.png`;
+const BACKEND_URL = (process.env.BACKEND_URL || "https://shine-a77g.onrender.com").replace(/\/$/, "");
+const DEFAULT_IMAGE = `${FRONTEND_URL}/og-default.png`;
 
 function escapeHtml(value = "") {
   return String(value)
@@ -21,8 +22,23 @@ function truncate(text = "", max = 150) {
   return `${clean.slice(0, max - 1)}…`;
 }
 
+function looksLikeImageUrl(url = "") {
+  return /\.(avif|gif|jpe?g|png|svg|webp)(\?.*)?$/i.test(url);
+}
+
 function getMediaImage(media = []) {
-  return (media || []).find((item) => item?.type === "image")?.url || media?.[0]?.url || "";
+  const items = Array.isArray(media) ? media : [];
+
+  const explicitImage = items.find((item) => {
+    const kind = String(item?.type || "").toLowerCase();
+    return kind === "image" || kind.startsWith("image/");
+  });
+  if (explicitImage?.url) return explicitImage.url;
+
+  const imageByUrl = items.find((item) => looksLikeImageUrl(item?.url || ""));
+  if (imageByUrl?.url) return imageByUrl.url;
+
+  return items[0]?.url || "";
 }
 
 function toAbsoluteUrl(value = "") {
@@ -30,6 +46,11 @@ function toAbsoluteUrl(value = "") {
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
   if (raw.startsWith("//")) return `https:${raw}`;
+
+  if (raw.startsWith("/uploads/") || raw.startsWith("/api/upload")) {
+    return `${BACKEND_URL}${raw}`;
+  }
+
   if (raw.startsWith("/")) return `${FRONTEND_URL}${raw}`;
   return `${FRONTEND_URL}/${raw}`;
 }
