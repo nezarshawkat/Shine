@@ -5,18 +5,6 @@
       "destination": "https://shine-a77g.onrender.com/share/$1"
     },
     {
-      "source": "/post/(.*)",
-      "destination": "https://shine-a77g.onrender.com/post/$1"
-    },
-    {
-      "source": "/article/(.*)",
-      "destination": "https://shine-a77g.onrender.com/article/$1"
-    },
-    {
-      "source": "/community/(.*)",
-      "destination": "https://shine-a77g.onrender.com/community/$1"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "https://shine-a77g.onrender.com/api/$1"
     },

@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, useParams } from "react-router-dom";
 
-const allowedTypes = new Set(["post", "article", "community", "event"]);
+const allowedTypes = new Set(["post", "article", "community", "event", "profile"]);
 
 export default function ShareRedirect() {
   const { type, id } = useParams();

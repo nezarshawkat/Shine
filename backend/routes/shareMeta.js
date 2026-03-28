@@ -56,10 +56,11 @@ function toAbsoluteUrl(value = "") {
 }
 
 function buildMetaHtml({ title, description, image, url }) {
+  const redirectUrl = url || FRONTEND_URL;
   const safeTitle = escapeHtml(title || "Shine");
   const safeDescription = escapeHtml(description || "Discover content on Shine.");
   const safeImage = escapeHtml(image || DEFAULT_IMAGE);
-  const safeUrl = escapeHtml(url || FRONTEND_URL);
+  const safeUrl = escapeHtml(redirectUrl);
 
   return `<!doctype html>
 <html lang="en">
@@ -71,6 +72,7 @@ function buildMetaHtml({ title, description, image, url }) {
     <meta property="og:description" content="${safeDescription}" />
     <meta property="og:image" content="${safeImage}" />
     <meta property="og:image:secure_url" content="${safeImage}" />
+    <meta property="og:image:alt" content="${safeTitle}" />
     <meta property="og:url" content="${safeUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Shine" />
@@ -78,10 +80,8 @@ function buildMetaHtml({ title, description, image, url }) {
     <meta name="twitter:title" content="${safeTitle}" />
     <meta name="twitter:description" content="${safeDescription}" />
     <meta name="twitter:image" content="${safeImage}" />
+    <meta http-equiv="refresh" content="0;url=${safeUrl}" />
     <link rel="canonical" href="${safeUrl}" />
-    <script>
-      window.location.replace(${JSON.stringify(url || FRONTEND_URL)});
-    </script>
   </head>
   <body>
     <p>Redirecting to <a href="${safeUrl}">${safeUrl}</a>…</p>
@@ -89,7 +89,7 @@ function buildMetaHtml({ title, description, image, url }) {
 </html>`;
 }
 
-router.get(["/post/:id", "/share/post/:id"], async (req, res) => {
+router.get("/share/post/:id", async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
@@ -114,7 +114,7 @@ router.get(["/post/:id", "/share/post/:id"], async (req, res) => {
   }
 });
 
-router.get(["/article/:id", "/share/article/:id"], async (req, res) => {
+router.get("/share/article/:id", async (req, res) => {
   try {
     const article = await prisma.article.findUnique({
       where: { id: req.params.id },
@@ -138,7 +138,7 @@ router.get(["/article/:id", "/share/article/:id"], async (req, res) => {
   }
 });
 
-router.get(["/community/:id", "/share/community/:id"], async (req, res) => {
+router.get("/share/community/:id", async (req, res) => {
   try {
     const community = await prisma.community.findUnique({ where: { id: req.params.id } });
 
@@ -159,7 +159,43 @@ router.get(["/community/:id", "/share/community/:id"], async (req, res) => {
   }
 });
 
-router.get(["/event/:id", "/events/:id", "/share/event/:id"], async (req, res) => {
+router.get("/share/profile/:id", async (req, res) => {
+  try {
+    const profileKey = String(req.params.id || "").trim();
+    if (!profileKey) return res.status(404).send("Profile not found");
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ id: profileKey }, { username: profileKey }],
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        description: true,
+        image: true,
+      },
+    });
+
+    if (!user) return res.status(404).send("Profile not found");
+
+    const displayName = user.name || user.username || "Shine Member";
+    const html = buildMetaHtml({
+      title: `${displayName} on Shine`,
+      description: truncate(user.description || `View ${displayName}'s profile on Shine.`),
+      image: toAbsoluteUrl(user.image),
+      url: `${FRONTEND_URL}/profile/${user.username || user.id}`,
+    });
+
+    res.set("Content-Type", "text/html; charset=utf-8");
+    return res.status(200).send(html);
+  } catch (error) {
+    console.error("Profile share meta route error:", error);
+    return res.status(500).send("Internal server error");
+  }
+});
+
+router.get("/share/event/:id", async (req, res) => {
   try {
     const event = await prisma.event.findUnique({ where: { id: req.params.id } });
 

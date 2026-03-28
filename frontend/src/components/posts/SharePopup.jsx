@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
  * @param {function} onClose - Function to close the popup
  */
 export default function SharePopup({ id, type = "article", onClose }) {
-  const shareUrl = `${window.location.origin}/${type}/${id}`;
+  const shareUrl = `${window.location.origin}/share/${type}/${id}`;
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
