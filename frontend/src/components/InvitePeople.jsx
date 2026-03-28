@@ -79,7 +79,7 @@ export default function InvitePeople() {
 
     try {
       const token = localStorage.getItem("token");
-      const inviteText = `Come join my community ${communityName}. Open it here: ${window.location.origin}/community/${communityId}`;
+      const inviteText = `Come join my community ${communityName}. Open it here: ${window.location.origin}/share/community/${communityId}`;
 
       await Promise.all(
         friends.map((friend) =>
