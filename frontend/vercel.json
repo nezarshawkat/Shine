@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/share/(.*)",
+      "destination": "https://shine-a77g.onrender.com/share/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://shine-a77g.onrender.com/api/$1"
     },

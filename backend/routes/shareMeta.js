@@ -25,6 +25,15 @@ function getMediaImage(media = []) {
   return (media || []).find((item) => item?.type === "image")?.url || media?.[0]?.url || "";
 }
 
+function toAbsoluteUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (raw.startsWith("/")) return `${FRONTEND_URL}${raw}`;
+  return `${FRONTEND_URL}/${raw}`;
+}
+
 function buildMetaHtml({ title, description, image, url }) {
   const safeTitle = escapeHtml(title || "Shine");
   const safeDescription = escapeHtml(description || "Discover content on Shine.");
@@ -54,7 +63,7 @@ function buildMetaHtml({ title, description, image, url }) {
 </html>`;
 }
 
-router.get("/post/:id", async (req, res) => {
+router.get(["/post/:id", "/share/post/:id"], async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
@@ -67,7 +76,7 @@ router.get("/post/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: `${authorName} on Shine`,
       description: truncate(post.text || "View this post on Shine."),
-      image: getMediaImage(post.media),
+      image: toAbsoluteUrl(getMediaImage(post.media)),
       url: `${FRONTEND_URL}/post/${post.id}`,
     });
 
@@ -79,7 +88,7 @@ router.get("/post/:id", async (req, res) => {
   }
 });
 
-router.get("/article/:id", async (req, res) => {
+router.get(["/article/:id", "/share/article/:id"], async (req, res) => {
   try {
     const article = await prisma.article.findUnique({
       where: { id: req.params.id },
@@ -91,7 +100,7 @@ router.get("/article/:id", async (req, res) => {
     const html = buildMetaHtml({
       title: article.title || "Shine Article",
       description: truncate(article.content || "Read this article on Shine."),
-      image: getMediaImage(article.media),
+      image: toAbsoluteUrl(getMediaImage(article.media)),
       url: `${FRONTEND_URL}/article/${article.id}`,
     });
 
@@ -103,7 +112,7 @@ router.get("/article/:id", async (req, res) => {
   }
 });
 
-router.get("/community/:id", async (req, res) => {
+router.get(["/community/:id", "/share/community/:id"], async (req, res) => {
   try {
     const community = await prisma.community.findUnique({ where: { id: req.params.id } });
 
@@ -111,8 +120,8 @@ router.get("/community/:id", async (req, res) => {
 
     const html = buildMetaHtml({
       title: community.name || "Shine Community",
-      description: truncate(community.discription || community.slogan || "Join this community on Shine."),
-      image: community.banner || community.icon,
+      description: truncate(community.slogan || community.discription || "Join this community on Shine."),
+      image: toAbsoluteUrl(community.icon || community.banner),
       url: `${FRONTEND_URL}/community/${community.id}`,
     });
 
@@ -124,7 +133,7 @@ router.get("/community/:id", async (req, res) => {
   }
 });
 
-router.get(["/event/:id", "/events/:id"], async (req, res) => {
+router.get(["/event/:id", "/events/:id", "/share/event/:id"], async (req, res) => {
   try {
     const event = await prisma.event.findUnique({ where: { id: req.params.id } });
 
@@ -133,7 +142,7 @@ router.get(["/event/:id", "/events/:id"], async (req, res) => {
     const html = buildMetaHtml({
       title: event.title || "Shine Event",
       description: truncate(event.description || "See this event on Shine."),
-      image: event.image,
+      image: toAbsoluteUrl(event.image),
       url: `${FRONTEND_URL}/events`,
     });
 
