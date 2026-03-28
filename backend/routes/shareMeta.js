@@ -15,8 +15,9 @@ function escapeHtml(value = "") {
     .replace(/'/g, "&#39;");
 }
 
-function truncate(text = "", max = 150) {
+function truncate(text = "", max = 170) {
   const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1)}…`;
 }
@@ -25,19 +26,20 @@ function looksLikeImageUrl(url = "") {
   return /\.(avif|gif|jpe?g|png|svg|webp)(\?.*)?$/i.test(url);
 }
 
-function getMediaImage(media = []) {
+function getFirstMediaUrl(media = []) {
   const items = Array.isArray(media) ? media : [];
+  if (!items.length) return "";
 
-  const explicitImage = items.find((item) => {
+  const firstImageByType = items.find((item) => {
     const kind = String(item?.type || "").toLowerCase();
     return kind === "image" || kind.startsWith("image/");
   });
-  if (explicitImage?.url) return explicitImage.url;
+  if (firstImageByType?.url) return firstImageByType.url;
 
-  const imageByUrl = items.find((item) => looksLikeImageUrl(item?.url || ""));
-  if (imageByUrl?.url) return imageByUrl.url;
+  const firstImageByUrl = items.find((item) => looksLikeImageUrl(item?.url || ""));
+  if (firstImageByUrl?.url) return firstImageByUrl.url;
 
-  return "";
+  return items[0]?.url || "";
 }
 
 function getFirstImageFromText(text = "") {
@@ -72,26 +74,10 @@ function toAbsoluteUrl(value = "") {
     return `${BACKEND_URL}${normalized}`;
   }
 
-  if (
-    raw.startsWith("/posts/") ||
-    raw.startsWith("/articles/") ||
-    raw.startsWith("/communities/") ||
-    raw.startsWith("/profiles/") ||
-    raw.startsWith("/events/") ||
-    raw.startsWith("posts/") ||
-    raw.startsWith("articles/") ||
-    raw.startsWith("communities/") ||
-    raw.startsWith("profiles/") ||
-    raw.startsWith("events/")
-  ) {
-    const normalized = raw.startsWith("/") ? raw : `/${raw}`;
-    return `${BACKEND_URL}${normalized}`;
-  }
-
   if (raw.startsWith("blob:") || raw.startsWith("data:")) return raw;
 
-  if (raw.startsWith("/")) return `${FRONTEND_URL}${raw}`;
-  return `${FRONTEND_URL}/${raw}`;
+  const normalized = raw.startsWith("/") ? raw : `/${raw}`;
+  return `${FRONTEND_URL}${normalized}`;
 }
 
 function buildMetaHtml({ title, description, image, url }) {
@@ -139,16 +125,24 @@ router.get("/share/post/:id", async (req, res) => {
   try {
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
-      include: { media: true, author: { select: { username: true, name: true } } },
+      include: {
+        media: {
+          orderBy: { createdAt: "asc" },
+        },
+        author: { select: { username: true, name: true } },
+      },
     });
 
     if (!post) return res.status(404).send("Post not found");
 
     const authorName = post.author?.name || post.author?.username || "Shine member";
+    const postText = truncate(post.text || "View this post on Shine.");
+    const postMedia = getFirstMediaUrl(post.media);
+
     const html = buildMetaHtml({
-      title: `${authorName} on Shine`,
-      description: truncate(post.text || "View this post on Shine."),
-      image: getMediaImage(post.media),
+      title: `${authorName} posted on Shine`,
+      description: postText,
+      image: postMedia,
       url: `${FRONTEND_URL}/post/${post.id}`,
     });
 
@@ -160,40 +154,18 @@ router.get("/share/post/:id", async (req, res) => {
   }
 });
 
-router.get("/share/article/:id", async (req, res) => {
-  try {
-    const article = await prisma.article.findUnique({
-      where: { id: req.params.id },
-      include: { media: true },
-    });
-
-    if (!article) return res.status(404).send("Article not found");
-
-    const html = buildMetaHtml({
-      title: article.title || "Shine Article",
-      description: truncate(article.content || "Read this article on Shine."),
-      image: getMediaImage(article.media) || getFirstImageFromText(article.content),
-      url: `${FRONTEND_URL}/article/${article.id}`,
-    });
-
-    res.set("Content-Type", "text/html; charset=utf-8");
-    return res.status(200).send(html);
-  } catch (error) {
-    console.error("Article share meta route error:", error);
-    return res.status(500).send("Internal server error");
-  }
-});
-
 router.get("/share/community/:id", async (req, res) => {
   try {
     const community = await prisma.community.findUnique({ where: { id: req.params.id } });
 
     if (!community) return res.status(404).send("Community not found");
 
+    const image = community.icon || community.banner;
+
     const html = buildMetaHtml({
       title: community.name || "Shine Community",
       description: truncate(community.slogan || community.discription || "Join this community on Shine."),
-      image: community.icon || community.banner,
+      image,
       url: `${FRONTEND_URL}/community/${community.id}`,
     });
 
@@ -201,6 +173,37 @@ router.get("/share/community/:id", async (req, res) => {
     return res.status(200).send(html);
   } catch (error) {
     console.error("Community share meta route error:", error);
+    return res.status(500).send("Internal server error");
+  }
+});
+
+router.get("/share/article/:id", async (req, res) => {
+  try {
+    const article = await prisma.article.findUnique({
+      where: { id: req.params.id },
+      include: {
+        media: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    if (!article) return res.status(404).send("Article not found");
+
+    const excerpt = truncate(article.content || "Read this article on Shine.");
+    const image = getFirstMediaUrl(article.media) || getFirstImageFromText(article.content);
+
+    const html = buildMetaHtml({
+      title: article.title || "Shine Article",
+      description: excerpt,
+      image,
+      url: `${FRONTEND_URL}/article/${article.id}`,
+    });
+
+    res.set("Content-Type", "text/html; charset=utf-8");
+    return res.status(200).send(html);
+  } catch (error) {
+    console.error("Article share meta route error:", error);
     return res.status(500).send("Internal server error");
   }
 });
@@ -218,17 +221,18 @@ router.get("/share/profile/:id", async (req, res) => {
         id: true,
         username: true,
         name: true,
-        description: true,
         image: true,
       },
     });
 
     if (!user) return res.status(404).send("Profile not found");
 
-    const displayName = user.name || user.username || "Shine Member";
+    const displayName = user.name || "Shine Member";
+    const username = user.username ? `@${user.username}` : "";
+
     const html = buildMetaHtml({
-      title: `${displayName} on Shine`,
-      description: truncate(user.description || `View ${displayName}'s profile on Shine.`),
+      title: displayName,
+      description: truncate(username || "View this profile on Shine."),
       image: user.image,
       url: `${FRONTEND_URL}/profile/${user.username || user.id}`,
     });
@@ -237,27 +241,6 @@ router.get("/share/profile/:id", async (req, res) => {
     return res.status(200).send(html);
   } catch (error) {
     console.error("Profile share meta route error:", error);
-    return res.status(500).send("Internal server error");
-  }
-});
-
-router.get("/share/event/:id", async (req, res) => {
-  try {
-    const event = await prisma.event.findUnique({ where: { id: req.params.id } });
-
-    if (!event) return res.status(404).send("Event not found");
-
-    const html = buildMetaHtml({
-      title: event.title || "Shine Event",
-      description: truncate(event.description || "See this event on Shine."),
-      image: event.image,
-      url: `${FRONTEND_URL}/events`,
-    });
-
-    res.set("Content-Type", "text/html; charset=utf-8");
-    return res.status(200).send(html);
-  } catch (error) {
-    console.error("Event share meta route error:", error);
     return res.status(500).send("Internal server error");
   }
 });

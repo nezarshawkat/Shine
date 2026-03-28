@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 /**
  * @param {string} id - The ID of the content
- * @param {string} type - Either 'article' or 'post'
+ * @param {string} type - One of 'post', 'community', 'article', or 'profile'
  * @param {function} onClose - Function to close the popup
  */
 export default function SharePopup({ id, type = "article", onClose }) {
