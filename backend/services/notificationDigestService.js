@@ -238,6 +238,13 @@ function formatTimestamp(date) {
   });
 }
 
+function pickPostPreviewImage(post) {
+  if (!post) return null;
+  const media = Array.isArray(post.media) ? post.media : [];
+  const image = media.find((item) => String(item?.type || "").toLowerCase().startsWith("image"));
+  return image?.url || null;
+}
+
 function buildDigestSubject(summary) {
   const segments = [];
   if (summary.messages > 0) segments.push(`${summary.messages} new messages`);
@@ -255,6 +262,7 @@ function buildWeeklyRecommendationSubject(post) {
 
 function buildWeeklyRecommendationHtml({ user, post, platformBaseUrl }) {
   const authorName = post.author?.name || post.author?.username || "A creator you may like";
+  const previewImage = pickPostPreviewImage(post);
   return `
 <!doctype html>
 <html>
@@ -273,6 +281,11 @@ function buildWeeklyRecommendationHtml({ user, post, platformBaseUrl }) {
                 <h2 style="margin:0 0 8px 0;color:#112f5d;">Hello ${escapeHtml(user.name || user.username)},</h2>
                 <p style="margin:0 0 14px 0;color:#334155;">This week’s most-liked forum post is ready for you.</p>
                 <a href="${platformBaseUrl}/posts/${post.id}" style="display:block;padding:14px;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;">
+                  ${
+                    previewImage
+                      ? `<img src="${escapeHtml(previewImage)}" alt="Post preview" style="display:block;width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />`
+                      : ""
+                  }
                   <div style="font-size:16px;font-weight:700;color:#112f5d;">${escapeHtml(extractPostTitle(post))}</div>
                   <div style="margin-top:8px;font-size:13px;color:#64748b;">by ${escapeHtml(authorName)} · ${escapeHtml(mapPostType(post.type, (post.pollOptions || []).length > 0))}</div>
                 </a>
@@ -326,6 +339,11 @@ function buildEmailHtml({
         .map(
           (post) => `
           <li style=\"padding:8px 0;border-bottom:1px solid #edf2f7;\">
+            ${
+              post.previewImage
+                ? `<img src=\"${escapeHtml(post.previewImage)}\" alt=\"Post preview\" style=\"display:block;width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;\" />`
+                : ""
+            }
             <a href=\"${platformBaseUrl}/posts/${post.id}\" style=\"font-weight:600;color:#112f5d;text-decoration:none;\">${escapeHtml(post.title)}</a>
             <div style=\"font-size:12px;color:#64748b;\">${formatTimestamp(post.createdAt)} · ${escapeHtml(post.typeLabel)}</div>
           </li>
@@ -349,6 +367,11 @@ function buildEmailHtml({
         .map(
           (post) => `
           <li style=\"padding:8px 0;border-bottom:1px solid #edf2f7;\">
+            ${
+              post.previewImage
+                ? `<img src=\"${escapeHtml(post.previewImage)}\" alt=\"Post preview\" style=\"display:block;width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;\" />`
+                : ""
+            }
             <a href=\"${platformBaseUrl}/posts/${post.id}\" style=\"font-weight:600;color:#112f5d;text-decoration:none;\">${escapeHtml(post.title)}</a>
             <div style=\"font-size:12px;color:#64748b;\">${formatTimestamp(post.createdAt)} · ${escapeHtml(post.typeLabel)}</div>
           </li>
@@ -537,7 +560,11 @@ async function collectUserDigestData(user, preference) {
             status: "ACTIVE",
             type: { in: SUPPORTED_POST_TYPES },
           },
-          include: { author: { select: { id: true, name: true, username: true } }, pollOptions: { select: { id: true } } },
+          include: {
+            author: { select: { id: true, name: true, username: true } },
+            pollOptions: { select: { id: true } },
+            media: { select: { url: true, type: true } },
+          },
           orderBy: { createdAt: "desc" },
           take: maxFollowedCandidates,
         })
@@ -554,6 +581,7 @@ async function collectUserDigestData(user, preference) {
             community: { select: { id: true, name: true } },
             author: { select: { id: true, username: true } },
             pollOptions: { select: { id: true } },
+            media: { select: { url: true, type: true } },
           },
           orderBy: { createdAt: "desc" },
           take: maxCommunityCandidates,
@@ -614,6 +642,7 @@ async function collectUserDigestData(user, preference) {
       item.posts.push({
         id: post.id,
         title: extractPostTitle(post),
+        previewImage: pickPostPreviewImage(post),
         typeLabel,
         createdAt: post.createdAt,
       });
@@ -640,6 +669,7 @@ async function collectUserDigestData(user, preference) {
       item.posts.push({
         id: post.id,
         title: extractPostTitle(post),
+        previewImage: pickPostPreviewImage(post),
         typeLabel,
         createdAt: post.createdAt,
       });
@@ -892,6 +922,7 @@ async function sendWeeklyRecommendedPostEmails({ transporters, platformBaseUrl }
     include: {
       author: { select: { id: true, name: true, username: true } },
       pollOptions: { select: { id: true } },
+      media: { select: { url: true, type: true } },
       _count: { select: { likes: true } },
     },
     orderBy: [{ likes: { _count: "desc" } }, { createdAt: "desc" }],
