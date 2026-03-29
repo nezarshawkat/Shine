@@ -499,7 +499,7 @@ async function runDigestCycle() {
   const platformBaseUrl = getPlatformBaseUrl();
 
   const users = await prisma.user.findMany({
-    where: { email: { not: null } },
+    where: { email: { not: "" } },
     select: { id: true, email: true, name: true, username: true },
   });
 
