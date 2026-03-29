@@ -70,11 +70,13 @@ function createBrevoApiTransporter(apiKey) {
   };
 }
 
-function createTransporter() {
-  const provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
+function createTransporter(provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase()) {
   const brevoApiKey = process.env.BREVO_API_KEY;
 
-  if (provider === "brevo_api" || (provider === "smtp" && brevoApiKey && parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true))) {
+  if (provider === "brevo_api") {
+    if (!brevoApiKey) {
+      throw new Error("Missing BREVO_API_KEY for brevo_api digest email delivery.");
+    }
     console.log("Using Brevo REST API transporter for digest delivery");
     return createBrevoApiTransporter(brevoApiKey);
   }
@@ -100,6 +102,23 @@ function createTransporter() {
   });
 }
 
+<<<<<<< ours
+=======
+function createTransportersWithFallback() {
+  const provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
+  const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
+  const hasBrevoApiKey = Boolean(process.env.BREVO_API_KEY);
+
+  const transporters = [{ name: provider, instance: createTransporter(provider) }];
+
+  if (provider === "smtp" && useBrevoFallback && hasBrevoApiKey) {
+    transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api") });
+  }
+
+  return transporters;
+}
+
+>>>>>>> theirs
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -118,6 +137,7 @@ function isTransientEmailError(error) {
   );
 }
 
+<<<<<<< ours
 async function sendMailWithRetry(transporter, mailOptions) {
   const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
   let lastError;
@@ -133,6 +153,30 @@ async function sendMailWithRetry(transporter, mailOptions) {
     }
   }
 
+=======
+async function sendMailWithRetry(transporters, mailOptions) {
+  const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
+  let lastError;
+  const failedTransporters = [];
+
+  for (const transporter of transporters) {
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        await transporter.instance.sendMail(mailOptions);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (!isTransientEmailError(error) || attempt >= attempts) break;
+        await sleep(Math.min(1000 * attempt, 3000));
+      }
+    }
+    failedTransporters.push(transporter.name);
+  }
+
+  if (lastError && failedTransporters.length > 0) {
+    lastError.message = `${lastError.message} (transporters tried: ${failedTransporters.join(", ")})`;
+  }
+>>>>>>> theirs
   throw lastError;
 }
 
@@ -539,7 +583,7 @@ async function collectUserDigestData(user, preference) {
   };
 }
 
-async function sendDigestForUser({ user, preference, transporter, platformBaseUrl }) {
+async function sendDigestForUser({ user, preference, transporters, platformBaseUrl }) {
   const digest = await collectUserDigestData(user, preference);
   const summary = digest.summary;
 
@@ -547,7 +591,11 @@ async function sendDigestForUser({ user, preference, transporter, platformBaseUr
     return { skipped: true, reason: "no-new-content" };
   }
 
+<<<<<<< ours
   await sendMailWithRetry(transporter, {
+=======
+  await sendMailWithRetry(transporters, {
+>>>>>>> theirs
     from: process.env.EMAIL_FROM || DEFAULT_FROM,
     to: user.email,
     subject: buildDigestSubject(summary),
@@ -589,7 +637,7 @@ async function sendDigestForUser({ user, preference, transporter, platformBaseUr
 async function runDigestCycle() {
   if (!parseBooleanEnv(process.env.ENABLE_EMAIL_DIGEST, true)) return;
 
-  const transporter = createTransporter();
+  const transporters = createTransportersWithFallback();
   const platformBaseUrl = getPlatformBaseUrl();
 
   const users = await prisma.user.findMany({
@@ -605,7 +653,7 @@ async function runDigestCycle() {
       const minutesSinceLastDigest = (Date.now() - new Date(preference.lastDigestSentAt || 0).getTime()) / 60000;
       if (minutesSinceLastDigest < preference.digestFrequencyMinutes) continue;
 
-      await sendDigestForUser({ user, preference, transporter, platformBaseUrl });
+      await sendDigestForUser({ user, preference, transporters, platformBaseUrl });
     } catch (error) {
       console.error(`Digest failed for user ${user.id}:`, error.message);
     }
