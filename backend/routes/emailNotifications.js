@@ -65,18 +65,18 @@ router.post("/messages/viewed", auth, async (req, res) => {
 });
 
 router.post("/run-now", async (req, res) => {
-  // Optional protected trigger; use NOTIFICATION_DIGEST_SECRET in env for ad-hoc runs.
   const secret = process.env.NOTIFICATION_DIGEST_SECRET;
   if (secret && req.headers["x-digest-secret"] !== secret) {
     return res.status(401).json({ error: "Unauthorized digest trigger" });
   }
 
-  try {
-    await runDigestCycle();
-    res.json({ ok: true });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to run digest" });
-  }
+  // REMOVE the 'await' here
+  runDigestCycle().catch((err) => {
+    console.error("Manual digest background error:", err);
+  });
+
+  // Respond immediately so the connection doesn't time out
+  res.json({ ok: true, message: "Digest cycle started in background" });
 });
 
 module.exports = router;
