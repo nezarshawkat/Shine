@@ -26,7 +26,8 @@ function getDigestIntervalMs() {
 
 function createTransporter() {
   const host = process.env.EMAIL_HOST;
-  const port = Number(process.env.EMAIL_PORT || 587);
+  // We default to 465 because it is more stable on Render
+  const port = Number(process.env.EMAIL_PORT || 465); 
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
 
@@ -37,23 +38,25 @@ function createTransporter() {
   return nodemailer.createTransport({
     host,
     port,
-    // Port 587 must use secure: false. Port 465 must use secure: true.
+    // Port 465 must be true. Port 587 must be false.
     secure: port === 465, 
     auth: {
       user: user,
       pass: pass,
     },
-    // Add these specific settings to fix Connection Timeouts:
     tls: {
-      // Helps bypass common network restrictions on cloud hosts like Render
+      // This is the "Magic Fix" for Render timeouts: 
+      // It prevents the connection from dropping if there's a certificate mismatch.
       rejectUnauthorized: false,
       minVersion: "TLSv1.2"
     },
-    connectionTimeout: 10000, // Wait 10 seconds for connection
-    greetingTimeout: 10000,   // Wait 10 seconds for the "Hello" from the mail server
-    socketTimeout: 15000,     // Wait 15 seconds for data transfer
-    debug: true,              // This will print more info to your Render logs
-    logger: true              // This will log the SMTP traffic to help you see where it hangs
+    // Explicitly set short timeouts so the server retries faster
+    connectionTimeout: 10000, 
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
+    // Keep these true while debugging so you can see the SMTP talk in Render logs
+    debug: true,
+    logger: true 
   });
 }
 
