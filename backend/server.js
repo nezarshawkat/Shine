@@ -7,6 +7,8 @@ const redis = require("redis");
 const prisma = require("./prisma.js");
 const { OAuth2Client } = require("google-auth-library");
 
+const { pingRouter, startping } = require("./ping");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
@@ -69,7 +71,6 @@ if (process.env.ENABLE_REDIS_CACHE === "true") {
 // ================= 5. SOCKET.IO =================
 let io = null;
 if (process.env.ENABLE_SOCKET_IO === "true") {
-  // Updated socket cors to use the same logic or allow all for simplicity in testing
   io = new Server(server, { 
     cors: { 
       origin: allowedOrigins, 
@@ -99,7 +100,11 @@ app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
 app.use("/share", require("./routes/sharePreview"));
 
-// Health Check
+// ================= 7. PING =================
+app.use("/", pingRouter); // Ping endpoint
+startping();               // Automatic interval every 30 seconds
+
+// ================= 8. Health Check =================
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -109,7 +114,7 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Google Auth Route
+// ================= 9. Google Auth Route =================
 app.post("/api/auth/google", async (req, res) => {
   try {
     const { token } = req.body;
@@ -139,4 +144,5 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
+// ================= 10. START SERVER =================
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
