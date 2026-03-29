@@ -12,6 +12,19 @@ const DEFAULT_EMAIL_SEND_RETRIES = 2;
 
 let digestTimer = null;
 
+function getDigestPrismaDelegates() {
+  const preference = prisma.emailNotificationPreference;
+  const batch = prisma.emailNotificationBatch;
+
+  if (!preference || !batch) {
+    throw new Error(
+      "Prisma client is missing email notification models. Run `npx prisma generate --schema=backend/prisma/schema.prisma` and redeploy."
+    );
+  }
+
+  return { preference, batch };
+}
+
 function parseBooleanEnv(value, defaultValue) {
   if (value === undefined) return defaultValue;
   return String(value).toLowerCase() === "true";
@@ -116,6 +129,26 @@ function createTransportersWithFallback() {
   return transporters;
 }
 
+async function filterHealthyTransporters(transporters) {
+  const healthy = [];
+
+  for (const transporter of transporters) {
+    if (typeof transporter.instance.verify !== "function") {
+      healthy.push(transporter);
+      continue;
+    }
+
+    try {
+      await transporter.instance.verify();
+      healthy.push(transporter);
+    } catch (error) {
+      console.error(`Digest transporter "${transporter.name}" failed verification:`, error.message);
+    }
+  }
+
+  return healthy.length > 0 ? healthy : transporters;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -134,9 +167,9 @@ function isTransientEmailError(error) {
   );
 }
 
-
-async function sendMailWithRetry(transporter, mailOptions) {
+async function sendMailWithRetry(transporters, mailOptions) {
   const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
+  let lastError;
   const failedTransporters = [];
 
   for (const transporter of transporters) {
@@ -156,9 +189,9 @@ async function sendMailWithRetry(transporter, mailOptions) {
   if (lastError && failedTransporters.length > 0) {
     lastError.message = `${lastError.message} (transporters tried: ${failedTransporters.join(", ")})`;
   }
-
   throw lastError;
 }
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -383,10 +416,11 @@ function mapPostType(type, hasPollOptions) {
 }
 
 async function getOrCreatePreference(userId) {
-  const existing = await prisma.emailNotificationPreference.findUnique({ where: { userId } });
+  const { preference } = getDigestPrismaDelegates();
+  const existing = await preference.findUnique({ where: { userId } });
   if (existing) return existing;
 
-  return prisma.emailNotificationPreference.create({
+  return preference.create({
     data: {
       userId,
       digestFrequencyMinutes: Number(process.env.EMAIL_DIGEST_INTERVAL_MINUTES || DEFAULT_INTERVAL_MINUTES),
@@ -562,15 +596,17 @@ async function collectUserDigestData(user, preference) {
   };
 }
 
-async function sendDigestForUser({ user, preference, transporters, platformBaseUrl }) {
+async function sendDigestForUser({ user, preference, transporters = [], platformBaseUrl }) {
+  const { preference: preferenceDelegate, batch } = getDigestPrismaDelegates();
   const digest = await collectUserDigestData(user, preference);
   const summary = digest.summary;
+  const activeTransporters = Array.isArray(transporters) && transporters.length > 0 ? transporters : createTransportersWithFallback();
 
   if (summary.messages === 0 && summary.followingPosts === 0 && summary.communityPosts === 0) {
     return { skipped: true, reason: "no-new-content" };
   }
 
-  await sendMailWithRetry(transporters, {
+  await sendMailWithRetry(activeTransporters, {
     from: process.env.EMAIL_FROM || DEFAULT_FROM,
     to: user.email,
     subject: buildDigestSubject(summary),
@@ -587,14 +623,14 @@ async function sendDigestForUser({ user, preference, transporters, platformBaseU
 
   const notifiedAt = new Date();
   await prisma.$transaction([
-    prisma.emailNotificationPreference.update({
+    preferenceDelegate.update({
       where: { userId: user.id },
       data: {
         lastNotifiedAt: notifiedAt,
         lastDigestSentAt: notifiedAt,
       },
     }),
-    prisma.emailNotificationBatch.create({
+    batch.create({
       data: {
         userId: user.id,
         messagesCount: summary.messages,
@@ -612,7 +648,14 @@ async function sendDigestForUser({ user, preference, transporters, platformBaseU
 async function runDigestCycle() {
   if (!parseBooleanEnv(process.env.ENABLE_EMAIL_DIGEST, true)) return;
 
-  const transporters = createTransportersWithFallback();
+  try {
+    getDigestPrismaDelegates();
+  } catch (error) {
+    console.error("Digest cycle disabled:", error.message);
+    return;
+  }
+
+  const transporters = await filterHealthyTransporters(createTransportersWithFallback());
   const platformBaseUrl = getPlatformBaseUrl();
 
   const users = await prisma.user.findMany({
