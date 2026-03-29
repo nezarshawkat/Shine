@@ -26,8 +26,7 @@ function getDigestIntervalMs() {
 
 function createTransporter() {
   const host = process.env.EMAIL_HOST;
-  // We default to 465 because it is more stable on Render
-  const port = Number(process.env.EMAIL_PORT || 465); 
+  const port = Number(process.env.EMAIL_PORT || 587);
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
 
@@ -38,25 +37,25 @@ function createTransporter() {
   return nodemailer.createTransport({
     host,
     port,
-    // Port 465 must be true. Port 587 must be false.
+    // true for 465, false for 587
     secure: port === 465, 
-    auth: {
-      user: user,
-      pass: pass,
+    auth: { 
+      user: user, 
+      pass: pass 
     },
+    // CRITICAL: Add this block to fix the "Connection timeout" on Render
     tls: {
-      // This is the "Magic Fix" for Render timeouts: 
-      // It prevents the connection from dropping if there's a certificate mismatch.
+      // Bypasses handshake errors and connection drops on cloud networks
       rejectUnauthorized: false,
       minVersion: "TLSv1.2"
     },
-    // Explicitly set short timeouts so the server retries faster
-    connectionTimeout: 10000, 
-    greetingTimeout: 10000,
+    // Give the server more time to respond before crashing
+    connectionTimeout: 15000, 
+    greetingTimeout: 15000,
     socketTimeout: 20000,
-    // Keep these true while debugging so you can see the SMTP talk in Render logs
+    // Keep these true to see exactly what Brevo says in your logs
     debug: true,
-    logger: true 
+    logger: true
   });
 }
 
