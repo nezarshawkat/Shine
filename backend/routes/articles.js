@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require("../prisma");
 const auth = require("../middleware/auth");
 const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
+const { queueDigestForAuthorFollowers } = require("../services/notificationDigestService");
 
 /* =====================================================
     GET ALL ARTICLES (PAGINATED FEED)
@@ -159,6 +160,10 @@ router.post("/", memoryUpload.array("media"), async (req, res) => {
           select: { id: true, username: true, name: true, image: true },
         },
       },
+    });
+
+    queueDigestForAuthorFollowers(authorId).catch((error) => {
+      console.error("Failed to queue follower digest for article:", error.message);
     });
 
     res.status(201).json(newArticle);

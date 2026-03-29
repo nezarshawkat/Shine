@@ -9,8 +9,34 @@ const MAX_POSTS_PER_FOLLOWED_USER = 3;
 const MAX_POSTS_PER_COMMUNITY = 3;
 const SUPPORTED_POST_TYPES = ["opinion", "analysis", "critique", "poll"];
 const DEFAULT_EMAIL_SEND_RETRIES = 2;
+const DIGEST_USER_BATCH_SIZE = Math.max(25, Number(process.env.EMAIL_DIGEST_USER_BATCH_SIZE || 200));
+const DIGEST_SEND_CONCURRENCY = Math.max(1, Number(process.env.EMAIL_DIGEST_SEND_CONCURRENCY || 20));
+const DIGEST_LOOKBACK_DAYS = Math.max(1, Number(process.env.EMAIL_DIGEST_LOOKBACK_DAYS || 14));
+const DIGEST_GLOBAL_LOCK_ID = 4047701;
+const EVENT_DIGEST_DEBOUNCE_MS = Math.max(10000, Number(process.env.EMAIL_EVENT_DEBOUNCE_MS || 120000));
+const WEEKLY_RECOMMENDATION_BATCH_SIZE = Math.max(50, Number(process.env.EMAIL_WEEKLY_RECOMMENDATION_BATCH_SIZE || 500));
 
 let digestTimer = null;
+let eventDigestFlushTimer = null;
+const eventDigestQueue = new Set();
+
+async function acquireDigestGlobalLock() {
+  try {
+    const rows = await prisma.$queryRaw`SELECT pg_try_advisory_lock(${DIGEST_GLOBAL_LOCK_ID}) AS locked`;
+    return Boolean(Array.isArray(rows) && rows[0]?.locked);
+  } catch (error) {
+    console.warn("Digest lock unavailable (non-Postgres or restricted db user). Continuing without global lock.");
+    return true;
+  }
+}
+
+async function releaseDigestGlobalLock() {
+  try {
+    await prisma.$queryRaw`SELECT pg_advisory_unlock(${DIGEST_GLOBAL_LOCK_ID})`;
+  } catch (error) {
+    // No-op when advisory locks are unavailable.
+  }
+}
 
 function getDigestPrismaDelegates() {
   const preference = prisma.emailNotificationPreference;
@@ -221,6 +247,44 @@ function buildDigestSubject(summary) {
   if (summary.polls > 0) segments.push(`${summary.polls} polls`);
 
   return segments.length > 0 ? `Your Shine digest: ${segments.join(" · ")}` : "Your Shine digest";
+}
+
+function buildWeeklyRecommendationSubject(post) {
+  return `Top post this week: ${extractPostTitle(post)}`;
+}
+
+function buildWeeklyRecommendationHtml({ user, post, platformBaseUrl }) {
+  const authorName = post.author?.name || post.author?.username || "A creator you may like";
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="680" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.08);">
+            <tr>
+              <td style="background:#112f5d;padding:20px 24px;color:#ffffff;">
+                <div style="font-size:24px;font-weight:800;">Shine Weekly Pick</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">
+                <h2 style="margin:0 0 8px 0;color:#112f5d;">Hello ${escapeHtml(user.name || user.username)},</h2>
+                <p style="margin:0 0 14px 0;color:#334155;">This week’s most-liked forum post is ready for you.</p>
+                <a href="${platformBaseUrl}/posts/${post.id}" style="display:block;padding:14px;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;">
+                  <div style="font-size:16px;font-weight:700;color:#112f5d;">${escapeHtml(extractPostTitle(post))}</div>
+                  <div style="margin-top:8px;font-size:13px;color:#64748b;">by ${escapeHtml(authorName)} · ${escapeHtml(mapPostType(post.type, (post.pollOptions || []).length > 0))}</div>
+                </a>
+                <a href="${platformBaseUrl}/feed" style="display:inline-block;margin-top:16px;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">Open feed</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function buildEmailHtml({
@@ -434,44 +498,12 @@ async function getOrCreatePreference(userId) {
 }
 
 async function collectUserDigestData(user, preference) {
-  const since = preference.lastNotifiedAt || new Date(0);
+  const minSince = new Date(Date.now() - DIGEST_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+  const since = preference.lastNotifiedAt && preference.lastNotifiedAt > minSince ? preference.lastNotifiedAt : minSince;
   const messageSince = preference.lastMessengerViewedAt && preference.lastMessengerViewedAt > since ? preference.lastMessengerViewedAt : since;
 
-  const [messages, followingPostsRaw, communityPostsRaw, followedArticlesRaw, followedUserIds, joinedCommunityIds] =
-    await Promise.all([
-    preference.enableMessages
-      ? prisma.message.findMany({
-          where: { receiverId: user.id, isRead: false, createdAt: { gt: messageSince } },
-          include: { sender: { select: { id: true, name: true, username: true } } },
-          orderBy: { createdAt: "desc" },
-        })
-      : Promise.resolve([]),
-    preference.enableFollowingPosts
-      ? prisma.post.findMany({
-          where: { createdAt: { gt: since }, communityId: null, status: "ACTIVE", type: { in: SUPPORTED_POST_TYPES } },
-          include: { author: { select: { id: true, name: true, username: true } }, pollOptions: { select: { id: true } } },
-          orderBy: { createdAt: "desc" },
-        })
-      : Promise.resolve([]),
-    preference.enableCommunityPosts
-      ? prisma.post.findMany({
-          where: { createdAt: { gt: since }, communityId: { not: null }, status: "ACTIVE", type: { in: SUPPORTED_POST_TYPES } },
-          include: {
-            community: { select: { id: true, name: true } },
-            author: { select: { id: true, username: true } },
-            pollOptions: { select: { id: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        })
-      : Promise.resolve([]),
-      preference.enableArticles
-        ? prisma.article.findMany({
-            where: { createdAt: { gt: since } },
-            include: { author: { select: { id: true, name: true, username: true } } },
-            orderBy: { createdAt: "desc" },
-          })
-        : Promise.resolve([]),
-      preference.enableFollowingPosts || preference.enableArticles
+  const [followedUserIds, joinedCommunityIds] = await Promise.all([
+    preference.enableFollowingPosts || preference.enableArticles
       ? prisma.follows.findMany({ where: { followerId: user.id }, select: { followingId: true } })
       : Promise.resolve([]),
     preference.enableCommunityPosts
@@ -481,6 +513,64 @@ async function collectUserDigestData(user, preference) {
 
   const followedSet = new Set(followedUserIds.map((f) => f.followingId));
   const communitySet = new Set(joinedCommunityIds.map((c) => c.communityId));
+  const followedAuthorIds = Array.from(followedSet);
+  const joinedCommunityIdsArray = Array.from(communitySet);
+
+  const maxFollowedCandidates = Math.max(60, followedAuthorIds.length * MAX_POSTS_PER_FOLLOWED_USER * 2);
+  const maxCommunityCandidates = Math.max(60, joinedCommunityIdsArray.length * MAX_POSTS_PER_COMMUNITY * 2);
+  const maxArticleCandidates = Math.max(60, followedAuthorIds.length * MAX_POSTS_PER_FOLLOWED_USER * 2);
+
+  const [messages, followingPostsRaw, communityPostsRaw, followedArticlesRaw] = await Promise.all([
+    preference.enableMessages
+      ? prisma.message.findMany({
+          where: { receiverId: user.id, isRead: false, createdAt: { gt: messageSince } },
+          include: { sender: { select: { id: true, name: true, username: true } } },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+    preference.enableFollowingPosts && followedAuthorIds.length > 0
+      ? prisma.post.findMany({
+          where: {
+            authorId: { in: followedAuthorIds },
+            createdAt: { gt: since },
+            communityId: null,
+            status: "ACTIVE",
+            type: { in: SUPPORTED_POST_TYPES },
+          },
+          include: { author: { select: { id: true, name: true, username: true } }, pollOptions: { select: { id: true } } },
+          orderBy: { createdAt: "desc" },
+          take: maxFollowedCandidates,
+        })
+      : Promise.resolve([]),
+    preference.enableCommunityPosts && joinedCommunityIdsArray.length > 0
+      ? prisma.post.findMany({
+          where: {
+            createdAt: { gt: since },
+            communityId: { in: joinedCommunityIdsArray },
+            status: "ACTIVE",
+            type: { in: SUPPORTED_POST_TYPES },
+          },
+          include: {
+            community: { select: { id: true, name: true } },
+            author: { select: { id: true, username: true } },
+            pollOptions: { select: { id: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: maxCommunityCandidates,
+        })
+      : Promise.resolve([]),
+    preference.enableArticles && followedAuthorIds.length > 0
+      ? prisma.article.findMany({
+          where: {
+            createdAt: { gt: since },
+            authorId: { in: followedAuthorIds },
+          },
+          include: { author: { select: { id: true, name: true, username: true } } },
+          orderBy: { createdAt: "desc" },
+          take: maxArticleCandidates,
+        })
+      : Promise.resolve([]),
+  ]);
 
   const groupedMessagesMap = new Map();
   for (const message of messages) {
@@ -606,7 +696,14 @@ async function sendDigestForUser({ user, preference, transporters = [], platform
   const summary = digest.summary;
   const activeTransporters = Array.isArray(transporters) && transporters.length > 0 ? transporters : createTransportersWithFallback();
 
-  if (summary.messages === 0 && summary.followingPosts === 0 && summary.communityPosts === 0) {
+  const hasDigestContent =
+    summary.messages > 0 ||
+    summary.followingPosts > 0 ||
+    summary.communityPosts > 0 ||
+    summary.articles > 0 ||
+    summary.polls > 0;
+
+  if (!hasDigestContent) {
     return { skipped: true, reason: "no-new-content" };
   }
 
@@ -652,40 +749,287 @@ async function sendDigestForUser({ user, preference, transporters = [], platform
 async function runDigestCycle() {
   if (!parseBooleanEnv(process.env.ENABLE_EMAIL_DIGEST, true)) return;
 
+  const lockAcquired = await acquireDigestGlobalLock();
+  if (!lockAcquired) {
+    console.log("Digest cycle skipped: another node currently owns the global digest lock.");
+    return;
+  }
+
   try {
     getDigestPrismaDelegates();
   } catch (error) {
     console.error("Digest cycle disabled:", error.message);
+    await releaseDigestGlobalLock();
     return;
   }
 
-  const transporters = await filterHealthyTransporters(createTransportersWithFallback());
-  if (transporters.length === 0) {
-    console.error(
-      "Digest cycle disabled: no healthy email transporters. Check EMAIL_HOST/EMAIL_PORT connectivity or enable Brevo API fallback."
-    );
-    return;
-  }
-  const platformBaseUrl = getPlatformBaseUrl();
+  try {
+    const transporters = await filterHealthyTransporters(createTransportersWithFallback());
+    if (transporters.length === 0) {
+      console.error(
+        "Digest cycle disabled: no healthy email transporters. Check EMAIL_HOST/EMAIL_PORT connectivity or enable Brevo API fallback."
+      );
+      return;
+    }
 
-  const users = await prisma.user.findMany({
-    where: { email: { not: "" } },
-    select: { id: true, email: true, name: true, username: true },
+    const platformBaseUrl = getPlatformBaseUrl();
+    let cursorId = null;
+
+    while (true) {
+      const duePreferences = cursorId
+        ? await prisma.$queryRawUnsafe(
+            `
+              SELECT
+                p.id,
+                p."userId",
+                p.enabled,
+                p."enableMessages",
+                p."enableFollowingPosts",
+                p."enableCommunityPosts",
+                p."enableArticles",
+                p."enablePolls",
+                p."digestFrequencyMinutes",
+                p."lastMessengerViewedAt",
+                p."lastNotifiedAt",
+                p."lastDigestSentAt",
+                u.id AS "accountId",
+                u.email,
+                u.name,
+                u.username
+              FROM "EmailNotificationPreference" p
+              JOIN "User" u ON u.id = p."userId"
+              WHERE p.enabled = true
+                AND u.email <> ''
+                AND p.id > $2
+                AND (
+                  p."lastDigestSentAt" IS NULL
+                  OR p."lastDigestSentAt" <= NOW() - (p."digestFrequencyMinutes" * INTERVAL '1 minute')
+                )
+              ORDER BY p.id ASC
+              LIMIT $1
+            `,
+            DIGEST_USER_BATCH_SIZE,
+            cursorId
+          )
+        : await prisma.$queryRawUnsafe(
+            `
+              SELECT
+                p.id,
+                p."userId",
+                p.enabled,
+                p."enableMessages",
+                p."enableFollowingPosts",
+                p."enableCommunityPosts",
+                p."enableArticles",
+                p."enablePolls",
+                p."digestFrequencyMinutes",
+                p."lastMessengerViewedAt",
+                p."lastNotifiedAt",
+                p."lastDigestSentAt",
+                u.id AS "accountId",
+                u.email,
+                u.name,
+                u.username
+              FROM "EmailNotificationPreference" p
+              JOIN "User" u ON u.id = p."userId"
+              WHERE p.enabled = true
+                AND u.email <> ''
+                AND (
+                  p."lastDigestSentAt" IS NULL
+                  OR p."lastDigestSentAt" <= NOW() - (p."digestFrequencyMinutes" * INTERVAL '1 minute')
+                )
+              ORDER BY p.id ASC
+              LIMIT $1
+            `,
+            DIGEST_USER_BATCH_SIZE
+          );
+
+      if (duePreferences.length === 0) break;
+
+      for (let index = 0; index < duePreferences.length; index += DIGEST_SEND_CONCURRENCY) {
+        const chunk = duePreferences.slice(index, index + DIGEST_SEND_CONCURRENCY);
+        await Promise.all(
+          chunk.map(async (preference) => {
+            try {
+              const user = {
+                id: preference.accountId,
+                email: preference.email,
+                name: preference.name,
+                username: preference.username,
+              };
+              if (!user?.email) return;
+
+              await sendDigestForUser({ user, preference, transporters, platformBaseUrl });
+            } catch (error) {
+              console.error(`Digest failed for user ${preference.userId}:`, error.message);
+            }
+          })
+        );
+      }
+
+      cursorId = duePreferences[duePreferences.length - 1].id;
+      if (duePreferences.length < DIGEST_USER_BATCH_SIZE) break;
+    }
+
+    await sendWeeklyRecommendedPostEmails({ transporters, platformBaseUrl });
+  } finally {
+    await releaseDigestGlobalLock();
+  }
+}
+
+async function sendWeeklyRecommendedPostEmails({ transporters, platformBaseUrl }) {
+  if (!parseBooleanEnv(process.env.ENABLE_WEEKLY_RECOMMENDATION_EMAIL, true)) return;
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const topPost = await prisma.post.findFirst({
+    where: {
+      createdAt: { gte: weekAgo },
+      status: "ACTIVE",
+      communityId: null,
+      type: { in: SUPPORTED_POST_TYPES },
+    },
+    include: {
+      author: { select: { id: true, name: true, username: true } },
+      pollOptions: { select: { id: true } },
+      _count: { select: { likes: true } },
+    },
+    orderBy: [{ likes: { _count: "desc" } }, { createdAt: "desc" }],
   });
 
-  for (const user of users) {
-    try {
-      const preference = await getOrCreatePreference(user.id);
-      if (!preference.enabled) continue;
+  if (!topPost) return;
 
-      const minutesSinceLastDigest = (Date.now() - new Date(preference.lastDigestSentAt || 0).getTime()) / 60000;
-      if (minutesSinceLastDigest < preference.digestFrequencyMinutes) continue;
+  const sentThisWeek = await prisma.notification.findMany({
+    where: {
+      type: "weekly_recommended_email_sent",
+      createdAt: { gte: weekAgo },
+    },
+    select: { userId: true },
+  });
+  const sentUserIds = new Set(sentThisWeek.map((row) => row.userId));
 
-      await sendDigestForUser({ user, preference, transporters, platformBaseUrl });
-    } catch (error) {
-      console.error(`Digest failed for user ${user.id}:`, error.message);
+  let cursorId = null;
+  while (true) {
+    const preferenceRows = await prisma.emailNotificationPreference.findMany({
+      where: {
+        enabled: true,
+        user: { email: { not: "" } },
+        ...(cursorId ? { id: { gt: cursorId } } : {}),
+      },
+      include: {
+        user: { select: { id: true, email: true, name: true, username: true } },
+      },
+      orderBy: { id: "asc" },
+      take: WEEKLY_RECOMMENDATION_BATCH_SIZE,
+    });
+
+    if (preferenceRows.length === 0) break;
+
+    const targets = preferenceRows.filter((row) => !sentUserIds.has(row.userId));
+    for (let index = 0; index < targets.length; index += DIGEST_SEND_CONCURRENCY) {
+      const chunk = targets.slice(index, index + DIGEST_SEND_CONCURRENCY);
+      await Promise.all(
+        chunk.map(async (row) => {
+          try {
+            await sendMailWithRetry(transporters, {
+              from: process.env.EMAIL_FROM || DEFAULT_FROM,
+              to: row.user.email,
+              subject: buildWeeklyRecommendationSubject(topPost),
+              html: buildWeeklyRecommendationHtml({ user: row.user, post: topPost, platformBaseUrl }),
+            });
+
+            await prisma.notification.create({
+              data: {
+                userId: row.userId,
+                type: "weekly_recommended_email_sent",
+                content: `Weekly recommendation email sent for post ${topPost.id}`,
+                link: `/posts/${topPost.id}`,
+              },
+            });
+          } catch (error) {
+            console.error(`Weekly recommendation email failed for user ${row.userId}:`, error.message);
+          }
+        })
+      );
     }
+
+    cursorId = preferenceRows[preferenceRows.length - 1].id;
+    if (preferenceRows.length < WEEKLY_RECOMMENDATION_BATCH_SIZE) break;
   }
+}
+
+async function flushEventDigestQueue() {
+  const queuedUserIds = Array.from(eventDigestQueue.values());
+  eventDigestQueue.clear();
+  eventDigestFlushTimer = null;
+  if (queuedUserIds.length === 0) return;
+
+  const lockAcquired = await acquireDigestGlobalLock();
+  if (!lockAcquired) return;
+
+  try {
+    const transporters = await filterHealthyTransporters(createTransportersWithFallback());
+    if (transporters.length === 0) return;
+    const platformBaseUrl = getPlatformBaseUrl();
+
+    const preferences = await prisma.emailNotificationPreference.findMany({
+      where: {
+        userId: { in: queuedUserIds },
+        enabled: true,
+        user: { email: { not: "" } },
+      },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true, username: true },
+        },
+      },
+    });
+
+    for (let index = 0; index < preferences.length; index += DIGEST_SEND_CONCURRENCY) {
+      const chunk = preferences.slice(index, index + DIGEST_SEND_CONCURRENCY);
+      await Promise.all(
+        chunk.map(async (preference) => {
+          try {
+            await sendDigestForUser({
+              user: preference.user,
+              preference,
+              transporters,
+              platformBaseUrl,
+            });
+          } catch (error) {
+            console.error(`Event digest failed for user ${preference.userId}:`, error.message);
+          }
+        })
+      );
+    }
+  } finally {
+    await releaseDigestGlobalLock();
+  }
+}
+
+function scheduleEventDigestFlush() {
+  if (eventDigestFlushTimer) return;
+  eventDigestFlushTimer = setTimeout(() => {
+    flushEventDigestQueue().catch((error) => {
+      console.error("Event digest flush failed:", error.message);
+    });
+  }, EVENT_DIGEST_DEBOUNCE_MS);
+}
+
+async function queueDigestForAuthorFollowers(authorId) {
+  if (!authorId) return;
+  if (!parseBooleanEnv(process.env.ENABLE_EMAIL_DIGEST, true)) return;
+
+  const followers = await prisma.follows.findMany({
+    where: { followingId: authorId },
+    select: { followerId: true },
+  });
+
+  followers.forEach((row) => {
+    if (row.followerId) eventDigestQueue.add(row.followerId);
+  });
+
+  scheduleEventDigestFlush();
 }
 
 function startDigestScheduler() {
@@ -708,4 +1052,5 @@ module.exports = {
   runDigestCycle,
   startDigestScheduler,
   getOrCreatePreference,
+  queueDigestForAuthorFollowers,
 };

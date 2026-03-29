@@ -3,6 +3,8 @@ const router = express.Router();
 const prisma = require("../prisma.js");
 const jwt = require("jsonwebtoken");
 const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
+const { queueDigestForAuthorFollowers } = require("../services/notificationDigestService");
+const FORUM_DIGEST_TYPES = new Set(["opinion", "analysis", "critique", "poll"]);
 
 const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 
@@ -226,6 +228,11 @@ router.post("/", memoryUpload.array("files"), async (req, res) => {
 
     await updatePostScore(post, redisClient);
     req.app.get("io")?.emit("newPost", post);
+    if (FORUM_DIGEST_TYPES.has(String(type || "").toLowerCase())) {
+      queueDigestForAuthorFollowers(authorId).catch((error) => {
+        console.error("Failed to queue follower digest for post:", error.message);
+      });
+    }
     res.status(201).json(post);
   } catch (err) {
     res.status(500).json({ error: "Failed to create post" });
