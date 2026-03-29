@@ -8,6 +8,7 @@ const MAX_MESSAGE_PREVIEW_PER_CHAT = 5;
 const MAX_POSTS_PER_FOLLOWED_USER = 3;
 const MAX_POSTS_PER_COMMUNITY = 3;
 const SUPPORTED_POST_TYPES = ["opinion", "analysis", "critique", "poll"];
+const DEFAULT_EMAIL_SEND_RETRIES = 2;
 
 let digestTimer = null;
 
@@ -46,7 +47,7 @@ function createBrevoApiTransporter(apiKey) {
               "Content-Length": Buffer.byteLength(payload),
               "api-key": apiKey,
             },
-            timeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 15000),
+            timeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
           },
           (res) => {
             let body = "";
@@ -92,11 +93,47 @@ function createTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
-    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 15000),
-    greetingTimeout: Number(process.env.EMAIL_GREETING_TIMEOUT_MS || 10000),
-    socketTimeout: Number(process.env.EMAIL_SOCKET_TIMEOUT_MS || 20000),
+    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
+    greetingTimeout: Number(process.env.EMAIL_GREETING_TIMEOUT_MS || 15000),
+    socketTimeout: Number(process.env.EMAIL_SOCKET_TIMEOUT_MS || 30000),
     family: Number(process.env.EMAIL_IP_FAMILY || 4),
   });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientEmailError(error) {
+  if (!error) return false;
+
+  const message = String(error.message || "").toLowerCase();
+  const code = String(error.code || "").toUpperCase();
+
+  return (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("rate limit") ||
+    ["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EAI_AGAIN"].includes(code)
+  );
+}
+
+async function sendMailWithRetry(transporter, mailOptions) {
+  const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await transporter.sendMail(mailOptions);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!isTransientEmailError(error) || attempt >= attempts) break;
+      await sleep(Math.min(1000 * attempt, 3000));
+    }
+  }
+
+  throw lastError;
 }
 
 function escapeHtml(value = "") {
@@ -510,7 +547,7 @@ async function sendDigestForUser({ user, preference, transporter, platformBaseUr
     return { skipped: true, reason: "no-new-content" };
   }
 
-  await transporter.sendMail({
+  await sendMailWithRetry(transporter, {
     from: process.env.EMAIL_FROM || DEFAULT_FROM,
     to: user.email,
     subject: buildDigestSubject(summary),
