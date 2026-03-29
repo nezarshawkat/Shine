@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const https = require("https");
 const prisma = require("../prisma");
 
 const DEFAULT_FROM = "Shine Notifications <notifications@sshine.org>";
@@ -24,7 +25,59 @@ function getDigestIntervalMs() {
   return Math.max(5, Number.isFinite(minutes) ? minutes : DEFAULT_INTERVAL_MINUTES) * 60 * 1000;
 }
 
+function createBrevoApiTransporter(apiKey) {
+  return {
+    async sendMail(mailOptions) {
+      const payload = JSON.stringify({
+        sender: { email: process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER, name: "Shine Notifications" },
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject,
+        htmlContent: mailOptions.html,
+      });
+
+      await new Promise((resolve, reject) => {
+        const req = https.request(
+          {
+            hostname: "api.brevo.com",
+            path: "/v3/smtp/email",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Content-Length": Buffer.byteLength(payload),
+              "api-key": apiKey,
+            },
+            timeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 15000),
+          },
+          (res) => {
+            let body = "";
+            res.on("data", (chunk) => {
+              body += chunk;
+            });
+            res.on("end", () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) return resolve();
+              reject(new Error(`Brevo API send failed (${res.statusCode}): ${body || "no response body"}`));
+            });
+          }
+        );
+
+        req.on("timeout", () => req.destroy(new Error("Brevo API timeout")));
+        req.on("error", reject);
+        req.write(payload);
+        req.end();
+      });
+    },
+  };
+}
+
 function createTransporter() {
+  const provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
+  const brevoApiKey = process.env.BREVO_API_KEY;
+
+  if (provider === "brevo_api" || (provider === "smtp" && brevoApiKey && parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true))) {
+    console.log("Using Brevo REST API transporter for digest delivery");
+    return createBrevoApiTransporter(brevoApiKey);
+  }
+
   const host = process.env.EMAIL_HOST;
   const port = Number(process.env.EMAIL_PORT || 587);
   const user = process.env.EMAIL_USER;
@@ -39,6 +92,10 @@ function createTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 15000),
+    greetingTimeout: Number(process.env.EMAIL_GREETING_TIMEOUT_MS || 10000),
+    socketTimeout: Number(process.env.EMAIL_SOCKET_TIMEOUT_MS || 20000),
+    family: Number(process.env.EMAIL_IP_FAMILY || 4),
   });
 }
 
