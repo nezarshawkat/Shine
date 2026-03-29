@@ -102,8 +102,6 @@ function createTransporter(provider = (process.env.EMAIL_PROVIDER || "smtp").toL
   });
 }
 
-<<<<<<< ours
-=======
 function createTransportersWithFallback() {
   const provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
   const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
@@ -118,7 +116,6 @@ function createTransportersWithFallback() {
   return transporters;
 }
 
->>>>>>> theirs
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -137,26 +134,9 @@ function isTransientEmailError(error) {
   );
 }
 
-<<<<<<< ours
+
 async function sendMailWithRetry(transporter, mailOptions) {
   const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
-  let lastError;
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      await transporter.sendMail(mailOptions);
-      return;
-    } catch (error) {
-      lastError = error;
-      if (!isTransientEmailError(error) || attempt >= attempts) break;
-      await sleep(Math.min(1000 * attempt, 3000));
-    }
-  }
-
-=======
-async function sendMailWithRetry(transporters, mailOptions) {
-  const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
-  let lastError;
   const failedTransporters = [];
 
   for (const transporter of transporters) {
@@ -176,10 +156,9 @@ async function sendMailWithRetry(transporters, mailOptions) {
   if (lastError && failedTransporters.length > 0) {
     lastError.message = `${lastError.message} (transporters tried: ${failedTransporters.join(", ")})`;
   }
->>>>>>> theirs
+
   throw lastError;
 }
-
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -591,11 +570,7 @@ async function sendDigestForUser({ user, preference, transporters, platformBaseU
     return { skipped: true, reason: "no-new-content" };
   }
 
-<<<<<<< ours
-  await sendMailWithRetry(transporter, {
-=======
   await sendMailWithRetry(transporters, {
->>>>>>> theirs
     from: process.env.EMAIL_FROM || DEFAULT_FROM,
     to: user.email,
     subject: buildDigestSubject(summary),
