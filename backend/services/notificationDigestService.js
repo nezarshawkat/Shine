@@ -37,25 +37,8 @@ function createTransporter() {
   return nodemailer.createTransport({
     host,
     port,
-    // true for 465, false for 587
-    secure: port === 465, 
-    auth: { 
-      user: user, 
-      pass: pass 
-    },
-    // CRITICAL: Add this block to fix the "Connection timeout" on Render
-    tls: {
-      // Bypasses handshake errors and connection drops on cloud networks
-      rejectUnauthorized: false,
-      minVersion: "TLSv1.2"
-    },
-    // Give the server more time to respond before crashing
-    connectionTimeout: 15000, 
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
-    // Keep these true to see exactly what Brevo says in your logs
-    debug: true,
-    logger: true
+    secure: port === 465,
+    auth: { user, pass },
   });
 }
 
