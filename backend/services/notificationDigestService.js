@@ -146,7 +146,11 @@ async function filterHealthyTransporters(transporters) {
     }
   }
 
+<<<<<<< ours
   return healthy.length > 0 ? healthy : transporters;
+=======
+  return healthy;
+>>>>>>> theirs
 }
 
 function sleep(ms) {
@@ -168,6 +172,13 @@ function isTransientEmailError(error) {
 }
 
 async function sendMailWithRetry(transporters, mailOptions) {
+<<<<<<< ours
+=======
+  if (!Array.isArray(transporters) || transporters.length === 0) {
+    throw new Error("No healthy email transporters are available.");
+  }
+
+>>>>>>> theirs
   const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
   let lastError;
   const failedTransporters = [];
@@ -656,6 +667,15 @@ async function runDigestCycle() {
   }
 
   const transporters = await filterHealthyTransporters(createTransportersWithFallback());
+<<<<<<< ours
+=======
+  if (transporters.length === 0) {
+    console.error(
+      "Digest cycle disabled: no healthy email transporters. Check EMAIL_HOST/EMAIL_PORT connectivity or enable Brevo API fallback."
+    );
+    return;
+  }
+>>>>>>> theirs
   const platformBaseUrl = getPlatformBaseUrl();
 
   const users = await prisma.user.findMany({
