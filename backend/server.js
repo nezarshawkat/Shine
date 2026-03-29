@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const redis = require("redis");
 const prisma = require("./prisma.js");
 const { OAuth2Client } = require("google-auth-library");
+const { startDigestScheduler } = require("./services/notificationDigestService");
 
 const { pingRouter, startping } = require("./ping");
 
@@ -98,6 +99,7 @@ app.use("/api", require("./routes/comments"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
+app.use("/api/email-notifications", require("./routes/emailNotifications"));
 app.use("/share", require("./routes/sharePreview"));
 
 // ================= 7. PING =================
@@ -145,4 +147,5 @@ app.post("/api/auth/google", async (req, res) => {
 });
 
 // ================= 10. START SERVER =================
+startDigestScheduler();
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

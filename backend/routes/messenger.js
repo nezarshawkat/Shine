@@ -187,6 +187,16 @@ router.get('/history/:partnerId', auth, async (req, res) => {
     const userId = req.user.id;
     const { partnerId } = req.params;
 
+    await prisma.emailNotificationPreference.upsert({
+      where: { userId },
+      update: { lastMessengerViewedAt: new Date() },
+      create: {
+        userId,
+        lastMessengerViewedAt: new Date(),
+        lastNotifiedAt: new Date(0),
+      },
+    });
+
     // Update incoming messages as 'read'
     await prisma.message.updateMany({
       where: { 
