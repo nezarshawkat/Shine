@@ -13,7 +13,7 @@ pingRouter.get("/ping", (req, res) => {
 });
 
 // Background interval to keep the backend active with a lightweight periodic task.
-function startPing() {
+function startping() {
   if (pingInterval) {
     return pingInterval;
   }
@@ -27,5 +27,5 @@ function startPing() {
 
 module.exports = {
   pingRouter,
-  startPing,
+  startping,
 };
