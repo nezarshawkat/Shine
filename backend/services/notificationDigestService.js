@@ -37,8 +37,23 @@ function createTransporter() {
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
-    auth: { user, pass },
+    // Port 587 must use secure: false. Port 465 must use secure: true.
+    secure: port === 465, 
+    auth: {
+      user: user,
+      pass: pass,
+    },
+    // Add these specific settings to fix Connection Timeouts:
+    tls: {
+      // Helps bypass common network restrictions on cloud hosts like Render
+      rejectUnauthorized: false,
+      minVersion: "TLSv1.2"
+    },
+    connectionTimeout: 10000, // Wait 10 seconds for connection
+    greetingTimeout: 10000,   // Wait 10 seconds for the "Hello" from the mail server
+    socketTimeout: 15000,     // Wait 15 seconds for data transfer
+    debug: true,              // This will print more info to your Render logs
+    logger: true              // This will log the SMTP traffic to help you see where it hangs
   });
 }
 
