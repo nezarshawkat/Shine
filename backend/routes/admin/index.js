@@ -8,6 +8,7 @@ const { getAnalytics, getDashboardOverview } = require("../../controllers/admin/
 const { listSupportMessages, replySupportMessage } = require("../../controllers/admin/supportController");
 const { sendSystemMessage } = require("../../controllers/admin/messagingController");
 const { listArticleApplications, reviewArticleApplication } = require("../../controllers/admin/articleApplicationsController");
+const { getEmailSystemOverview, sendAdminEmail, triggerDigestNow } = require("../../controllers/admin/emailSystemController");
 
 const router = express.Router();
 
@@ -66,5 +67,8 @@ router.patch("/article-applications/:id", reviewArticleApplication);
 
 /* ---------- system messaging ---------- */
 router.post("/messages/system", sendSystemMessage);
+router.get("/email-system", getEmailSystemOverview);
+router.post("/email-system/send", sendAdminEmail);
+router.post("/email-system/trigger-digest", triggerDigestNow);
 
 module.exports = router;

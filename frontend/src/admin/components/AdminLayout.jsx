@@ -13,6 +13,7 @@ const tabs = [
   ["support", "Support"],
   ["article-applications", "Article Applications"],
   ["system-messages", "System Messages"],
+  ["email-system", "Email System"],
 ];
 
 export default function AdminLayout() {

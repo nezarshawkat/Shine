@@ -12,6 +12,9 @@ This module isolates privileged endpoints under `/api/admin/*`.
 - `POST /api/admin/seed` (protected by `x-admin-setup-key`)
 - `GET /api/admin/dashboard`
 - `GET /api/admin/analytics`
+- `GET /api/admin/email-system`
+- `POST /api/admin/email-system/send`
+- `POST /api/admin/email-system/trigger-digest`
 - `GET/PUT/PATCH/DELETE /api/admin/users/*`
 - `GET/PUT/DELETE /api/admin/posts|events|communities/*`
 - `GET /api/admin/reports`

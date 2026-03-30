@@ -463,6 +463,24 @@ model EmailNotificationBatch {
   @@index([userId, createdAt])
 }
 
+model EmailDeliveryLog {
+  id                String   @id @default(uuid())
+  category          String   @default("digest")
+  status            String
+  toEmail           String
+  subject           String?
+  provider          String?
+  transporter       String?
+  attempts          Int      @default(1)
+  errorMessage      String?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([category, createdAt])
+  @@index([toEmail, createdAt])
+}
+
 model Event {
   id             String   @id @default(uuid())
   title          String

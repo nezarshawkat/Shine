@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
-const https = require("https");
+const fs = require("fs");
+const path = require("path");
 const prisma = require("../prisma");
 
 const DEFAULT_FROM = "Shine Notifications <notifications@sshine.org>";
@@ -19,6 +20,7 @@ const WEEKLY_RECOMMENDATION_BATCH_SIZE = Math.max(50, Number(process.env.EMAIL_W
 let digestTimer = null;
 let eventDigestFlushTimer = null;
 const eventDigestQueue = new Set();
+let cachedLogoDataUri = null;
 
 async function acquireDigestGlobalLock() {
   try {
@@ -66,87 +68,12 @@ function getDigestIntervalMs() {
 }
 
 function getEmailProvider() {
-  const configuredProvider = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
-  if (configuredProvider) return configuredProvider;
-  return process.env.BREVO_API_KEY ? "brevo_api" : "smtp";
-}
-
-function createBrevoApiTransporter(apiKey) {
-  const resolveSender = (fromHeader) => {
-    const fromValue = String(fromHeader || process.env.EMAIL_FROM || "").trim();
-    const fallbackEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER;
-
-    if (!fromValue && !fallbackEmail) {
-      throw new Error("Missing sender email. Set EMAIL_FROM (preferred) or EMAIL_FROM_ADDRESS for Brevo delivery.");
-    }
-
-    const angledMatch = fromValue.match(/^(.*)<([^>]+)>$/);
-    if (angledMatch) {
-      const name = angledMatch[1].trim().replace(/^"|"$/g, "");
-      return { email: angledMatch[2].trim(), name: name || "Shine Notifications" };
-    }
-
-    if (fromValue.includes("@")) {
-      return { email: fromValue, name: "Shine Notifications" };
-    }
-
-    return { email: fallbackEmail, name: fromValue || "Shine Notifications" };
-  };
-
-  return {
-    async sendMail(mailOptions) {
-      const sender = resolveSender(mailOptions?.from);
-      const payload = JSON.stringify({
-        sender,
-        to: [{ email: mailOptions.to }],
-        subject: mailOptions.subject,
-        textContent: mailOptions.text,
-        htmlContent: mailOptions.html,
-      });
-
-      await new Promise((resolve, reject) => {
-        const req = https.request(
-          {
-            hostname: "api.brevo.com",
-            path: "/v3/smtp/email",
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Content-Length": Buffer.byteLength(payload),
-              "api-key": apiKey,
-            },
-            timeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
-          },
-          (res) => {
-            let body = "";
-            res.on("data", (chunk) => {
-              body += chunk;
-            });
-            res.on("end", () => {
-              if (res.statusCode >= 200 && res.statusCode < 300) return resolve();
-              reject(new Error(`Brevo API send failed (${res.statusCode}): ${body || "no response body"}`));
-            });
-          }
-        );
-
-        req.on("timeout", () => req.destroy(new Error("Brevo API timeout")));
-        req.on("error", reject);
-        req.write(payload);
-        req.end();
-      });
-    },
-  };
+  return "smtp";
 }
 
 function createTransporter(provider = getEmailProvider()) {
-  const brevoApiKey = process.env.BREVO_API_KEY;
-
-  if (provider === "brevo_api") {
-    if (!brevoApiKey) {
-      throw new Error("Missing BREVO_API_KEY for brevo_api digest email delivery.");
-    }
-    console.log("Using Brevo REST API transporter for digest delivery");
-    return createBrevoApiTransporter(brevoApiKey);
+  if (provider !== "smtp") {
+    throw new Error(`Unsupported email provider "${provider}". Only SMTP is enabled.`);
   }
 
   const host = process.env.EMAIL_HOST;
@@ -172,45 +99,7 @@ function createTransporter(provider = getEmailProvider()) {
 
 function createTransportersWithFallback() {
   const provider = getEmailProvider();
-  const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
-  const hasBrevoApiKey = Boolean(process.env.BREVO_API_KEY);
-  const includeSmtpWithBrevoFallback = parseBooleanEnv(process.env.EMAIL_INCLUDE_SMTP_WITH_BREVO_FALLBACK, false);
-  const verifySmtpWithBrevoFallback = parseBooleanEnv(process.env.EMAIL_VERIFY_SMTP_WITH_BREVO_FALLBACK, false);
-
-  const transporters = [];
-  const canUseBrevoFallback = provider === "smtp" && useBrevoFallback && hasBrevoApiKey;
-
-  if (canUseBrevoFallback) {
-    transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api") });
-
-    if (includeSmtpWithBrevoFallback) {
-      try {
-        const smtpTransporter = { name: provider, instance: createTransporter(provider) };
-        transporters.push({
-          ...smtpTransporter,
-          skipVerify: !verifySmtpWithBrevoFallback,
-        });
-      } catch (error) {
-        console.warn(`Digest SMTP fallback unavailable: ${error.message}. Continuing with Brevo API only.`);
-      }
-    } else {
-      console.warn(
-        "Digest SMTP disabled because Brevo fallback is available. Set EMAIL_INCLUDE_SMTP_WITH_BREVO_FALLBACK=true to re-enable SMTP."
-      );
-    }
-
-    return transporters;
-  }
-
-  try {
-    const smtpTransporter = { name: provider, instance: createTransporter(provider) };
-    transporters.push(smtpTransporter);
-  } catch (error) {
-    if (!canUseBrevoFallback) throw error;
-    console.warn(`Digest primary transporter "${provider}" unavailable: ${error.message}. Falling back to Brevo API.`);
-  }
-
-  return transporters;
+  return [{ name: provider, instance: createTransporter(provider) }];
 }
 
 async function filterHealthyTransporters(transporters) {
@@ -242,6 +131,14 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function logEmailDelivery(data) {
+  try {
+    await prisma.emailDeliveryLog.create({ data });
+  } catch (error) {
+    console.error("Failed to persist email delivery log:", error.message);
+  }
+}
+
 function isTransientEmailError(error) {
   if (!error) return false;
 
@@ -264,11 +161,23 @@ async function sendMailWithRetry(transporters, mailOptions) {
   const attempts = Math.max(1, Number(process.env.EMAIL_SEND_RETRIES || DEFAULT_EMAIL_SEND_RETRIES));
   let lastError;
   const failedTransporters = [];
+  const context = mailOptions?.context || {};
+  const { context: _context, ...deliveryOptions } = mailOptions || {};
 
   for (const transporter of transporters) {
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
       try {
-        await transporter.instance.sendMail(mailOptions);
+        await transporter.instance.sendMail(deliveryOptions);
+        await logEmailDelivery({
+          category: context.category || "digest",
+          status: "sent",
+          toEmail: String(mailOptions?.to || ""),
+          subject: mailOptions?.subject || null,
+          provider: getEmailProvider(),
+          transporter: transporter.name,
+          attempts: attempt,
+          metadata: context.metadata || undefined,
+        });
         return;
       } catch (error) {
         lastError = error;
@@ -282,6 +191,17 @@ async function sendMailWithRetry(transporters, mailOptions) {
   if (lastError && failedTransporters.length > 0) {
     lastError.message = `${lastError.message} (transporters tried: ${failedTransporters.join(", ")})`;
   }
+  await logEmailDelivery({
+    category: context.category || "digest",
+    status: "failed",
+    toEmail: String(mailOptions?.to || ""),
+    subject: mailOptions?.subject || null,
+    provider: getEmailProvider(),
+    transporter: failedTransporters.join(", ") || null,
+    attempts,
+    errorMessage: lastError?.message || "Unknown error",
+    metadata: context.metadata || undefined,
+  });
   throw lastError;
 }
 
@@ -299,6 +219,71 @@ function formatTimestamp(date) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function getShineLogoSrc(platformBaseUrl) {
+  if (cachedLogoDataUri) return cachedLogoDataUri;
+  try {
+    const logoPath = path.resolve(__dirname, "../../frontend/src/assets/shineLogo.png");
+    const ext = path.extname(logoPath).replace(".", "") || "png";
+    const base64 = fs.readFileSync(logoPath, "base64");
+    cachedLogoDataUri = `data:image/${ext};base64,${base64}`;
+    return cachedLogoDataUri;
+  } catch (error) {
+    return `${platformBaseUrl}/assets/shineLogo.png`;
+  }
+}
+
+function buildBrandedEmailShell({ platformBaseUrl, title, subtitle, introHtml = "", contentHtml = "", ctaHref, ctaLabel }) {
+  const logoSrc = getShineLogoSrc(platformBaseUrl);
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#eef2f7;font-family:Arial,sans-serif;color:#0f172a;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 28px rgba(15,23,42,0.08);">
+            <tr>
+              <td style="background:#112f5d;padding:20px 24px;color:#ffffff;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="font-size:24px;font-weight:800;line-height:1.2;">Shine</div>
+                      <div style="font-size:12px;opacity:0.9;">${escapeHtml(subtitle || "Professional updates, delivered clearly.")}</div>
+                    </td>
+                    <td align="right" style="vertical-align:middle;">
+                      <img src="${logoSrc}" alt="Shine Logo" style="height:38px;width:auto;background:#fff;border-radius:8px;padding:4px;" />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">
+                <h2 style="margin:0 0 10px 0;color:#112f5d;">${escapeHtml(title)}</h2>
+                ${introHtml}
+                ${contentHtml}
+                ${
+                  ctaHref && ctaLabel
+                    ? `<a href="${ctaHref}" style="display:inline-block;margin-top:14px;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">${escapeHtml(
+                        ctaLabel
+                      )}</a>`
+                    : ""
+                }
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#112f5d;padding:14px 24px;color:#dbeafe;font-size:12px;">
+                You can manage your notification preferences anytime in Shine Settings → Notifications.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function pickPostPreviewImage(post) {
@@ -326,41 +311,26 @@ function buildWeeklyRecommendationSubject(post) {
 function buildWeeklyRecommendationHtml({ user, post, platformBaseUrl }) {
   const authorName = post.author?.name || post.author?.username || "A creator you may like";
   const previewImage = pickPostPreviewImage(post);
-  return `
-<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="680" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.08);">
-            <tr>
-              <td style="background:#112f5d;padding:20px 24px;color:#ffffff;">
-                <div style="font-size:24px;font-weight:800;">Shine Weekly Pick</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px;">
-                <h2 style="margin:0 0 8px 0;color:#112f5d;">Hello ${escapeHtml(user.name || user.username)},</h2>
-                <p style="margin:0 0 14px 0;color:#334155;">This week’s most-liked forum post is ready for you.</p>
-                <a href="${platformBaseUrl}/posts/${post.id}" style="display:block;padding:14px;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;">
-                  ${
-                    previewImage
-                      ? `<img src="${escapeHtml(previewImage)}" alt="Post preview" style="display:block;width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />`
-                      : ""
-                  }
-                  <div style="font-size:16px;font-weight:700;color:#112f5d;">${escapeHtml(extractPostTitle(post))}</div>
-                  <div style="margin-top:8px;font-size:13px;color:#64748b;">by ${escapeHtml(authorName)} · ${escapeHtml(mapPostType(post.type, (post.pollOptions || []).length > 0))}</div>
-                </a>
-                <a href="${platformBaseUrl}/feed" style="display:inline-block;margin-top:16px;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">Open feed</a>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return buildBrandedEmailShell({
+    platformBaseUrl,
+    title: `Hello ${user.name || user.username}, your weekly pick is here`,
+    subtitle: "Shine Weekly Pick",
+    contentHtml: `
+      <p style="margin:0 0 14px 0;color:#334155;">This week’s most-liked forum post is ready for you.</p>
+      <a href="${platformBaseUrl}/posts/${post.id}" style="display:block;padding:14px;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;">
+        ${
+          previewImage
+            ? `<img src="${escapeHtml(previewImage)}" alt="Post preview" style="display:block;width:100%;max-height:280px;object-fit:cover;border-radius:8px;margin-bottom:10px;" />`
+            : ""
+        }
+        <div style="font-size:16px;font-weight:700;color:#112f5d;">${escapeHtml(extractPostTitle(post))}</div>
+        <div style="margin-top:8px;font-size:13px;color:#64748b;">by ${escapeHtml(authorName)} · ${escapeHtml(
+          mapPostType(post.type, (post.pollOptions || []).length > 0)
+        )}</div>
+      </a>`,
+    ctaHref: `${platformBaseUrl}/feed`,
+    ctaLabel: "Open feed",
+  });
 }
 
 function buildEmailHtml({
@@ -473,86 +443,22 @@ function buildEmailHtml({
       `;
     })
     .join("");
+  const contentBlocks = [
+    groupedMessages.length > 0 ? `<div style="margin-top:18px;"><h3 style="margin:0 0 12px 0;color:#112f5d;">Messenger updates</h3>${messageSections}</div>` : "",
+    groupedFollowingPosts.length > 0 ? `<div style="margin-top:18px;"><h3 style="margin:0 0 12px 0;color:#112f5d;">New posts from people you follow</h3>${followingSections}</div>` : "",
+    groupedArticles.length > 0 ? `<div style="margin-top:18px;"><h3 style="margin:0 0 12px 0;color:#112f5d;">New articles</h3>${articleSections}</div>` : "",
+    groupedCommunityPosts.length > 0 ? `<div style="margin-top:18px;"><h3 style="margin:0 0 12px 0;color:#112f5d;">Community activity</h3>${communitySections}</div>` : "",
+  ].join("");
 
-  return `
-<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="680" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.08);">
-            <tr>
-              <td style="background:#112f5d;padding:20px 24px;color:#ffffff;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-                  <div>
-                    <div style="font-size:24px;font-weight:800;letter-spacing:0.3px;">Shine</div>
-                    <div style="font-size:12px;opacity:0.9;">Professional Activity Digest</div>
-                  </div>
-                  <img src="${platformBaseUrl}/assets/shine-logo.png" alt="ShineLogo" style="height:42px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:4px;" />
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:20px 24px 4px 24px;">
-                <h2 style="margin:0;color:#112f5d;">Hello ${escapeHtml(user.name || user.username)},</h2>
-                <p style="margin:8px 0 0 0;color:#334155;">You have ${summary.messages} new messages, ${summary.followingPosts} new posts from followed users, and ${summary.communityPosts} new community posts.</p>
-                <p style="margin:4px 0 0 0;color:#334155;">Articles: ${summary.articles} · Polls: ${summary.polls}</p>
-              </td>
-            </tr>
-            ${
-              groupedMessages.length > 0
-                ? `<tr>
-              <td style="padding:16px 24px 0 24px;">
-                <h3 style="margin:0 0 12px 0;color:#112f5d;">Messenger updates</h3>
-                ${messageSections}
-                <a href="${platformBaseUrl}/messenger" style="display:inline-block;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">View all messages</a>
-              </td>
-            </tr>`
-                : ""
-            }
-            ${
-              groupedFollowingPosts.length > 0
-                ? `<tr>
-              <td style="padding:24px 24px 0 24px;">
-                <h3 style="margin:0 0 12px 0;color:#112f5d;">New posts from people you follow</h3>
-                ${followingSections}
-                <a href="${platformBaseUrl}/feed/following" style="display:inline-block;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">View all followed posts</a>
-              </td>
-            </tr>`
-                : ""
-            }
-            ${
-              groupedArticles.length > 0
-                ? `<tr>
-              <td style="padding:24px 24px 0 24px;">
-                <h3 style="margin:0 0 12px 0;color:#112f5d;">New articles</h3>
-                ${articleSections}
-                <a href="${platformBaseUrl}/articles" style="display:inline-block;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">View all articles</a>
-              </td>
-            </tr>`
-                : ""
-            }
-            ${
-              groupedCommunityPosts.length > 0
-                ? `<tr>
-              <td style="padding:24px 24px 0 24px;">
-                <h3 style="margin:0 0 12px 0;color:#112f5d;">Community activity</h3>
-                ${communitySections}
-                <a href="${platformBaseUrl}/communities" style="display:inline-block;background:#facc15;color:#112f5d;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:999px;">View all communities</a>
-              </td>
-            </tr>`
-                : ""
-            }
-            <tr>
-              <td style="padding:24px;color:#64748b;font-size:12px;">Manage your digest preferences in Settings → Notifications.</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return buildBrandedEmailShell({
+    platformBaseUrl,
+    title: `Hello ${user.name || user.username}, here's your Shine digest`,
+    subtitle: "Professional Activity Digest",
+    introHtml: `<p style="margin:8px 0 0 0;color:#334155;">You have ${summary.messages} new messages, ${summary.followingPosts} new followed-user posts, ${summary.communityPosts} community posts, ${summary.articles} articles and ${summary.polls} polls.</p>`,
+    contentHtml: contentBlocks,
+    ctaHref: `${platformBaseUrl}/feed`,
+    ctaLabel: "Open Shine",
+  });
 }
 
 function extractPostTitle(post) {
@@ -804,6 +710,10 @@ async function sendDigestForUser({ user, preference, transporters = [], platform
     from: process.env.EMAIL_FROM || DEFAULT_FROM,
     to: user.email,
     subject: buildDigestSubject(summary),
+    context: {
+      category: "digest",
+      metadata: { userId: user.id, summary },
+    },
     html: buildEmailHtml({
       user,
       summary,
@@ -1029,6 +939,10 @@ async function sendWeeklyRecommendedPostEmails({ transporters, platformBaseUrl }
               from: process.env.EMAIL_FROM || DEFAULT_FROM,
               to: row.user.email,
               subject: buildWeeklyRecommendationSubject(topPost),
+              context: {
+                category: "weekly_recommendation",
+                metadata: { userId: row.userId, postId: topPost.id },
+              },
               html: buildWeeklyRecommendationHtml({ user: row.user, post: topPost, platformBaseUrl }),
             });
 
@@ -1147,4 +1061,10 @@ module.exports = {
   startDigestScheduler,
   getOrCreatePreference,
   queueDigestForAuthorFollowers,
+  createTransportersWithFallback,
+  filterHealthyTransporters,
+  sendMailWithRetry,
+  buildBrandedEmailShell,
+  getPlatformBaseUrl,
+  getEmailProvider,
 };
