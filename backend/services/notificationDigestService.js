@@ -179,16 +179,6 @@ function createTransportersWithFallback() {
 
   const transporters = [];
   const canUseBrevoFallback = provider === "smtp" && useBrevoFallback && hasBrevoApiKey;
-<<<<<<< ours
-
-  try {
-    transporters.push({ name: provider, instance: createTransporter(provider) });
-  } catch (error) {
-    if (!canUseBrevoFallback) throw error;
-    console.warn(`Digest primary transporter "${provider}" unavailable: ${error.message}. Falling back to Brevo API.`);
-  }
-=======
->>>>>>> theirs
 
   if (canUseBrevoFallback) {
     transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api") });
