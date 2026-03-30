@@ -66,12 +66,35 @@ function getDigestIntervalMs() {
 }
 
 function createBrevoApiTransporter(apiKey) {
+  const resolveSender = (fromHeader) => {
+    const fromValue = String(fromHeader || process.env.EMAIL_FROM || "").trim();
+    const fallbackEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER;
+
+    if (!fromValue && !fallbackEmail) {
+      throw new Error("Missing sender email. Set EMAIL_FROM (preferred) or EMAIL_FROM_ADDRESS for Brevo delivery.");
+    }
+
+    const angledMatch = fromValue.match(/^(.*)<([^>]+)>$/);
+    if (angledMatch) {
+      const name = angledMatch[1].trim().replace(/^"|"$/g, "");
+      return { email: angledMatch[2].trim(), name: name || "Shine Notifications" };
+    }
+
+    if (fromValue.includes("@")) {
+      return { email: fromValue, name: "Shine Notifications" };
+    }
+
+    return { email: fallbackEmail, name: fromValue || "Shine Notifications" };
+  };
+
   return {
     async sendMail(mailOptions) {
+      const sender = resolveSender(mailOptions?.from);
       const payload = JSON.stringify({
-        sender: { email: process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER, name: "Shine Notifications" },
+        sender,
         to: [{ email: mailOptions.to }],
         subject: mailOptions.subject,
+        textContent: mailOptions.text,
         htmlContent: mailOptions.html,
       });
 
@@ -146,9 +169,17 @@ function createTransportersWithFallback() {
   const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
   const hasBrevoApiKey = Boolean(process.env.BREVO_API_KEY);
 
-  const transporters = [{ name: provider, instance: createTransporter(provider) }];
+  const transporters = [];
+  const canUseBrevoFallback = provider === "smtp" && useBrevoFallback && hasBrevoApiKey;
 
-  if (provider === "smtp" && useBrevoFallback && hasBrevoApiKey) {
+  try {
+    transporters.push({ name: provider, instance: createTransporter(provider) });
+  } catch (error) {
+    if (!canUseBrevoFallback) throw error;
+    console.warn(`Digest primary transporter "${provider}" unavailable: ${error.message}. Falling back to Brevo API.`);
+  }
+
+  if (canUseBrevoFallback) {
     transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api") });
   }
 
