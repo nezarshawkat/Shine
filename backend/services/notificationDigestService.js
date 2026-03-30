@@ -770,7 +770,7 @@ async function runDigestCycle() {
     const transporters = await filterHealthyTransporters(createTransportersWithFallback());
     if (transporters.length === 0) {
       console.error(
-        "Digest cycle disabled: no healthy email transporters. Check EMAIL_HOST/EMAIL_PORT connectivity or enable Brevo API fallback."
+        "Digest cycle disabled: no healthy SMTP transporters. Check EMAIL_HOST/EMAIL_PORT connectivity, SMTP credentials, and outbound firewall/network rules."
       );
       return;
     }
