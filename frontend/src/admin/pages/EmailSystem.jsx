@@ -89,15 +89,35 @@ export default function EmailSystem() {
           <li>SMTP verified: <strong>{String(data?.smtpHealth?.transporterVerified)}</strong></li>
           <li>Digest enabled: <strong>{String(data?.smtpHealth?.digestEnabled)}</strong></li>
           <li>Weekly recommendation enabled: <strong>{String(data?.smtpHealth?.weeklyRecommendationEnabled)}</strong></li>
-<<<<<<< ours
-=======
           <li>API fallback enabled: <strong>{String(data?.smtpHealth?.apiFallbackEnabled)}</strong></li>
->>>>>>> theirs
           <li>Digest interval: <strong>{data?.smtpHealth?.digestIntervalMinutes} minutes</strong></li>
           {Object.entries(data?.smtpHealth?.required || {}).map(([k, v]) => (
             <li key={k}>{k}: <strong>{v ? "set" : "missing"}</strong></li>
           ))}
+          {Object.entries(data?.smtpHealth?.apiFallbackRequired || {}).map(([k, v]) => (
+            <li key={k}>{k} (API): <strong>{v ? "set" : "missing"}</strong></li>
+          ))}
         </ul>
+      </div>
+
+      <div className="admin-card">
+        <h3 style={{ marginTop: 0 }}>API Fallback Variables</h3>
+        <p style={{ marginTop: 0 }}>
+          Add these values to your backend environment to enable fallback when SMTP fails.
+        </p>
+        <table className="admin-table" style={{ marginBottom: 0 }}>
+          <thead>
+            <tr><th>Variable</th><th>Suggested Value</th></tr>
+          </thead>
+          <tbody>
+            {Object.entries(data?.smtpHealth?.apiFallbackVariables || {}).map(([key, value]) => (
+              <tr key={key}>
+                <td><code>{key}</code></td>
+                <td><code>{String(value)}</code></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="admin-card">

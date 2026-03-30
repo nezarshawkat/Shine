@@ -1,8 +1,5 @@
 const nodemailer = require("nodemailer");
-<<<<<<< ours
-=======
 const https = require("https");
->>>>>>> theirs
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../prisma");
@@ -72,40 +69,6 @@ function getDigestIntervalMs() {
 }
 
 function getEmailProvider() {
-<<<<<<< ours
-  return "smtp";
-}
-
-function createTransporter(provider = getEmailProvider()) {
-  if (provider !== "smtp") {
-    throw new Error(`Unsupported email provider "${provider}". Only SMTP is enabled.`);
-  }
-
-  const host = process.env.EMAIL_HOST;
-  const port = Number(process.env.EMAIL_PORT || 587);
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
-
-  if (!host || !user || !pass) {
-    throw new Error("Missing EMAIL_HOST, EMAIL_USER or EMAIL_PASS for digest email delivery.");
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
-    greetingTimeout: Number(process.env.EMAIL_GREETING_TIMEOUT_MS || 15000),
-    socketTimeout: Number(process.env.EMAIL_SOCKET_TIMEOUT_MS || 30000),
-    family: Number(process.env.EMAIL_IP_FAMILY || 4),
-  });
-}
-
-function createTransportersWithFallback() {
-  const provider = getEmailProvider();
-  return [{ name: provider, instance: createTransporter(provider) }];
-=======
   const configuredProvider = String(process.env.EMAIL_PROVIDER || "smtp").trim().toLowerCase();
   return configuredProvider || "smtp";
 }
@@ -220,7 +183,6 @@ function createTransportersWithFallback() {
     throw new Error("No email transporters could be initialized.");
   }
   return transporters;
->>>>>>> theirs
 }
 
 async function filterHealthyTransporters(transporters) {
@@ -891,11 +853,7 @@ async function runDigestCycle() {
     const transporters = await filterHealthyTransporters(createTransportersWithFallback());
     if (transporters.length === 0) {
       console.error(
-<<<<<<< ours
-        "Digest cycle disabled: no healthy SMTP transporters. Check EMAIL_HOST/EMAIL_PORT connectivity, SMTP credentials, and outbound firewall/network rules."
-=======
         "Digest cycle disabled: no healthy email transporters. Check SMTP connectivity/credentials, or configure Brevo API fallback via BREVO_API_KEY."
->>>>>>> theirs
       );
       return;
     }

@@ -15,45 +15,54 @@ function boolFromEnv(value, fallback = false) {
 }
 
 function smtpConfigHealth() {
-  const required = {
+  const smtpRequired = {
     EMAIL_HOST: Boolean(process.env.EMAIL_HOST),
     EMAIL_PORT: Boolean(process.env.EMAIL_PORT),
     EMAIL_USER: Boolean(process.env.EMAIL_USER),
     EMAIL_PASS: Boolean(process.env.EMAIL_PASS),
     EMAIL_FROM: Boolean(process.env.EMAIL_FROM),
-<<<<<<< ours
-=======
+  };
+  const apiFallbackRequired = {
     BREVO_API_KEY: Boolean(process.env.BREVO_API_KEY),
->>>>>>> theirs
   };
 
-  const ready = Object.values(required).every(Boolean);
+  const provider = getEmailProvider();
+  const smtpReady = Object.values(smtpRequired).every(Boolean);
+  const apiReady = Object.values(apiFallbackRequired).every(Boolean) && Boolean(process.env.EMAIL_FROM || process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER);
+  const ready = provider === "brevo_api" ? apiReady : smtpReady;
   return {
-    provider: getEmailProvider(),
+    provider,
     ready,
-    required,
+    required: smtpRequired,
+    apiFallbackRequired,
+    smtpReady,
+    apiReady,
     secure: Number(process.env.EMAIL_PORT || 587) === 465,
     digestEnabled: boolFromEnv(process.env.ENABLE_EMAIL_DIGEST, true),
     weeklyRecommendationEnabled: boolFromEnv(process.env.ENABLE_WEEKLY_RECOMMENDATION_EMAIL, true),
-<<<<<<< ours
-=======
     apiFallbackEnabled: boolFromEnv(process.env.EMAIL_ENABLE_API_FALLBACK, true),
->>>>>>> theirs
     digestIntervalMinutes: Math.max(5, Number(process.env.EMAIL_DIGEST_INTERVAL_MINUTES || 60)),
+    apiFallbackProvider: "Brevo API",
+    apiFallbackVariables: {
+      EMAIL_ENABLE_API_FALLBACK: "true",
+      BREVO_API_KEY: "your_brevo_api_key",
+      EMAIL_FROM: process.env.EMAIL_FROM || "Shine Notifications <notifications@yourdomain.com>",
+      EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER || "notifications@yourdomain.com",
+    },
   };
 }
 
 function explainSystemState({ smtpHealth, transporterVerified, lastFailure }) {
   if (!smtpHealth.ready) {
-    return "Email system is blocked: one or more SMTP environment keys are missing.";
+    return "Email system is blocked: required environment keys for the selected provider are missing.";
   }
   if (!transporterVerified) {
-    return "SMTP keys exist, but login/connection verification failed. Check credentials or firewall/port access.";
+    return "Provider keys exist, but delivery verification failed. Check credentials and network access.";
   }
   if (lastFailure) {
     return "Email system is active, but there were recent failures. Investigate the latest errors below.";
   }
-  return "Email system is healthy. SMTP is connected and recent sends are succeeding.";
+  return "Email system is healthy. Delivery provider is connected and recent sends are succeeding.";
 }
 
 async function getEmailSystemOverview(req, res) {
