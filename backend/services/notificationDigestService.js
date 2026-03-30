@@ -65,6 +65,12 @@ function getDigestIntervalMs() {
   return Math.max(5, Number.isFinite(minutes) ? minutes : DEFAULT_INTERVAL_MINUTES) * 60 * 1000;
 }
 
+function getEmailProvider() {
+  const configuredProvider = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
+  if (configuredProvider) return configuredProvider;
+  return process.env.BREVO_API_KEY ? "brevo_api" : "smtp";
+}
+
 function createBrevoApiTransporter(apiKey) {
   const resolveSender = (fromHeader) => {
     const fromValue = String(fromHeader || process.env.EMAIL_FROM || "").trim();
@@ -132,7 +138,7 @@ function createBrevoApiTransporter(apiKey) {
   };
 }
 
-function createTransporter(provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase()) {
+function createTransporter(provider = getEmailProvider()) {
   const brevoApiKey = process.env.BREVO_API_KEY;
 
   if (provider === "brevo_api") {
@@ -165,7 +171,7 @@ function createTransporter(provider = (process.env.EMAIL_PROVIDER || "smtp").toL
 }
 
 function createTransportersWithFallback() {
-  const provider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
+  const provider = getEmailProvider();
   const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
   const hasBrevoApiKey = Boolean(process.env.BREVO_API_KEY);
 
