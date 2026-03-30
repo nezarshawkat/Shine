@@ -1,7 +1,5 @@
 const nodemailer = require("nodemailer");
 const https = require("https");
-const fs = require("fs");
-const path = require("path");
 const prisma = require("../prisma");
 
 const DEFAULT_FROM = "Shine Notifications <notifications@sshine.org>";
@@ -21,7 +19,10 @@ const WEEKLY_RECOMMENDATION_BATCH_SIZE = Math.max(50, Number(process.env.EMAIL_W
 let digestTimer = null;
 let eventDigestFlushTimer = null;
 const eventDigestQueue = new Set();
-let cachedLogoDataUri = null;
+let digestPaused = false;
+let digestLastRunStartedAt = null;
+let digestLastRunFinishedAt = null;
+let digestLastRunStatus = "idle";
 
 async function acquireDigestGlobalLock() {
   try {
@@ -305,16 +306,8 @@ function formatTimestamp(date) {
 }
 
 function getShineLogoSrc(platformBaseUrl) {
-  if (cachedLogoDataUri) return cachedLogoDataUri;
-  try {
-    const logoPath = path.resolve(__dirname, "../../frontend/src/assets/shineLogo.png");
-    const ext = path.extname(logoPath).replace(".", "") || "png";
-    const base64 = fs.readFileSync(logoPath, "base64");
-    cachedLogoDataUri = `data:image/${ext};base64,${base64}`;
-    return cachedLogoDataUri;
-  } catch (error) {
-    return `${platformBaseUrl}/assets/shineLogo.png`;
-  }
+  const explicitLogo = "https://sshine.org/assets/shineLogo-BgHL47FR.png";
+  return explicitLogo || `${platformBaseUrl}/assets/shineLogo.png`;
 }
 
 function buildBrandedEmailShell({ platformBaseUrl, title, subtitle, introHtml = "", contentHtml = "", ctaHref, ctaLabel }) {
@@ -833,10 +826,15 @@ async function sendDigestForUser({ user, preference, transporters = [], platform
 }
 
 async function runDigestCycle() {
+  if (digestPaused) return;
   if (!parseBooleanEnv(process.env.ENABLE_EMAIL_DIGEST, true)) return;
+  digestLastRunStartedAt = new Date();
+  digestLastRunStatus = "running";
 
   const lockAcquired = await acquireDigestGlobalLock();
   if (!lockAcquired) {
+    digestLastRunStatus = "skipped_locked";
+    digestLastRunFinishedAt = new Date();
     console.log("Digest cycle skipped: another node currently owns the global digest lock.");
     return;
   }
@@ -844,6 +842,8 @@ async function runDigestCycle() {
   try {
     getDigestPrismaDelegates();
   } catch (error) {
+    digestLastRunStatus = "failed";
+    digestLastRunFinishedAt = new Date();
     console.error("Digest cycle disabled:", error.message);
     await releaseDigestGlobalLock();
     return;
@@ -852,6 +852,8 @@ async function runDigestCycle() {
   try {
     const transporters = await filterHealthyTransporters(createTransportersWithFallback());
     if (transporters.length === 0) {
+      digestLastRunStatus = "failed";
+      digestLastRunFinishedAt = new Date();
       console.error(
         "Digest cycle disabled: no healthy email transporters. Check SMTP connectivity/credentials, or configure Brevo API fallback via BREVO_API_KEY."
       );
@@ -958,6 +960,8 @@ async function runDigestCycle() {
     }
 
     await sendWeeklyRecommendedPostEmails({ transporters, platformBaseUrl });
+    digestLastRunStatus = "ok";
+    digestLastRunFinishedAt = new Date();
   } finally {
     await releaseDigestGlobalLock();
   }
@@ -1139,6 +1143,25 @@ function startDigestScheduler() {
   return digestTimer;
 }
 
+function pauseDigestScheduler() {
+  digestPaused = true;
+}
+
+function resumeDigestScheduler() {
+  digestPaused = false;
+}
+
+function getDigestRuntimeState() {
+  return {
+    paused: digestPaused,
+    queuedUserCount: eventDigestQueue.size,
+    intervalMs: getDigestIntervalMs(),
+    lastRunStartedAt: digestLastRunStartedAt,
+    lastRunFinishedAt: digestLastRunFinishedAt,
+    lastRunStatus: digestLastRunStatus,
+  };
+}
+
 module.exports = {
   runDigestCycle,
   startDigestScheduler,
@@ -1150,4 +1173,7 @@ module.exports = {
   buildBrandedEmailShell,
   getPlatformBaseUrl,
   getEmailProvider,
+  pauseDigestScheduler,
+  resumeDigestScheduler,
+  getDigestRuntimeState,
 };

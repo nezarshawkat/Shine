@@ -8,7 +8,13 @@ const { getAnalytics, getDashboardOverview } = require("../../controllers/admin/
 const { listSupportMessages, replySupportMessage } = require("../../controllers/admin/supportController");
 const { sendSystemMessage } = require("../../controllers/admin/messagingController");
 const { listArticleApplications, reviewArticleApplication } = require("../../controllers/admin/articleApplicationsController");
-const { getEmailSystemOverview, sendAdminEmail, triggerDigestNow } = require("../../controllers/admin/emailSystemController");
+const {
+  getEmailSystemOverview,
+  sendAdminEmail,
+  triggerDigestNow,
+  updateDigestSchedulerState,
+  getAdminEmailPreview,
+} = require("../../controllers/admin/emailSystemController");
 
 const router = express.Router();
 
@@ -70,5 +76,7 @@ router.post("/messages/system", sendSystemMessage);
 router.get("/email-system", getEmailSystemOverview);
 router.post("/email-system/send", sendAdminEmail);
 router.post("/email-system/trigger-digest", triggerDigestNow);
+router.post("/email-system/scheduler", updateDigestSchedulerState);
+router.post("/email-system/preview", getAdminEmailPreview);
 
 module.exports = router;
