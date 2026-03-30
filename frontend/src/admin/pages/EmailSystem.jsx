@@ -89,6 +89,10 @@ export default function EmailSystem() {
           <li>SMTP verified: <strong>{String(data?.smtpHealth?.transporterVerified)}</strong></li>
           <li>Digest enabled: <strong>{String(data?.smtpHealth?.digestEnabled)}</strong></li>
           <li>Weekly recommendation enabled: <strong>{String(data?.smtpHealth?.weeklyRecommendationEnabled)}</strong></li>
+<<<<<<< ours
+=======
+          <li>API fallback enabled: <strong>{String(data?.smtpHealth?.apiFallbackEnabled)}</strong></li>
+>>>>>>> theirs
           <li>Digest interval: <strong>{data?.smtpHealth?.digestIntervalMinutes} minutes</strong></li>
           {Object.entries(data?.smtpHealth?.required || {}).map(([k, v]) => (
             <li key={k}>{k}: <strong>{v ? "set" : "missing"}</strong></li>

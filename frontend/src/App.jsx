@@ -69,6 +69,7 @@ function AppRoutes() {
     "/invite-people",
     "/article-apply",
     "/compost",
+    "/admin/email-system",
     "/admin",
     "/admin/login",
     "/admin/dashboard",

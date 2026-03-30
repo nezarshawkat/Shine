@@ -21,6 +21,10 @@ function smtpConfigHealth() {
     EMAIL_USER: Boolean(process.env.EMAIL_USER),
     EMAIL_PASS: Boolean(process.env.EMAIL_PASS),
     EMAIL_FROM: Boolean(process.env.EMAIL_FROM),
+<<<<<<< ours
+=======
+    BREVO_API_KEY: Boolean(process.env.BREVO_API_KEY),
+>>>>>>> theirs
   };
 
   const ready = Object.values(required).every(Boolean);
@@ -31,6 +35,10 @@ function smtpConfigHealth() {
     secure: Number(process.env.EMAIL_PORT || 587) === 465,
     digestEnabled: boolFromEnv(process.env.ENABLE_EMAIL_DIGEST, true),
     weeklyRecommendationEnabled: boolFromEnv(process.env.ENABLE_WEEKLY_RECOMMENDATION_EMAIL, true),
+<<<<<<< ours
+=======
+    apiFallbackEnabled: boolFromEnv(process.env.EMAIL_ENABLE_API_FALLBACK, true),
+>>>>>>> theirs
     digestIntervalMinutes: Math.max(5, Number(process.env.EMAIL_DIGEST_INTERVAL_MINUTES || 60)),
   };
 }

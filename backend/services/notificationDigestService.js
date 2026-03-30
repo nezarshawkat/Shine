@@ -1,4 +1,8 @@
 const nodemailer = require("nodemailer");
+<<<<<<< ours
+=======
+const https = require("https");
+>>>>>>> theirs
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../prisma");
@@ -68,6 +72,7 @@ function getDigestIntervalMs() {
 }
 
 function getEmailProvider() {
+<<<<<<< ours
   return "smtp";
 }
 
@@ -100,6 +105,122 @@ function createTransporter(provider = getEmailProvider()) {
 function createTransportersWithFallback() {
   const provider = getEmailProvider();
   return [{ name: provider, instance: createTransporter(provider) }];
+=======
+  const configuredProvider = String(process.env.EMAIL_PROVIDER || "smtp").trim().toLowerCase();
+  return configuredProvider || "smtp";
+}
+
+function createTransporter(provider = getEmailProvider()) {
+  if (provider === "brevo_api") {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) throw new Error("Missing BREVO_API_KEY for Brevo API fallback delivery.");
+    return createBrevoApiTransporter(apiKey);
+  }
+
+  if (provider !== "smtp") {
+    throw new Error(`Unsupported email provider "${provider}". Use smtp or brevo_api.`);
+  }
+
+  const host = process.env.EMAIL_HOST;
+  const port = Number(process.env.EMAIL_PORT || 587);
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!host || !user || !pass) {
+    throw new Error("Missing EMAIL_HOST, EMAIL_USER or EMAIL_PASS for digest email delivery.");
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
+    greetingTimeout: Number(process.env.EMAIL_GREETING_TIMEOUT_MS || 15000),
+    socketTimeout: Number(process.env.EMAIL_SOCKET_TIMEOUT_MS || 30000),
+    family: Number(process.env.EMAIL_IP_FAMILY || 4),
+  });
+}
+
+function createBrevoApiTransporter(apiKey) {
+  const resolveSender = () => {
+    const fromValue = String(process.env.EMAIL_FROM || "").trim();
+    const fallbackEmail = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER;
+    if (!fromValue && !fallbackEmail) {
+      throw new Error("Missing sender address. Set EMAIL_FROM (or EMAIL_FROM_ADDRESS) for Brevo API fallback.");
+    }
+    if (fromValue.includes("<") && fromValue.includes(">")) {
+      const match = fromValue.match(/^(.*)<([^>]+)>$/);
+      if (match) return { name: match[1].trim().replace(/^"|"$/g, "") || "Shine Notifications", email: match[2].trim() };
+    }
+    if (fromValue.includes("@")) return { name: "Shine Notifications", email: fromValue };
+    return { name: fromValue || "Shine Notifications", email: fallbackEmail };
+  };
+
+  return {
+    async sendMail(mailOptions) {
+      const payload = JSON.stringify({
+        sender: resolveSender(),
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject,
+        htmlContent: mailOptions.html,
+        textContent: mailOptions.text,
+      });
+
+      await new Promise((resolve, reject) => {
+        const req = https.request(
+          {
+            hostname: "api.brevo.com",
+            path: "/v3/smtp/email",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Content-Length": Buffer.byteLength(payload),
+              "api-key": apiKey,
+            },
+            timeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT_MS || 30000),
+          },
+          (res) => {
+            let body = "";
+            res.on("data", (chunk) => {
+              body += chunk;
+            });
+            res.on("end", () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) return resolve();
+              reject(new Error(`Brevo API send failed (${res.statusCode}): ${body || "no response body"}`));
+            });
+          }
+        );
+        req.on("timeout", () => req.destroy(new Error("Brevo API timeout")));
+        req.on("error", reject);
+        req.write(payload);
+        req.end();
+      });
+    },
+  };
+}
+
+function createTransportersWithFallback() {
+  const provider = getEmailProvider();
+  const fallbackEnabled = String(process.env.EMAIL_ENABLE_API_FALLBACK || "true").toLowerCase() === "true";
+  const transporters = [];
+
+  try {
+    transporters.push({ name: provider, instance: createTransporter(provider) });
+  } catch (error) {
+    if (!(provider === "smtp" && fallbackEnabled && process.env.BREVO_API_KEY)) throw error;
+    console.warn(`Primary transporter "${provider}" is unavailable: ${error.message}`);
+  }
+
+  if (provider === "smtp" && fallbackEnabled && process.env.BREVO_API_KEY) {
+    transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api"), skipVerify: true });
+  }
+
+  if (transporters.length === 0) {
+    throw new Error("No email transporters could be initialized.");
+  }
+  return transporters;
+>>>>>>> theirs
 }
 
 async function filterHealthyTransporters(transporters) {
@@ -770,7 +891,11 @@ async function runDigestCycle() {
     const transporters = await filterHealthyTransporters(createTransportersWithFallback());
     if (transporters.length === 0) {
       console.error(
+<<<<<<< ours
         "Digest cycle disabled: no healthy SMTP transporters. Check EMAIL_HOST/EMAIL_PORT connectivity, SMTP credentials, and outbound firewall/network rules."
+=======
+        "Digest cycle disabled: no healthy email transporters. Check SMTP connectivity/credentials, or configure Brevo API fallback via BREVO_API_KEY."
+>>>>>>> theirs
       );
       return;
     }
