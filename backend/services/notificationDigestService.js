@@ -174,9 +174,12 @@ function createTransportersWithFallback() {
   const provider = getEmailProvider();
   const useBrevoFallback = parseBooleanEnv(process.env.EMAIL_USE_BREVO_API_FALLBACK, true);
   const hasBrevoApiKey = Boolean(process.env.BREVO_API_KEY);
+  const includeSmtpWithBrevoFallback = parseBooleanEnv(process.env.EMAIL_INCLUDE_SMTP_WITH_BREVO_FALLBACK, false);
+  const verifySmtpWithBrevoFallback = parseBooleanEnv(process.env.EMAIL_VERIFY_SMTP_WITH_BREVO_FALLBACK, false);
 
   const transporters = [];
   const canUseBrevoFallback = provider === "smtp" && useBrevoFallback && hasBrevoApiKey;
+<<<<<<< ours
 
   try {
     transporters.push({ name: provider, instance: createTransporter(provider) });
@@ -184,9 +187,37 @@ function createTransportersWithFallback() {
     if (!canUseBrevoFallback) throw error;
     console.warn(`Digest primary transporter "${provider}" unavailable: ${error.message}. Falling back to Brevo API.`);
   }
+=======
+>>>>>>> theirs
 
   if (canUseBrevoFallback) {
     transporters.push({ name: "brevo_api_fallback", instance: createTransporter("brevo_api") });
+
+    if (includeSmtpWithBrevoFallback) {
+      try {
+        const smtpTransporter = { name: provider, instance: createTransporter(provider) };
+        transporters.push({
+          ...smtpTransporter,
+          skipVerify: !verifySmtpWithBrevoFallback,
+        });
+      } catch (error) {
+        console.warn(`Digest SMTP fallback unavailable: ${error.message}. Continuing with Brevo API only.`);
+      }
+    } else {
+      console.warn(
+        "Digest SMTP disabled because Brevo fallback is available. Set EMAIL_INCLUDE_SMTP_WITH_BREVO_FALLBACK=true to re-enable SMTP."
+      );
+    }
+
+    return transporters;
+  }
+
+  try {
+    const smtpTransporter = { name: provider, instance: createTransporter(provider) };
+    transporters.push(smtpTransporter);
+  } catch (error) {
+    if (!canUseBrevoFallback) throw error;
+    console.warn(`Digest primary transporter "${provider}" unavailable: ${error.message}. Falling back to Brevo API.`);
   }
 
   return transporters;
@@ -196,6 +227,11 @@ async function filterHealthyTransporters(transporters) {
   const healthy = [];
 
   for (const transporter of transporters) {
+    if (transporter.skipVerify) {
+      healthy.push(transporter);
+      continue;
+    }
+
     if (typeof transporter.instance.verify !== "function") {
       healthy.push(transporter);
       continue;
