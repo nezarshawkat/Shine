@@ -329,7 +329,7 @@ function buildBrandedEmailShell({ platformBaseUrl, title, subtitle, introHtml = 
                       <div style="font-size:12px;opacity:0.9;">${escapeHtml(subtitle || "Professional updates, delivered clearly.")}</div>
                     </td>
                     <td align="right" style="vertical-align:middle;">
-                      <img src="${logoSrc}" alt="Shine Logo" style="height:38px;width:auto;background:#fff;border-radius:8px;padding:4px;" />
+                      <img src="${logoSrc}" alt="Shine Logo" style="height:38px;width:auto;background:#0f172a;border-radius:8px;padding:4px;" />
                     </td>
                   </tr>
                 </table>
@@ -528,8 +528,8 @@ function buildEmailHtml({
 
   return buildBrandedEmailShell({
     platformBaseUrl,
-    title: `Hello ${user.name || user.username}, here's your Shine digest`,
-    subtitle: "Professional Activity Digest",
+    title: `Hello ${user.name || user.username}, here's your Shine news`,
+    subtitle: "Your Activity",
     introHtml: `<p style="margin:8px 0 0 0;color:#334155;">You have ${summary.messages} new messages, ${summary.followingPosts} new followed-user posts, ${summary.communityPosts} community posts, ${summary.articles} articles and ${summary.polls} polls.</p>`,
     contentHtml: contentBlocks,
     ctaHref: `${platformBaseUrl}/feed`,
