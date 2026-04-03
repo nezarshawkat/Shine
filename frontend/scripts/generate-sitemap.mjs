@@ -174,7 +174,11 @@ async function main() {
 Allow: /
 
 Sitemap: ${SITE_URL}/sitemap.xml
+<<<<<<< ours
 IndexNow-Key: ${SITE_URL}/1f4b9b5b0d8344d19d08e6db84d6de20.txt
+=======
+IndexNow-Key: ${SITE_URL}/6641b49d58b145ba8920386e3a25367f.txt
+>>>>>>> theirs
 Host: sshine.org
 `;
   await writeFile(path.join(publicDir, "robots.txt"), robotsTxt, "utf8");

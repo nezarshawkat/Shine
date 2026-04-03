@@ -8,7 +8,7 @@ const INDEXNOW_ENDPOINTS = [
 ];
 
 router.post("/submit", async (req, res) => {
-  const key = process.env.INDEXNOW_KEY || "1f4b9b5b0d8344d19d08e6db84d6de20";
+  const key = process.env.INDEXNOW_KEY || "6641b49d58b145ba8920386e3a25367f";
   const keyLocation = process.env.INDEXNOW_KEY_LOCATION || `https://sshine.org/${key}.txt`;
 
   const bodyUrls = Array.isArray(req.body?.urls) ? req.body.urls : [];

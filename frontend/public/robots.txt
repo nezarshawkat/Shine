@@ -2,5 +2,9 @@ User-agent: *
 Allow: /
 
 Sitemap: https://sshine.org/sitemap.xml
+<<<<<<< ours
 IndexNow-Key: https://sshine.org/1f4b9b5b0d8344d19d08e6db84d6de20.txt
+=======
+IndexNow-Key: https://sshine.org/6641b49d58b145ba8920386e3a25367f.txt
+>>>>>>> theirs
 Host: sshine.org
