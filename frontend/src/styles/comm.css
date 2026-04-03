@@ -118,6 +118,32 @@
 }
 
 @media (max-width: 1216px) {
+  .forum-mobile-menu-btn {
+    display: inline-flex;
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 999;
+    height: 46px;
+    padding: 0 24px;
+    border-radius: 50px;
+    border: none;
+    background: #1C274C;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1;
+  }
+
+  .forum-mobile-menu-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1);
+  }
+
   .floating-page-menu-btn {
     display: inline-flex;
     position: fixed;

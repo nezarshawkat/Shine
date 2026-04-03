@@ -94,6 +94,16 @@
     color: #fff;
     font-weight: 600;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1;
+  }
+
+  .forum-mobile-menu-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1);
   }
 
   .forum-mobile-scroll-top-btn {
