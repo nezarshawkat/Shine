@@ -84,7 +84,8 @@
     bottom: 24px;
     right: 24px;
     z-index: 999;
-    padding: 12px 24px;
+    height: 46px;
+    padding: 0 24px;
     border-radius: 50px;
     background: #1C274C;
     color: white;
@@ -111,6 +112,13 @@
     font-size: 20px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     cursor: pointer;
+    padding: 4px;
+  }
+
+  .forum-mobile-scroll-top-icon {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
   }
 
   /* Search Bar at top of page in mobile */

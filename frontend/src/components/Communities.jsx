@@ -3,6 +3,7 @@ import Header from "./Header";
 import FeedC from "./communities/feedC.jsx";
 import LeftBarC from "./communities/LeftBarC.jsx";
 import RightBarC from "./communities/rightBarC.jsx";
+import UpArrowIcon from "../assets/up-arrow-icon.svg";
 import "../styles/comm.css";
 
 export default function Communities() {
@@ -33,27 +34,10 @@ export default function Communities() {
         {showScrollTop && (
           <button
             className="forum-mobile-scroll-top-btn"
-            style={{
-              display: "inline-flex",
-              position: "fixed",
-              right: "136px",
-              bottom: "24px",
-              zIndex: 999,
-              width: "46px",
-              height: "46px",
-              borderRadius: "50%",
-              border: "none",
-              background: "#1C274C",
-              color: "#fff",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "20px",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
-            }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="Scroll to top"
           >
-            ⬆
+            <img src={UpArrowIcon} alt="" aria-hidden="true" className="forum-mobile-scroll-top-icon" />
           </button>
         )}
       </div>

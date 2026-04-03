@@ -6,6 +6,7 @@ import RightSidebar from "./forum/RightSidebar";
 import Feed from "./forum/Feed";
 import PostView from "./PostView/PostView";
 import { SearchContext } from "../searchContext.jsx";
+import UpArrowIcon from "../assets/up-arrow-icon.svg";
 import "../styles/Forum.css";
 
 export default function Forum() {
@@ -75,7 +76,7 @@ export default function Forum() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="Scroll to top"
           >
-            ⬆
+            <img src={UpArrowIcon} alt="" aria-hidden="true" className="forum-mobile-scroll-top-icon" />
           </button>
         )}
       </div>

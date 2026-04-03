@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Header from "./Header";
 import RightSideBarA from "./articles/rightSideBarA";
 import FeedA from "./articles/feedA";
+import UpArrowIcon from "../assets/up-arrow-icon.svg";
 import "../styles/articles.css";
 
 function Articles() {
@@ -34,7 +35,7 @@ function Articles() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="Scroll to top"
           >
-            ⬆
+            <img src={UpArrowIcon} alt="" aria-hidden="true" className="forum-mobile-scroll-top-icon" />
           </button>
         )}
       </div>
