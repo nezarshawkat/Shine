@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Header from "./Header";
 import RightSideBarA from "./articles/rightSideBarA";
 import FeedA from "./articles/feedA";
-import UpArrowIcon from "../assets/up-arrow-icon.svg";
+import MobileArrowIcon from "../assets/Adobe-Express-file.svg";
 import "../styles/articles.css";
 
 function Articles() {
@@ -27,12 +27,7 @@ function Articles() {
       {/* Mobile Top Bar */}
       <div className="forum-mobile-topbar">
         <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
-          <img
-            src="/src/assets/Adobe-Express-file.svg"
-            alt=""
-            aria-hidden="true"
-            className="forum-mobile-menu-icon"
-          />
+          <span className="forum-mobile-menu-hamburger" aria-hidden="true">☰</span>
           <span>Menu</span>
         </button>
         {showScrollTop && (
@@ -41,7 +36,7 @@ function Articles() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="Scroll to top"
           >
-            <img src={UpArrowIcon} alt="" aria-hidden="true" className="forum-mobile-scroll-top-icon" />
+            <img src={MobileArrowIcon} alt="" aria-hidden="true" className="forum-mobile-scroll-top-icon" />
           </button>
         )}
       </div>
