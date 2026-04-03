@@ -8,6 +8,18 @@ import "../styles/comm.css";
 export default function Communities() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.innerWidth <= 1216 && window.scrollY > 240);
+    onScroll();
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   return (
     <div className="communities-page">
@@ -18,6 +30,32 @@ export default function Communities() {
         <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
           ☰ Menu
         </button>
+        {showScrollTop && (
+          <button
+            className="forum-mobile-scroll-top-btn"
+            style={{
+              display: "inline-flex",
+              position: "fixed",
+              right: "136px",
+              bottom: "24px",
+              zIndex: 999,
+              width: "46px",
+              height: "46px",
+              borderRadius: "50%",
+              border: "none",
+              background: "#1C274C",
+              color: "#fff",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
+            }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label="Scroll to top"
+          >
+            ⬆
+          </button>
+        )}
       </div>
 
       {/* 2. Unified Mobile Drawer */}

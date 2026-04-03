@@ -22,6 +22,7 @@ import ArticleCreate from "./components/articles/articleCreate.jsx";
 
 // Layout
 import Header from "./components/Header.jsx";
+import SeoManager from "./components/SeoManager.jsx";
 
 // Community & Posts
 import CommunityProfile from "./components/communities/CommunityProfile.jsx";
@@ -159,6 +160,7 @@ function AppRoutes() {
 
   return (
     <>
+      <SeoManager />
       {/* Conditionally render Header based on current path */}
       {!hideHeader && <Header />}
 

@@ -145,6 +145,29 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ---------------- LIST USERS (PUBLIC SITEMAP USE) ----------------
+router.get("/list", async (req, res) => {
+  try {
+    const parsedLimit = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 1000) : 500;
+    const users = await prisma.user.findMany({
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    res.json(users);
+  } catch (err) {
+    console.error("List users error:", err);
+    res.status(500).json({ error: "Failed to list users" });
+  }
+});
+
 // ---------------- GET USER BY USERNAME ----------------
 router.get("/:username", async (req, res) => {
   try {

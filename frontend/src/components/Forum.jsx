@@ -17,6 +17,7 @@ export default function Forum() {
   const [selectedPostId, setSelectedPostId] = useState(postId || null);
   const [feed, setFeed] = useState([]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollPosRef = useRef(0);
 
   // Sync state with URL params
@@ -28,6 +29,17 @@ export default function Forum() {
     const query = new URLSearchParams(location.search).get("search") || "";
     setSearchQuery(query);
   }, [location.search, setSearchQuery]);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.innerWidth <= 1216 && window.scrollY > 240);
+    onScroll();
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   const handleSelectPost = (id) => {
     scrollPosRef.current = window.scrollY;
@@ -57,6 +69,15 @@ export default function Forum() {
         <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
           ☰ Menu
         </button>
+        {showScrollTop && (
+          <button
+            className="forum-mobile-scroll-top-btn"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label="Scroll to top"
+          >
+            ⬆
+          </button>
+        )}
       </div>
 
       {/* Unified Mobile Sidebar Drawer */}

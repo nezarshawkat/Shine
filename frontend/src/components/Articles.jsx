@@ -6,6 +6,18 @@ import "../styles/articles.css";
 
 function Articles() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.innerWidth <= 768 && window.scrollY > 240);
+    onScroll();
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   return (
     <div className="articles-page">
@@ -16,6 +28,15 @@ function Articles() {
         <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
           ☰ Menu
         </button>
+        {showScrollTop && (
+          <button
+            className="forum-mobile-scroll-top-btn"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label="Scroll to top"
+          >
+            ⬆
+          </button>
+        )}
       </div>
 
       {/* Mobile Drawer Navigation */}

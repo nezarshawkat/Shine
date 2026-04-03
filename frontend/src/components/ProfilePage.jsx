@@ -376,7 +376,7 @@ export default function ProfilePage({
                 @{editMode ? <input value={editedUsername} onChange={(e) => setEditedUsername(e.target.value)} /> : editedUsername}
               </div>
 
-              <div className="profile-follow">
+              <div className={`profile-follow ${isMobile && !isCurrentUser ? "profile-follow-center-mobile" : ""}`}>
                 <button style={{ all: "unset", cursor: "pointer" }} onClick={() => navigate(`/${user.username}/followers`)}>
                   {followerCount} followers
                 </button>
