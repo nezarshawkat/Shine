@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "seed:reset": "node scripts/reset_and_seed_from_json.js",
-    "seed:check": "node scripts/check_seed_counts.js"
+    "seed:check": "node scripts/check_seed_counts.js",
+    "seed:reset:keep-core": "node scripts/reset_keep_core_and_seed_demo.js"
   },
   "keywords": [],
   "author": "",
