@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "seed:reset": "npm --prefix backend run seed:reset"
+    "seed:reset": "npm --prefix backend run seed:reset",
+    "seed:check": "npm --prefix backend run seed:check"
   },
   "dependencies": {
     "nodemailer": "^8.0.4",

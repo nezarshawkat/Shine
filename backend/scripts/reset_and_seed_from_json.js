@@ -6,6 +6,17 @@ const prisma = require('../prisma');
 
 const DATA_PATH = path.join(__dirname, '..', 'prisma', 'seed_data.json');
 
+function maskedDbUrl(url) {
+  if (!url) return 'MISSING_DATABASE_URL';
+  try {
+    const u = new URL(url);
+    const dbName = u.pathname?.replace(/^\//, '') || '(no-db)';
+    return `${u.protocol}//${u.hostname}:${u.port || 'default'}/${dbName}`;
+  } catch (_) {
+    return 'INVALID_DATABASE_URL';
+  }
+}
+
 function toDate(value, fallback = new Date()) {
   const d = value ? new Date(value) : fallback;
   return Number.isNaN(d.getTime()) ? fallback : d;
@@ -42,6 +53,11 @@ async function main() {
   const posts = Array.isArray(data.posts) ? data.posts : [];
   const comments = Array.isArray(data.comments) ? data.comments : [];
 
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is not set. Put it in backend/.env first.');
+  }
+
+  console.log(`Target database: ${maskedDbUrl(process.env.DATABASE_URL)}`);
   console.log('Resetting database (truncate all public tables)...');
   await truncateAllPublicTables();
 
@@ -199,7 +215,16 @@ async function main() {
     });
   }
 
+  const [userCount, communityCount, postCount, commentCount, articleCount] = await Promise.all([
+    prisma.user.count(),
+    prisma.community.count(),
+    prisma.post.count(),
+    prisma.comment.count(),
+    prisma.article.count(),
+  ]);
+
   console.log('Done. Database replaced with seed_data.json content.');
+  console.log({ userCount, communityCount, postCount, commentCount, articleCount });
 }
 
 main()
