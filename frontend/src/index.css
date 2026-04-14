@@ -145,8 +145,50 @@ html[data-theme="dark"] #root {
 html[data-theme="dark"] img,
 html[data-theme="dark"] video,
 html[data-theme="dark"] picture,
-html[data-theme="dark"] svg,
 html[data-theme="dark"] canvas,
 html[data-theme="dark"] iframe {
   filter: invert(1) hue-rotate(180deg);
+}
+
+html[data-theme="dark"] .no-dark-invert,
+html[data-theme="dark"] .no-dark-invert * {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html[data-theme="dark"] .forum-page,
+html[data-theme="dark"] .communities-page,
+html[data-theme="dark"] .articles-page,
+html[data-theme="dark"] .profile-page,
+html[data-theme="dark"] .community-page,
+html[data-theme="dark"] .profile-sticky-container,
+html[data-theme="dark"] .communities-page .left-column,
+html[data-theme="dark"] .communities-page .center-column,
+html[data-theme="dark"] .communities-page .right-column,
+html[data-theme="dark"] .articles-page .center-column,
+html[data-theme="dark"] .articles-page .right-column,
+html[data-theme="dark"] .community-sidebar,
+html[data-theme="dark"] .community-center {
+  background: #07090f !important;
+}
+
+html[data-theme="dark"] .post-keyword-chip,
+html[data-theme="dark"] .postbody-keyword {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+html[data-theme="dark"] [style*="color: rgb(28, 39, 76)"] {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] [style*="border: 0.5px solid rgb(28, 39, 76)"],
+html[data-theme="dark"] [style*="border: 1px solid rgb(28, 39, 76)"] {
+  border-color: #ffffff !important;
+}
+
+html[data-theme="dark"] svg,
+html[data-theme="dark"] svg * {
+  color: #ffffff !important;
+  fill: currentColor;
+  stroke: currentColor;
 }

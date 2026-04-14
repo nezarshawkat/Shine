@@ -86,7 +86,7 @@ const LeftBarC = ({
               fontSize: "0.85rem", padding: "0.3rem 0.5rem", borderRadius: "0.6rem",
               border: searchText === topic ? "1px solid #1C274C" : "0.1px solid #CCC",
               backgroundColor: searchText === topic ? "#ECF2F6" : "transparent",
-              color: searchText === topic ? "#1C274C" : "black", 
+              color: "#1C274C",
               fontWeight: searchText === topic ? "600" : "300",
               cursor: "pointer",
             }}

@@ -781,6 +781,7 @@ export default function PostBody() {
               <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                 {(post.keywords || []).map((k, i) => (
                   <div
+                    className="post-keyword-chip"
                     key={i}
                     style={{
                       background: "#ECF2F6",

@@ -60,6 +60,7 @@ export const TrendSearch = ({ trends, loading }) => {
                 padding: "5px 10px", borderRadius: "10px", fontSize: "13px", cursor: "pointer",
                 border: selectedTopic === topic ? "1px solid #1C274C" : "1px solid #ccc",
                 background: selectedTopic === topic ? "#ECF2F6" : "transparent",
+                color: "#1C274C",
                 fontWeight: selectedTopic === topic ? "600" : "300",
               }}
             >

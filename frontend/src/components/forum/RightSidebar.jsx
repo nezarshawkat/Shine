@@ -235,7 +235,7 @@ const RightSidebar = ({ showOnly = null }) => {
 
       {/* ================= POST BUTTON ================= */}
       {shouldShow('postButton') && (
-        <div className="forum-post-card" style={{ width: "100%", position: "relative" }}>
+        <div className="forum-post-card no-dark-invert" style={{ width: "100%", position: "relative" }}>
           <button
             onClick={() => setShowPopup(!showPopup)}
             style={{

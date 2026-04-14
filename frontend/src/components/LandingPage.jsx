@@ -103,7 +103,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer>
+      <footer className="no-dark-invert">
         <div className="footer-top">
           <img src={shineLogo} alt="ShineLogo" style={{ width: 200 }} />
           <div className="footer-center">

@@ -260,7 +260,7 @@ export default function CommunityProfile() {
             }} />
           </div>
         )}
-        <div className="community-banner-members">
+        <div className="community-banner-members no-dark-invert">
           {!isEditing ? (
             <button className="community-members-btn" onClick={() => setShowMembersPopup(true)}>
               {community._count?.communityMembers || 0} members
@@ -337,7 +337,7 @@ export default function CommunityProfile() {
                 <div style={{ flex: 1, position: "relative" }} ref={postPopupRef}>
                   <button 
                     onClick={() => setShowPostPopup(!showPostPopup)} 
-                    className="sidebar-post-btn-style"
+                    className="sidebar-post-btn-style no-dark-invert"
                   >
                     <img src={feather} alt="" style={{ width: 18 }} />
                     <span style={{ fontSize: "17px", fontWeight: 600, color: "#FFC847" }}>Post</span>

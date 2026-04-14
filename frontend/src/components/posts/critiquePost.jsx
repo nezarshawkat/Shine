@@ -818,6 +818,7 @@ export default function CritiquePost({ postId, initialData }) {
             >
               {post.keywords?.map((k, i) => (
                 <span
+                  className="post-keyword-chip"
                   key={i}
                   style={{
                     background: "#ECF2F6",
