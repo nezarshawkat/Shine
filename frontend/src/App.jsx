@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 // Providers
 import { AuthProvider, AuthContext } from "./components/AuthProvider.jsx";
 import { SearchProvider } from "./searchContext.jsx";
+import { ThemeProvider } from "./components/ThemeProvider.jsx";
 
 // Pages
 import LandingPage from "./components/LandingPage.jsx"; 
@@ -220,11 +221,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <SearchProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </SearchProvider>
+      <ThemeProvider>
+        <SearchProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </SearchProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

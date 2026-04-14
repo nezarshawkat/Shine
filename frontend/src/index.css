@@ -124,3 +124,29 @@ input, textarea, select {
 }
 
 
+
+
+/* ---------------------------------------------------------
+   Theme: Light / Reversed Dark
+--------------------------------------------------------- */
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  background: #05070d;
+  color: #f2f6ff;
+}
+
+html[data-theme="dark"] #root {
+  min-height: 100vh;
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html[data-theme="dark"] img,
+html[data-theme="dark"] video,
+html[data-theme="dark"] picture,
+html[data-theme="dark"] svg,
+html[data-theme="dark"] canvas,
+html[data-theme="dark"] iframe {
+  filter: invert(1) hue-rotate(180deg);
+}

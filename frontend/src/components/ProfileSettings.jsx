@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import API from "../api.js";
-
+import { useTheme } from "./ThemeProvider.jsx";
 
 export default function ProfileSettings({ onClose, user, logout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState("Account");
@@ -12,6 +12,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState(user?.blockedUsers || []);
+  const { theme, setTheme } = useTheme();
   const showToast = (message, type = "success") => setToast({ message, type });
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
@@ -224,7 +225,43 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
               </div>
             )}
 
-            {(activeSection !== "Account" && activeSection !== "Blocked") && (
+
+            {activeSection === "Appearance" && (
+              <div className="settings-card-group">
+                <div className="setting-row">
+                  <div className="info">
+                    <label>Theme</label>
+                    <p>Choose how Shine should look on this device.</p>
+                  </div>
+                </div>
+
+                <div className="setting-row" style={{ alignItems: "stretch", flexDirection: "column", gap: "12px" }}>
+                  {[
+                    { id: "system", title: "As system (default)", description: "Automatically follows your device theme." },
+                    { id: "light", title: "Light mode", description: "Keep the current bright appearance." },
+                    { id: "dark", title: "Dark mode", description: "Use the reversed dark appearance." },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      className="action-btn"
+                      onClick={() => setTheme(option.id)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "12px 14px",
+                        borderColor: theme === option.id ? "#1C274C" : "#ddd",
+                        background: theme === option.id ? "#f0f4ff" : "#fff",
+                      }}
+                    >
+                      <strong>{option.title}</strong>
+                      <p style={{ marginTop: "4px", color: "#666", fontWeight: 400 }}>{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(activeSection !== "Account" && activeSection !== "Blocked" && activeSection !== "Appearance") && (
               <div className="empty-settings-state">
                 <span className="big-icon">⏳</span>
                 <h3>Coming Soon</h3>

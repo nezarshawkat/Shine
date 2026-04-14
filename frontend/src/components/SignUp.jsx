@@ -33,7 +33,7 @@ const SignUp = () => {
 
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/auth.routes/signup`,
+        `${API_BASE_URL}/users/signup`,
         formData
       );
 
