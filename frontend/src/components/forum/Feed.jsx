@@ -191,7 +191,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
           width: "100%",
           maxWidth: "765px",
           overflow: "hidden",
-          marginBottom: isMobile ? "2px" : "12px",
+          marginBottom: "12px",
         }}
       >
         <Component
@@ -222,7 +222,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       style={{
         width: "100%",
         flex: 1,
-        padding: isMobile ? "12px 15px" : "20px",
+        padding: isMobile ? "12px" : "20px",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",

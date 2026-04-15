@@ -221,11 +221,13 @@ background-color: #ffffff;
 
 .menu-toggle {
   border: none;
-  background: #fff;
-  color: #1C274C;
+  background: #1C274C;
+  color: #FFC847;
   font-size: 24px;
   cursor: pointer;
   line-height: 1;
+  padding: 4px 10px;
+  border-radius: 8px;
 }
 
 .mobile-menu-overlay {

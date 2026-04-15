@@ -202,10 +202,33 @@ html[data-theme="dark"] .mobile-search-bar input {
   color: #fff !important;
 }
 
+html[data-theme="dark"] .forum-search-card input,
+html[data-theme="dark"] .community-search-card input,
+html[data-theme="dark"] .sidebar-search-container input,
+html[data-theme="dark"] .search-bar-mini input,
+html[data-theme="dark"] .profile-search-container input,
+html[data-theme="dark"] .mobile-search-bar input {
+  background-color: transparent !important;
+  color: #f5f5f5 !important;
+}
+
+html[data-theme="dark"] .profile-search-container input::placeholder,
+html[data-theme="dark"] .mobile-search-bar input::placeholder,
+html[data-theme="dark"] .community-search-card input::placeholder,
+html[data-theme="dark"] .search-bar-mini input::placeholder {
+  color: #b8b8b8 !important;
+}
+
 html[data-theme="dark"] .forum-search-card > div,
 html[data-theme="dark"] .community-search-card > div,
 html[data-theme="dark"] .article-search-card > div {
   background-color: #1d1d1d !important;
+}
+
+html[data-theme="dark"] .sidebar-search-container,
+html[data-theme="dark"] .search-bar-mini {
+  background-color: #1d1d1d !important;
+  border-color: rgba(255,255,255,0.28) !important;
 }
 
 /* Search icon + search field borders */
@@ -246,6 +269,11 @@ html[data-theme="dark"] .header-button,
 html[data-theme="dark"] .login-button,
 html[data-theme="dark"] .menu-toggle {
   color: #fff !important;
+}
+
+html[data-theme="dark"] .menu-toggle {
+  background: #1d1d1d !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
 }
 
 /* Keep selected/active accent unchanged */
@@ -397,6 +425,41 @@ html[data-theme="dark"] .profile-page .menu-btn {
   background: #1d1d1d !important;
   border-color: rgba(255,255,255,0.4) !important;
   color: #fff !important;
+}
+
+html[data-theme="dark"] .full-settings-layer,
+html[data-theme="dark"] .settings-container,
+html[data-theme="dark"] .settings-sidebar,
+html[data-theme="dark"] .settings-main,
+html[data-theme="dark"] .settings-scroll-area,
+html[data-theme="dark"] .settings-card-group {
+  background: #1d1d1d !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+
+html[data-theme="dark"] .settings-view-header h1,
+html[data-theme="dark"] .settings-view-header p,
+html[data-theme="dark"] .settings-nav button,
+html[data-theme="dark"] .settings-main label,
+html[data-theme="dark"] .settings-main h2,
+html[data-theme="dark"] .settings-main h3,
+html[data-theme="dark"] .settings-main p,
+html[data-theme="dark"] .settings-main span {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .settings-main input,
+html[data-theme="dark"] .settings-main select,
+html[data-theme="dark"] .settings-main textarea {
+  background: #101010 !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.3) !important;
+}
+
+html[data-theme="dark"] .settings-main [style*="background: #f0f4ff"],
+html[data-theme="dark"] .settings-main [style*="background: #fff"] {
+  background: #2a2a2a !important;
 }
 
 html[data-theme="dark"] .header .donate-button img {

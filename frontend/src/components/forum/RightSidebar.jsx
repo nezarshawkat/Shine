@@ -268,9 +268,9 @@ const RightSidebar = ({ showOnly = null }) => {
                 transform: "translate(-50%, -50%)",
                 width: "90%",
                 maxWidth: "320px",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "#1d1d1d",
                 borderRadius: "28px",
-                border: "1px solid #1c274c",
+                border: "1px solid #3a3a3a",
                 padding: "25px 0",
                 display: "flex",
                 flexDirection: "column",
@@ -279,7 +279,7 @@ const RightSidebar = ({ showOnly = null }) => {
                 boxShadow: "0px 10px 40px rgba(0,0,0,0.2)"
               }}
             >
-              <h3 style={{ marginBottom: '15px', color: '#1C274C', fontSize: '20px' }}>Create a Post</h3>
+              <h3 style={{ marginBottom: '15px', color: '#FFFFFF', fontSize: '20px' }}>Create a Post</h3>
               {[
                 { label: "Opinion", route: "/opinion-create" },
                 { label: "Analysis", route: "/analysis-create" },
@@ -294,18 +294,18 @@ const RightSidebar = ({ showOnly = null }) => {
                       border: "none",
                       fontSize: "19px",
                       fontWeight: 500,
-                      color: "#1C274C",
+                      color: "#FFFFFF",
                       padding: "12px 0",
                       cursor: "pointer",
                       width: "100%",
                       transition: "background 0.2s"
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#2a2a2a"}
                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                   >
                     {item.label}
                   </button>
-                  {i < 3 && <div style={{ width: "85%", height: "0.5px", backgroundColor: "rgba(28, 39, 76, 0.1)" }} />}
+                  {i < 3 && <div style={{ width: "85%", height: "0.5px", backgroundColor: "rgba(255,255,255,0.15)" }} />}
                 </React.Fragment>
               ))}
               

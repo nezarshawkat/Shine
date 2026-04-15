@@ -9,6 +9,7 @@ import TagClickedIcon from "../../assets/TagClicked.svg";
 import MenuIcon from "../../assets/Menu.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 import SharePopup from "./SharePopup.jsx";
+import PostCard from "./PostCard.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { submitReport } from "../reporting/reportUtils";
 
@@ -59,6 +60,7 @@ export default function PollPost({ postId, initialData }) {
   const [showFlagPopup, setShowFlagPopup] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showSources, setShowSources] = useState(false);
   const [toast, setToast] = useState(null);
 
   const currentPostId = post?.id || post?._id || postId;
@@ -206,14 +208,23 @@ export default function PollPost({ postId, initialData }) {
 
   const totalVotes = pollData.reduce((sum, o) => sum + (o._count?.votedUsers || 0), 0);
   const community = post.community || getCommunityById(post.communityId);
+  const sources =
+    Array.isArray(post.sources) && post.sources.length > 0
+      ? post.sources
+      : post.sourceLink
+        ? [{ name: post.sourceName || "Source", link: post.sourceLink }]
+        : [];
 
   return (
     <>
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       {showDeleteModal && <DeleteModal onConfirm={handleDelete} onCancel={() => setShowDeleteModal(false)} />}
 
-      <div ref={postRef} onClick={() => navigate(`/post/${currentPostId}`)}
-        style={{ width: "100%", background: "#fff", borderRadius: 18, border: "0.5px solid #1C274C", padding: 18, display: "flex", flexDirection: "column", gap: 12, cursor: "pointer", position: "relative" }}>
+      <PostCard
+        ref={postRef}
+        onClick={() => navigate(`/post/${currentPostId}`)}
+        style={{ cursor: "pointer", position: "relative" }}
+      >
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -244,6 +255,19 @@ export default function PollPost({ postId, initialData }) {
         </div>
 
         <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{post.text}</div>
+        {!!post.keywords?.length && (
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {post.keywords.map((k, i) => (
+              <span
+                key={i}
+                className="post-keyword-chip"
+                style={{ background: "#ECF2F6", border: "0.5px solid #1C274C", padding: "4px 8px", borderRadius: 6, fontSize: 12, color: "#1C274C" }}
+              >
+                {k}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {pollData.map((option) => {
@@ -272,7 +296,20 @@ export default function PollPost({ postId, initialData }) {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>{new Date(post.createdAt).toLocaleDateString()}</div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>{new Date(post.createdAt).toLocaleDateString()}</div>
+            {sources.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSources(!showSources);
+                }}
+                style={{ background: "transparent", border: "none", color: "#FFC847", fontSize: 16, fontWeight: 500, cursor: "pointer" }}
+              >
+                {showSources ? "Hide Sources" : "View Sources"}
+              </button>
+            )}
+          </div>
           <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
               <img src={ShareIcon} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} style={{ width: 18, cursor: "pointer" }} alt="" />
               <img src={isSaved ? TagClickedIcon : TagIcon} onClick={toggleSave} style={{ width: 18, cursor: "pointer" }} alt="" />
@@ -293,7 +330,25 @@ export default function PollPost({ postId, initialData }) {
               </div>
           </div>
         </div>
-      </div>
+
+      {showSources && (
+        <div style={{ marginTop: 12, borderTop: "0.5px solid rgba(0,0,0,0.2)", paddingTop: 12 }}>
+          {sources.map((s, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <a
+                href={s.link.startsWith("http") ? s.link : `https://${s.link}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: "#1C274C", textDecoration: "none", fontSize: 14 }}
+              >
+                • {s.name}
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+      </PostCard>
       {showShare && <SharePopup id={currentPostId} type="post" onClose={() => setShowShare(false)} />}
     </>
   );

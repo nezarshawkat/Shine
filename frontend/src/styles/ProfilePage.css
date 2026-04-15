@@ -139,12 +139,18 @@
   width: 100%;
   padding: 12px 15px;
   border-radius: 10px;
-  border: 1px solid #ddd;
-  background-color: #fcfcfc;
+  border: 1px solid #2a2a2a;
+  background-color: #1d1d1d;
+  color: #f5f5f5;
   outline: none;
   font-size: 16px;
   box-sizing: border-box;
   transition: border-color 0.2s;
+}
+
+.profile-search-container input::placeholder,
+.mobile-search-bar input::placeholder {
+  color: #b8b8b8;
 }
 
 .profile-search-container input:focus,

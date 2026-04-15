@@ -827,6 +827,7 @@ export default function CritiquePost({ postId, initialData }) {
                     padding: "4px 8px",
                     borderRadius: 6,
                     fontSize: 12,
+                    color: "#1C274C",
                   }}
                 >
                   {k}
@@ -847,6 +848,7 @@ export default function CritiquePost({ postId, initialData }) {
                   padding: "4px 8px",
                   borderRadius: 6,
                   fontSize: 12,
+                  color: "#1C274C",
                 }}
               >
                 {k}
