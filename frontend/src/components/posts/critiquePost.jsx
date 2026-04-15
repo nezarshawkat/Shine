@@ -728,6 +728,7 @@ export default function CritiquePost({ postId, initialData }) {
               {post.viewsCount || 0} views
             </div>
             <div
+              className="post-type-label"
               style={{
                 fontSize: 16,
                 fontWeight: 800,
@@ -1096,6 +1097,7 @@ export default function CritiquePost({ postId, initialData }) {
               </div>
 
               <img
+                className="post-reply-icon"
                 src={ArrowIcon}
                 onClick={(e) => {
                   e.stopPropagation();

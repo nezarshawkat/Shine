@@ -172,15 +172,15 @@ const CommunitySidebar = ({
       )}
 
       {/* SEARCH & TRENDS SECTION */}
-      <div className="sidebar-search-container">
-        <div className="search-bar-mini">
+      <div className="sidebar-search-container forum-search-card">
+        <div className="search-bar-mini forum-search-mini">
           {!searchQuery && <img src={magnifier} style={{ width: "1.25rem", marginRight: "0.4rem" }} alt="search" />}
           <input type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           {searchQuery && <img src={closeIcon} onClick={() => setSearchQuery("")} style={{ width: "1rem", cursor: "pointer" }} alt="clear" />}
         </div>
         <div className="trend-tags">
           {!loadingTrends ? trends.viralKeywords.map((topic, i) => (
-            <button key={i} onClick={() => setSearchQuery(searchQuery === topic ? "" : topic)} className={searchQuery === topic ? "active" : ""}>{topic}</button>
+            <button key={i} onClick={() => setSearchQuery(searchQuery === topic ? "" : topic)} className={`sidebar-topic-chip ${searchQuery === topic ? "active" : ""}`}>{topic}</button>
           )) : <span>Loading...</span>}
         </div>
       </div>
@@ -233,11 +233,11 @@ const CommunitySidebar = ({
           padding-top: 12px;
         }
         .sidebar-search-container { width: 100%; border-radius: 1.4rem; border: 0.5px solid #1C274C; padding: 1.25rem; background: #FFF; }
-        .search-bar-mini { display: flex; align-items: center; background: #FCFCFC; border: 0.2px solid black; border-radius: 0.7rem; padding: 0.5rem; }
-        .search-bar-mini input { flex: 1; border: none; outline: none; background: transparent; }
+        .search-bar-mini { display: flex; align-items: center; background: #FCFCFC; border: 0.2px solid black; border-radius: 0.7rem; padding: 0.5rem 0.625rem; margin-bottom: 1.1rem; }
+        .search-bar-mini input { flex: 1; border: none; outline: none; background: transparent; color: #1C274C; font-size: 0.9rem; font-weight: 300; }
         .trend-tags { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .trend-tags button { font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 0.6rem; border: 1px solid #ccc; background: transparent; cursor: pointer; }
-        .trend-tags button.active { background: #ECF2F6; border-color: #1C274C; }
+        .trend-tags button { font-size: 0.85rem; padding: 0.3rem 0.6rem; border-radius: 0.6rem; border: 0.1px solid #CCC; background: transparent; cursor: pointer; color: #1C274C; font-weight: 300; transition: all 0.2s ease; }
+        .trend-tags button.active { background: #ECF2F6; border-color: #1C274C; font-weight: 600; }
       `}</style>
     </div>
   );

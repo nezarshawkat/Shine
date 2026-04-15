@@ -219,7 +219,7 @@ export default function CritiqueCreate() {
   };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", overflowX: "hidden" }}>
+    <div className="force-light-page" style={{ background: BG, minHeight: "100vh", overflowX: "hidden" }}>
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

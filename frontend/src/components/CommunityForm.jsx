@@ -142,7 +142,7 @@ export default function CommunityForm() {
   };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", paddingBottom: 100 }}>
+    <div className="force-light-page" style={{ background: BG, minHeight: "100vh", paddingBottom: 100 }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Header */}

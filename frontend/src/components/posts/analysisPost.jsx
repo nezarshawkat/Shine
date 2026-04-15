@@ -388,7 +388,7 @@ export default function AnalysisPost({ postId, initialData }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ fontSize: 16, fontWeight: 500, color: "#1C274C" }}>{post.viewsCount || 0} views</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#FFC847" }}>{post.type}</div>
+            <div className="post-type-label" style={{ fontSize: 16, fontWeight: 800, color: "#FFC847" }}>{post.type}</div>
           </div>
         </div>
 
@@ -474,7 +474,7 @@ export default function AnalysisPost({ postId, initialData }) {
                 <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>{post.sharesCount || 0}</span>
               </div>
 
-              <img src={ArrowIcon} onClick={(e) => { e.stopPropagation(); navigate("/critique-create", { state: { replyToId: post.id || post._id, replyToContent: post.text } }); }} style={{ width: 20, cursor: "pointer" }} />
+              <img className="post-reply-icon" src={ArrowIcon} onClick={(e) => { e.stopPropagation(); navigate("/critique-create", { state: { replyToId: post.id || post._id, replyToContent: post.text } }); }} style={{ width: 20, cursor: "pointer" }} />
               
               {!isAuthor && (
                 <div style={{ position: "relative" }}>

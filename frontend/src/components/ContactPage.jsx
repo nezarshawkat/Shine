@@ -91,8 +91,8 @@ export default function ContactPage() {
     button: {
       width: "fit-content",
       padding: "0.75rem 1.5rem",
-      backgroundColor: isDark ? "#fff" : "#1C274C",
-      color: isDark ? "#000" : "#fff",
+      backgroundColor: isDark ? "#FFC847" : "#1C274C",
+      color: isDark ? "#1C274C" : "#fff",
       fontWeight: 600,
       fontSize: "1rem",
       borderRadius: 8,
@@ -137,8 +137,8 @@ export default function ContactPage() {
           <button
             type="submit"
             style={styles.button}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#f2f2f2" : "#2f38b0")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#ffffff" : "#1C274C")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#f5bc2f" : "#2f38b0")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#FFC847" : "#1C274C")}
           >
             Send Message
           </button>

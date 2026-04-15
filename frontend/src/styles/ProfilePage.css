@@ -239,8 +239,9 @@
   width: 765px;
   max-width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .articles-feed-container {
