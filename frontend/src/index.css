@@ -127,111 +127,181 @@ input, textarea, select {
 
 
 /* ---------------------------------------------------------
-   Theme: Dark (Manual Color Mapping)
+   Theme: Dark (Manual Color Mapping - No Inversion)
 --------------------------------------------------------- */
 
 html[data-theme="dark"],
 html[data-theme="dark"] body,
 html[data-theme="dark"] #root {
-  background: #000000;
-  color: #ffffff;
+  background: #000;
+  color: #fff;
 }
 
-html[data-theme="dark"] #root {
-  min-height: 100vh;
-}
+html[data-theme="dark"] #root { min-height: 100vh; }
 
-/* Core palette mapping requested for dark mode */
 html[data-theme="dark"] {
-  --dark-blue: #acf2f6;      /* 1C274C -> ACF2F6 */
-  --background: #000000;     /* F6F8F3 family -> black */
-  --text-color: #ffffff;     /* dark text -> white */
+  --background: #000000;
+  --text-color: #ffffff;
+  --dark-blue: #acf2f6; /* requested swap for 1C274C */
 }
 
-/* 1C274C <-> ACF2F6 swaps (hex + rgb forms, mostly inline styles) */
-html[data-theme="dark"] [style*="#1c274c" i] {
-  color: #acf2f6 !important;
-  border-color: #acf2f6 !important;
+/* Main page backgrounds that must be black */
+html[data-theme="dark"] .forum-page,
+html[data-theme="dark"] .forum-container,
+html[data-theme="dark"] .feed-scroll,
+html[data-theme="dark"] .communities-page,
+html[data-theme="dark"] .communities-page .left-column,
+html[data-theme="dark"] .communities-page .center-column,
+html[data-theme="dark"] .communities-page .right-column,
+html[data-theme="dark"] .articles-page,
+html[data-theme="dark"] .articles-page .center-column,
+html[data-theme="dark"] .articles-page .right-column,
+html[data-theme="dark"] .community-page,
+html[data-theme="dark"] .community-sidebar,
+html[data-theme="dark"] .community-container,
+html[data-theme="dark"] .profile-page,
+html[data-theme="dark"] .profile-sticky-container,
+html[data-theme="dark"] .donate-page,
+html[data-theme="dark"] .donate-container,
+html[data-theme="dark"] .events-page,
+html[data-theme="dark"] .landing-page {
+  background-color: #000 !important;
+  color: #fff !important;
 }
 
-html[data-theme="dark"] [style*="rgb(28, 39, 76)"] {
-  color: #acf2f6 !important;
-  border-color: #acf2f6 !important;
-}
-
-html[data-theme="dark"] [style*="#acf2f6" i] {
-  color: #1c274c !important;
-  border-color: #1c274c !important;
-}
-
-html[data-theme="dark"] [style*="rgb(172, 242, 246)"] {
-  color: #1c274c !important;
-  border-color: #1c274c !important;
-}
-
-/* White surfaces become dark surfaces */
-html[data-theme="dark"] [style*="#fff" i],
-html[data-theme="dark"] [style*="white" i],
-html[data-theme="dark"] [style*="rgb(255, 255, 255)"] {
+/* Cards/boxes that were white should be dark */
+html[data-theme="dark"] .postbody-container,
+html[data-theme="dark"] .forum-search-card,
+html[data-theme="dark"] .forum-trending-card,
+html[data-theme="dark"] .forum-messages-card,
+html[data-theme="dark"] .forum-friends-card,
+html[data-theme="dark"] .post-popup-container,
+html[data-theme="dark"] .donation-card,
+html[data-theme="dark"] .quote,
+html[data-theme="dark"] .banner-mv,
+html[data-theme="dark"] .banner-members,
+html[data-theme="dark"] .banner-do {
   background-color: #1d1d1d !important;
-  border-color: #ffffff !important;
+  color: #fff !important;
+  border-color: #fff !important;
 }
 
-/* Explicit F6F8F3 -> black mapping */
-html[data-theme="dark"] [style*="#f6f8f3" i],
-html[data-theme="dark"] [style*="rgb(246, 248, 243)"] {
-  background-color: #000000 !important;
+/* Search + messenger boxes */
+html[data-theme="dark"] .forum-search-card input,
+html[data-theme="dark"] .forum-search-card input::placeholder,
+html[data-theme="dark"] .profile-search-container input,
+html[data-theme="dark"] .mobile-search-bar input {
+  color: #fff !important;
 }
 
-/* Black + dark shades (text/border/icons) -> white */
-html[data-theme="dark"] [style*="#000" i],
-html[data-theme="dark"] [style*="rgb(0, 0, 0)"],
-html[data-theme="dark"] [style*="#111" i],
-html[data-theme="dark"] [style*="#1d1d1d" i],
-html[data-theme="dark"] [style*="#222" i],
-html[data-theme="dark"] [style*="#333" i],
-html[data-theme="dark"] [style*="#444" i],
-html[data-theme="dark"] [style*="#555" i],
-html[data-theme="dark"] [style*="#666" i],
-html[data-theme="dark"] [style*="#777" i] {
-  color: #ffffff !important;
-  border-color: #ffffff !important;
+html[data-theme="dark"] .forum-search-card > div,
+html[data-theme="dark"] .forum-messages-card > div [style*="backgroundColor: #F9FAFB"],
+html[data-theme="dark"] .forum-messages-card > div [style*="backgroundColor: #FFFBF2"] {
+  background-color: #1d1d1d !important;
 }
 
-/* Keep accent color fixed everywhere */
-html[data-theme="dark"] [style*="#ffc847" i],
+/* Text that must become white (titles, slogans, descriptions, counters, links) */
+html[data-theme="dark"] .forum-page :is(h1,h2,h3,h4,h5,h6,p,span,div,small,label),
+html[data-theme="dark"] .communities-page :is(h1,h2,h3,h4,h5,h6,p,span,div,small,label),
+html[data-theme="dark"] .articles-page :is(h1,h2,h3,h4,h5,h6,p,span,div,small,label),
+html[data-theme="dark"] .community-page :is(.community-name,.community-slogan,.community-description,.member-name,.member-username),
+html[data-theme="dark"] .events-page .events-intro h1,
+html[data-theme="dark"] .events-page .events-intro p,
+html[data-theme="dark"] .donate-container h1,
+html[data-theme="dark"] .donate-container .subtitle,
+html[data-theme="dark"] .donate-container h3,
+html[data-theme="dark"] .donate-container .security-note,
+html[data-theme="dark"] .profile-tabs .tab-btn,
+html[data-theme="dark"] .source-link,
+html[data-theme="dark"] .postbody-source-item a {
+  color: #fff !important;
+}
+
+/* Keep selected/active accent unchanged */
+html[data-theme="dark"] .tab-btn.active,
+html[data-theme="dark"] [style*="#FFC847" i],
 html[data-theme="dark"] [style*="rgb(255, 200, 71)"] {
   color: #ffc847 !important;
   border-color: #ffc847 !important;
 }
 
-/* Post action icons in dark mode -> white */
-html[data-theme="dark"] .post-actions svg,
+/* 1C274C and dark text/borders become white in dark mode */
+html[data-theme="dark"] [style*="#1c274c" i],
+html[data-theme="dark"] [style*="rgb(28, 39, 76)"],
+html[data-theme="dark"] [style*="#000" i],
+html[data-theme="dark"] [style*="rgb(0, 0, 0)"],
+html[data-theme="dark"] [style*="#111" i],
+html[data-theme="dark"] [style*="#222" i],
+html[data-theme="dark"] [style*="#333" i],
+html[data-theme="dark"] [style*="#444" i],
+html[data-theme="dark"] [style*="#555" i],
+html[data-theme="dark"] [style*="#666" i] {
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+/* Requested specific remaps */
+html[data-theme="dark"] [style*="#f6f8f3" i],
+html[data-theme="dark"] [style*="rgb(246, 248, 243)"] {
+  background-color: #000 !important;
+}
+
+html[data-theme="dark"] [style*="#acf2f6" i],
+html[data-theme="dark"] [style*="rgb(172, 242, 246)"] {
+  color: #1c274c !important;
+  border-color: #1c274c !important;
+}
+
+/* Post keywords: keep chip look, but text black as requested */
+html[data-theme="dark"] .post-keyword-chip,
+html[data-theme="dark"] .postbody-keyword {
+  color: #000 !important;
+}
+
+/* Post action SVG icons + post tool icons must be white */
+html[data-theme="dark"] .forum-page svg,
+html[data-theme="dark"] .postbody-container svg,
 html[data-theme="dark"] .post-footer-actions svg,
 html[data-theme="dark"] .post-main-layout svg,
-html[data-theme="dark"] .post-popup-container svg,
-html[data-theme="dark"] .forum-page svg {
-  color: #ffffff !important;
+html[data-theme="dark"] .post-popup-container svg {
+  color: #fff !important;
   fill: currentColor;
   stroke: currentColor;
 }
 
-/* Mobile donate heart icon -> white only on mobile */
-@media (max-width: 1216px) {
-  html[data-theme="dark"] .mobile-controls img[alt="Donate"] {
-    filter: brightness(0) invert(1);
-  }
+/* Keep forum/community Post button unchanged */
+html[data-theme="dark"] .forum-post-card button,
+html[data-theme="dark"] .sidebar-post-btn-style,
+html[data-theme="dark"] .no-dark-invert button {
+  background-color: #1c274c !important;
+  color: #ffc847 !important;
+  border-color: #1c274c !important;
 }
 
-/* Keep forum/community Post button as-is */
-html[data-theme="dark"] .no-dark-invert,
-html[data-theme="dark"] .no-dark-invert * {
-  filter: none !important;
-  background-color: unset;
+/* Donate-specific requests */
+html[data-theme="dark"] .donation-card,
+html[data-theme="dark"] .donation-card .preset-grid,
+html[data-theme="dark"] .donation-card h3 {
+  background-color: #1d1d1d !important;
 }
 
-/* Landing page footer should stay unchanged */
+html[data-theme="dark"] .donation-card input {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+/* Landing page footer must stay unchanged */
 html[data-theme="dark"] .landing-page footer,
 html[data-theme="dark"] .landing-page footer * {
-  filter: none !important;
+  background-color: unset;
+  color: unset;
+}
+
+/* Mobile donate heart icon -> white */
+@media (max-width: 1216px) {
+  html[data-theme="dark"] .mobile-donate-heart,
+  html[data-theme="dark"] .mobile-controls img[alt="Donate"] {
+    filter: brightness(0) invert(1) !important;
+  }
 }

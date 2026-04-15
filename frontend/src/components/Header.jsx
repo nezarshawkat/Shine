@@ -156,7 +156,7 @@ function Header() {
           <img 
             src={heart} 
             alt="Donate" 
-            className="mobile-icon" 
+            className="mobile-icon mobile-donate-heart" 
             onClick={() => navigate("/donate")}
             style={{ cursor: "pointer" }}
           />
