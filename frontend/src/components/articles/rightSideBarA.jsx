@@ -34,7 +34,7 @@ export const TrendSearch = ({ trends, loading }) => {
   };
 
   return (
-    <div style={{
+    <div className="article-search-card" style={{
       width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C",
       padding: "1.25rem", backgroundColor: "#FFFFFF", display: "flex",
       flexDirection: "column", boxSizing: "border-box"
@@ -84,7 +84,7 @@ export const TrendList = ({ trends, loading }) => {
   };
 
   return (
-    <div style={{
+    <div className="article-trending-card" style={{
       width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C",
       padding: "1.25rem", backgroundColor: "#FFFFFF", boxSizing: "border-box"
     }}>
@@ -114,7 +114,7 @@ export const PostActionButton = () => {
   const hasPostingAccess = user && user.isAuthorized;
 
   return (
-    <div style={{ width: "100%", boxSizing: "border-box" }}>
+    <div className="article-action-card" style={{ width: "100%", boxSizing: "border-box" }}>
       <button
         onClick={() => navigate(hasPostingAccess ? "/create-article" : "/article-apply")}
         style={{

@@ -1,9 +1,10 @@
 import React, { forwardRef } from "react";
 
-const PostCard = forwardRef(({ children, ...props }, ref) => {
+const PostCard = forwardRef(({ children, className, ...props }, ref) => {
   return (
     <div
       ref={ref}
+      className={`post-card-shell ${className || ""}`.trim()}
       {...props}
       style={{
         width: "100%",

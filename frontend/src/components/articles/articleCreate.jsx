@@ -2,10 +2,13 @@ import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../AuthProvider.jsx";
 import { API_BASE_URL, BACKEND_URL, buildMediaUrl } from "../../api";
+import { useTheme } from "../ThemeProvider.jsx";
 
 
 const ArticleForm = () => {
   const { user } = useContext(AuthContext);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const navigate = useNavigate();
   const { id } = useParams(); 
   const isEditMode = !!id;
@@ -112,30 +115,30 @@ const ArticleForm = () => {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "40px auto", padding: "20px", backgroundColor: "#fff", borderRadius: "12px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", fontFamily: "sans-serif" }}>
+    <div style={{ maxWidth: "800px", margin: "40px auto", padding: "20px", backgroundColor: isDark ? "#000" : "#fff", borderRadius: "12px", border: isDark ? "1px solid rgba(255,255,255,0.3)" : "none", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", fontFamily: "sans-serif", color: isDark ? "#fff" : "#111" }}>
       <h2 style={{ fontSize: "1.8rem", marginBottom: "24px", fontWeight: "800", textAlign: "center" }}>
         {isEditMode ? "Edit Your Article" : "Write a New Article"}
       </h2>
       
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", fontWeight: "600", marginBottom: "8px" }}>Title</label>
+          <label style={{ display: "block", fontWeight: "600", marginBottom: "8px", color: isDark ? "#fff" : "#111" }}>Title</label>
           <input 
             type="text" 
             value={title} 
             onChange={(e) => setTitle(e.target.value)}
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: isDark ? "1px solid rgba(255,255,255,0.45)" : "1px solid #ddd", color: isDark ? "#fff" : "#111", backgroundColor: isDark ? "#1d1d1d" : "#fff", boxSizing: "border-box" }}
             placeholder="Give your article a catchy title..."
             required 
           />
         </div>
 
         <div style={{ marginBottom: "20px" }}>
-          <label style={{ display: "block", fontWeight: "600", marginBottom: "8px" }}>Body Content</label>
+          <label style={{ display: "block", fontWeight: "600", marginBottom: "8px", color: isDark ? "#fff" : "#111" }}>Body Content</label>
           <textarea 
             value={content} 
             onChange={(e) => setContent(e.target.value)}
-            style={{ width: "100%", height: "350px", padding: "12px", borderRadius: "8px", border: "1px solid #ddd", whiteSpace: "pre-wrap", boxSizing: "border-box", fontSize: "1rem", lineHeight: "1.5" }}
+            style={{ width: "100%", height: "350px", padding: "12px", borderRadius: "8px", border: isDark ? "1px solid rgba(255,255,255,0.45)" : "1px solid #ddd", whiteSpace: "pre-wrap", color: isDark ? "#fff" : "#111", backgroundColor: isDark ? "#1d1d1d" : "#fff", boxSizing: "border-box", fontSize: "1rem", lineHeight: "1.5" }}
             placeholder="Tell your story..."
             required 
           />
@@ -211,8 +214,8 @@ const ArticleForm = () => {
           style={{ 
             width: "100%", 
             padding: "16px", 
-            backgroundColor: loading ? "#666" : "#000", 
-            color: "#fff", 
+            backgroundColor: loading ? "#666" : (isDark ? "#fff" : "#000"), 
+            color: isDark ? "#000" : "#fff", 
             border: "none",
             borderRadius: "8px", 
             cursor: loading ? "not-allowed" : "pointer",

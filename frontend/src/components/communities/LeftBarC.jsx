@@ -56,7 +56,7 @@ const LeftBarC = ({
 
   // 🔍 Search & Trending Box
   const SearchSection = (
-    <div style={{
+    <div className="community-search-card" style={{
       width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C",
       display: "flex", flexDirection: "column", padding: "1.25rem",
       boxSizing: "border-box", backgroundColor: "#FFFFFF",
@@ -100,7 +100,7 @@ const LeftBarC = ({
 
   // 🏠 Communities Table
   const CommunitiesSection = (
-    <div style={{
+    <div className="community-list-card" style={{
       width: "100%", borderRadius: "1.4rem", border: "0.5px solid #1C274C",
       padding: "1.25rem", boxSizing: "border-box", backgroundColor: "#FFFFFF",
     }}>

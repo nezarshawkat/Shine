@@ -149,6 +149,9 @@ html[data-theme="dark"] {
 html[data-theme="dark"] .forum-page,
 html[data-theme="dark"] .forum-container,
 html[data-theme="dark"] .feed-scroll,
+html[data-theme="dark"] .forum-page .left-column,
+html[data-theme="dark"] .forum-page .center-column,
+html[data-theme="dark"] .forum-page .right-column,
 html[data-theme="dark"] .communities-page,
 html[data-theme="dark"] .communities-page .left-column,
 html[data-theme="dark"] .communities-page .center-column,
@@ -171,10 +174,15 @@ html[data-theme="dark"] .landing-page {
 
 /* Cards/boxes that were white should be dark */
 html[data-theme="dark"] .postbody-container,
+html[data-theme="dark"] .post-card-shell,
 html[data-theme="dark"] .forum-search-card,
 html[data-theme="dark"] .forum-trending-card,
 html[data-theme="dark"] .forum-messages-card,
 html[data-theme="dark"] .forum-friends-card,
+html[data-theme="dark"] .community-search-card,
+html[data-theme="dark"] .community-list-card,
+html[data-theme="dark"] .article-search-card,
+html[data-theme="dark"] .article-trending-card,
 html[data-theme="dark"] .post-popup-container,
 html[data-theme="dark"] .donation-card,
 html[data-theme="dark"] .quote,
@@ -195,9 +203,22 @@ html[data-theme="dark"] .mobile-search-bar input {
 }
 
 html[data-theme="dark"] .forum-search-card > div,
-html[data-theme="dark"] .forum-messages-card > div [style*="backgroundColor: #F9FAFB"],
-html[data-theme="dark"] .forum-messages-card > div [style*="backgroundColor: #FFFBF2"] {
+html[data-theme="dark"] .community-search-card > div,
+html[data-theme="dark"] .article-search-card > div {
   background-color: #1d1d1d !important;
+}
+
+/* Search icon + search field borders */
+html[data-theme="dark"] .forum-search-card img[alt="search"],
+html[data-theme="dark"] .community-search-card img[alt="search"],
+html[data-theme="dark"] .article-search-card img[alt="search"] {
+  filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .forum-search-card [style*="border: 0.2px solid black"],
+html[data-theme="dark"] .community-search-card [style*="border: 0.2px solid black"],
+html[data-theme="dark"] .article-search-card [style*="border: 0.2px solid black"] {
+  border: 0.2px solid rgba(255,255,255,0.45) !important;
 }
 
 /* Text that must become white (titles, slogans, descriptions, counters, links) */
@@ -214,6 +235,16 @@ html[data-theme="dark"] .donate-container .security-note,
 html[data-theme="dark"] .profile-tabs .tab-btn,
 html[data-theme="dark"] .source-link,
 html[data-theme="dark"] .postbody-source-item a {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .header {
+  background: #1d1d1d !important;
+}
+
+html[data-theme="dark"] .header-button,
+html[data-theme="dark"] .login-button,
+html[data-theme="dark"] .menu-toggle {
   color: #fff !important;
 }
 
@@ -258,6 +289,16 @@ html[data-theme="dark"] .postbody-keyword {
   color: #000 !important;
 }
 
+html[data-theme="dark"] .postbody-type {
+  color: #ffc847 !important;
+}
+
+html[data-theme="dark"] [class*="sources-btn"],
+html[data-theme="dark"] .postbody-readmore,
+html[data-theme="dark"] .postbody-sources-title {
+  color: #ffc847 !important;
+}
+
 /* Post action SVG icons + post tool icons must be white */
 html[data-theme="dark"] .forum-page svg,
 html[data-theme="dark"] .postbody-container svg,
@@ -267,6 +308,35 @@ html[data-theme="dark"] .post-popup-container svg {
   color: #fff !important;
   fill: currentColor;
   stroke: currentColor;
+}
+
+html[data-theme="dark"] .forum-page img[src*="Heart"],
+html[data-theme="dark"] .forum-page img[src*="heart"],
+html[data-theme="dark"] .forum-page img[src*="comment"],
+html[data-theme="dark"] .forum-page img[src*="Share"],
+html[data-theme="dark"] .forum-page img[src*="share"],
+html[data-theme="dark"] .forum-page img[src*="Flag"],
+html[data-theme="dark"] .forum-page img[src*="Tag"],
+html[data-theme="dark"] .forum-page img[src*="save"] {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* Forum/community/article dividers */
+html[data-theme="dark"] .forum-trending-card [style*="height: 0.5px"],
+html[data-theme="dark"] .forum-messages-card [style*="height: 0.5px"],
+html[data-theme="dark"] .forum-friends-card [style*="height: 0.5px"],
+html[data-theme="dark"] .community-list-card [style*="height: 0.5px"],
+html[data-theme="dark"] .article-trending-card [style*="height: 1px"] {
+  background-color: rgba(255,255,255,0.6) !important;
+}
+
+/* Messenger "System" / "Activity" cards in sidebar */
+html[data-theme="dark"] .forum-messages-card [style*="background-color: rgb(255, 251, 242)"],
+html[data-theme="dark"] .forum-messages-card [style*="background-color: rgb(249, 250, 251)"],
+html[data-theme="dark"] .forum-messages-card [style*="background-color: rgb(224, 242, 254)"] {
+  background-color: #000 !important;
+  border-color: rgba(255,255,255,0.35) !important;
+  color: #fff !important;
 }
 
 /* Keep forum/community Post button unchanged */
@@ -285,6 +355,11 @@ html[data-theme="dark"] .donation-card h3 {
   background-color: #1d1d1d !important;
 }
 
+html[data-theme="dark"] .donation-card .preset-grid button:not(.active) {
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
 html[data-theme="dark"] .donation-card input {
   background: #000 !important;
   color: #fff !important;
@@ -296,6 +371,38 @@ html[data-theme="dark"] .landing-page footer,
 html[data-theme="dark"] .landing-page footer * {
   background-color: unset;
   color: unset;
+}
+
+/* Landing page content after hero: black sections + white text */
+html[data-theme="dark"] .landing-page .divider,
+html[data-theme="dark"] .landing-page .banner-hero,
+html[data-theme="dark"] .landing-page .banner-do,
+html[data-theme="dark"] .landing-page .banner-mv,
+html[data-theme="dark"] .landing-page .banner-members,
+html[data-theme="dark"] .landing-page .banner-mv .group {
+  background: #000 !important;
+}
+
+html[data-theme="dark"] .landing-page .banner-hero h2,
+html[data-theme="dark"] .landing-page .banner-do h2,
+html[data-theme="dark"] .landing-page .banner-members h2,
+html[data-theme="dark"] .landing-page .banner-mv .text-group h3,
+html[data-theme="dark"] .landing-page .banner-text,
+html[data-theme="dark"] .landing-page .activities-list,
+html[data-theme="dark"] .landing-page .quote {
+  color: #fff !important;
+}
+
+/* Profile text + divider tuning in dark mode */
+html[data-theme="dark"] .profile-name,
+html[data-theme="dark"] .profile-username,
+html[data-theme="dark"] .profile-description {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .profile-sticky-container .divider.second,
+html[data-theme="dark"] .profile-page .divider {
+  background: rgba(255,255,255,0.28) !important;
 }
 
 /* Mobile donate heart icon -> white */

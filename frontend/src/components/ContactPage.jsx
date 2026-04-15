@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import API from "../api";
+import { useTheme } from "./ThemeProvider.jsx";
 
 export default function ContactPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState("");
@@ -25,8 +28,8 @@ export default function ContactPage() {
       minHeight: "100vh",
       padding: "2rem 1rem",
       paddingTop: 90,
-      backgroundColor: "#f5f7ff",
-      color: "#1C274C",
+      backgroundColor: isDark ? "#000" : "#f5f7ff",
+      color: isDark ? "#fff" : "#1C274C",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -34,9 +37,10 @@ export default function ContactPage() {
     container: {
       width: "100%",
       maxWidth: 760,
-      backgroundColor: "#fff",
+      backgroundColor: isDark ? "#1d1d1d" : "#fff",
       padding: "2rem",
       borderRadius: 12,
+      border: isDark ? "1px solid rgba(255,255,255,0.25)" : "none",
       boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
       display: "flex",
       flexDirection: "column",
@@ -53,7 +57,7 @@ export default function ContactPage() {
     },
     subheading: {
       fontSize: "1rem",
-      color: "#4b4b7d",
+      color: isDark ? "#fff" : "#4b4b7d",
     },
     form: {
       display: "grid",
@@ -62,7 +66,9 @@ export default function ContactPage() {
     input: {
       padding: "0.85rem 1rem",
       borderRadius: 8,
-      border: "1px solid #ddd",
+      border: isDark ? "1px solid rgba(255,255,255,0.35)" : "1px solid #ddd",
+      backgroundColor: isDark ? "#000" : "#fff",
+      color: isDark ? "#fff" : "#111",
       fontSize: "1rem",
       width: "100%",
       boxSizing: "border-box",
@@ -72,7 +78,9 @@ export default function ContactPage() {
     textarea: {
       padding: "0.85rem 1rem",
       borderRadius: 8,
-      border: "1px solid #ddd",
+      border: isDark ? "1px solid rgba(255,255,255,0.35)" : "1px solid #ddd",
+      backgroundColor: isDark ? "#000" : "#fff",
+      color: isDark ? "#fff" : "#111",
       fontSize: "1rem",
       width: "100%",
       resize: "vertical",
@@ -83,8 +91,8 @@ export default function ContactPage() {
     button: {
       width: "fit-content",
       padding: "0.75rem 1.5rem",
-      backgroundColor: "#1C274C",
-      color: "#fff",
+      backgroundColor: isDark ? "#fff" : "#1C274C",
+      color: isDark ? "#000" : "#fff",
       fontWeight: 600,
       fontSize: "1rem",
       borderRadius: 8,
@@ -129,8 +137,8 @@ export default function ContactPage() {
           <button
             type="submit"
             style={styles.button}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#2f38b0")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1C274C")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#f2f2f2" : "#2f38b0")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isDark ? "#ffffff" : "#1C274C")}
           >
             Send Message
           </button>

@@ -3,11 +3,13 @@ import { API_BASE_URL, buildMediaUrl } from "../api";
 import React, { useContext, useState, useEffect } from "react";
 import "../styles/Header.css";
 import logo from "../assets/shine-logo.png";
+import logoWhite from "../assets/shine-logo-white.png";
 import heart from "../assets/heart.svg";
 import profileDefault from "../assets/profileDefault.svg";
 import MobileMenu from "./MobileMenu";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./AuthProvider.jsx";
+import { useTheme } from "./ThemeProvider.jsx";
 
 // Update this to match your backend URL
 
@@ -15,6 +17,7 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useContext(AuthContext);
+  const { resolvedTheme } = useTheme();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1216);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -38,7 +41,7 @@ function Header() {
           className="logo-button"
           onClick={() => navigate("/")}
         >
-          <img src={logo} alt="SHINE Logo" className="logo" />
+          <img src={resolvedTheme === "dark" ? logoWhite : logo} alt="SHINE Logo" className="logo" />
         </button>
       </div>
 
