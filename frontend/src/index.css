@@ -325,6 +325,20 @@ html[data-theme="dark"] .post-type-label {
   color: #ffc847 !important;
 }
 
+html[data-theme="dark"] .forum-page .post-type-label,
+html[data-theme="dark"] .forum-page .sources-toggle-btn,
+html[data-theme="dark"] .forum-page .sources-btn-text,
+html[data-theme="dark"] .forum-page .sources-btn-label,
+html[data-theme="dark"] .forum-page .sources-btn-root,
+html[data-theme="dark"] .forum-page .critique-post-sources-btn-full,
+html[data-theme="dark"] .forum-page .critique-post-sources-btn-mobile {
+  color: #ffc847 !important;
+}
+
+html[data-theme="dark"] .forum-page .post-keyword-chip {
+  color: #1c274c !important;
+}
+
 html[data-theme="dark"] [class*="sources-btn"],
 html[data-theme="dark"] .postbody-readmore,
 html[data-theme="dark"] .postbody-sources-title {
@@ -428,7 +442,7 @@ html[data-theme="dark"] .profile-page .menu-btn {
 }
 
 html[data-theme="dark"] .profile-page .follow-btn {
-  background: #1d1d1d !important;
+  background: #000 !important;
   border-color: rgba(255,255,255,0.4) !important;
   color: #fff !important;
 }

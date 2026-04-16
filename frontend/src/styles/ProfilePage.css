@@ -227,6 +227,7 @@
   font-weight: 400;
   background: none;
   border: none;
+  border-radius: 9999px;
   cursor: pointer;
 }
 
@@ -407,7 +408,7 @@
     font-size: 14px !important;
     padding: 8px 20px !important;
     border: 1px solid #ddd !important;
-    border-radius: 8px !important;
+    border-radius: 9999px !important;
     background: #fff !important;
     color: #1c274c;
     height: 38px !important;
@@ -445,6 +446,14 @@
   .divider {
     width: 100%;
     margin: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .profile-page .divider,
+  .profile-page .divider.second {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
   }
 }
 /* --- Report Modal Overlay --- */
