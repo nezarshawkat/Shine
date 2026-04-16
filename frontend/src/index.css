@@ -273,7 +273,7 @@ html[data-theme="dark"] .menu-toggle {
 
 html[data-theme="dark"] .menu-toggle {
   background: #1d1d1d !important;
-  border: 1px solid rgba(255,255,255,0.28) !important;
+  border: none !important;
 }
 
 /* Keep selected/active accent unchanged */
@@ -342,19 +342,19 @@ html[data-theme="dark"] .post-popup-container svg {
   stroke: currentColor;
 }
 
-html[data-theme="dark"] .forum-page img[src*="Heart"],
-html[data-theme="dark"] .forum-page img[src*="heart"],
-html[data-theme="dark"] .forum-page img[src*="comment"],
-html[data-theme="dark"] .forum-page img[src*="Share"],
-html[data-theme="dark"] .forum-page img[src*="share"],
-html[data-theme="dark"] .forum-page img[src*="Flag"],
-html[data-theme="dark"] .forum-page img[src*="Tag"],
-html[data-theme="dark"] .forum-page img[src*="save"] {
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="Heart"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="heart"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="comment"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="Share"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="share"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="Flag"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="Tag"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="save"] {
   filter: brightness(0) invert(1) !important;
 }
 
-html[data-theme="dark"] .forum-page img[src*="arrow"],
-html[data-theme="dark"] .forum-page img[src*="Arrow"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="arrow"],
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) img[src*="Arrow"],
 html[data-theme="dark"] .post-reply-icon {
   filter: brightness(0) invert(1) !important;
 }
@@ -422,6 +422,12 @@ html[data-theme="dark"] .profile-page .follow-btn img[src*="User Plus"] {
 }
 
 html[data-theme="dark"] .profile-page .menu-btn {
+  background: #1d1d1d !important;
+  border-color: rgba(255,255,255,0.4) !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .profile-page .follow-btn {
   background: #1d1d1d !important;
   border-color: rgba(255,255,255,0.4) !important;
   color: #fff !important;

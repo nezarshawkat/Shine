@@ -2,9 +2,11 @@ import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_W, BASE_H, R } from "../../../../backend/models/commConfig.js";
 import { buildMediaUrl } from "../../api";
+import { useTheme } from "../ThemeProvider.jsx";
 
 export default function CommunityCard({ community, feedWidth = BASE_W, onintrestClick }) {
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
 
   const {
     id,
@@ -43,6 +45,13 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
     : typeof rawInterests === "string"
       ? rawInterests.split(",").map(k => k.trim()).filter(Boolean)
       : [];
+  const isDarkMode = resolvedTheme === "dark";
+  const cardBg = isDarkMode ? "#1d1d1d" : "#fff";
+  const primaryText = isDarkMode ? "#fff" : "#1C274C";
+  const secondaryText = isDarkMode ? "rgba(255,255,255,0.76)" : "#4A5568";
+  const keywordBg = isDarkMode ? "rgba(172,242,246,0.15)" : "#F0F4F8";
+  const keywordBorder = isDarkMode ? "rgba(172,242,246,0.55)" : "#D1D9E0";
+  const keywordText = isDarkMode ? "#acf2f6" : "#1C274C";
 
   useEffect(() => {
     const fitName = () => {
@@ -70,10 +79,11 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
         height,
         display: "flex",
         flexDirection: isMobile ? "column" : "row",
-        background: "#fff",
+        background: cardBg,
         borderRadius: isMobile ? "20px" : 12 * scale,
         overflow: "hidden",
         boxShadow: isMobile ? "0 10px 30px rgba(0,0,0,0.1)" : "0 4px 20px rgba(0,0,0,0.06)",
+        border: isDarkMode ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(28,39,76,0.08)",
         marginBottom: isMobile ? "20px" : "24px",
         cursor: "pointer",
         transition: "all 0.2s ease",
@@ -98,11 +108,11 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
               }}
               alt="icon"
             />
-            <div style={{ fontSize: nameFontSize, fontWeight: 700, color: "#1C274C" }}>
+            <div style={{ fontSize: nameFontSize, fontWeight: 700, color: primaryText }}>
               {communityName}
             </div>
           </div>
-          <div style={{ fontSize: "16px", fontWeight: 800, color: "#1C274C" }}>
+          <div style={{ fontSize: "16px", fontWeight: 800, color: primaryText }}>
             {membersCountText}
           </div>
         </div>
@@ -131,7 +141,7 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
                 }}
                 alt="icon"
               />
-              <div style={{ fontSize: nameFontSize, fontWeight: 700, color: "#1C274C" }}>
+              <div style={{ fontSize: nameFontSize, fontWeight: 700, color: primaryText }}>
                 {communityName}
               </div>
             </div>
@@ -142,7 +152,7 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
             fontSize: isMobile ? "24px" : R.titleSizePx * scale,
             fontWeight: 800,
             lineHeight: 1.1,
-            color: "#1C274C"
+            color: primaryText
           }}>
             {bannerTitle}
           </div>
@@ -151,7 +161,7 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
             marginTop: "12px",
             fontSize: isMobile ? "16px" : R.descriptionSizePx * scale,
             lineHeight: 1.6,
-            color: "#4A5568",
+            color: secondaryText,
             display: "-webkit-box",
             WebkitLineClamp: expanded ? "unset" : "3",
             WebkitBoxOrient: "vertical",
@@ -188,12 +198,12 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
               }}
               style={{
                 padding: isMobile ? "8px 16px" : `${8 * scale}px ${16 * scale}px`,
-                background: "#F0F4F8",
+                background: keywordBg,
                 borderRadius: "100px",
                 fontSize: isMobile ? "14px" : 14 * scale,
-                color: "#1C274C",
+                color: keywordText,
                 fontWeight: 600,
-                border: "1px solid #D1D9E0",
+                border: `1px solid ${keywordBorder}`,
                 whiteSpace: "nowrap"
               }}
             >
