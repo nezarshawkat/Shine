@@ -396,6 +396,10 @@
     width: 100%;
   }
 
+  .mobile-search-bar input {
+    border: 1px solid rgba(28, 39, 76, 0.14) !important;
+  }
+
   .mobile-action-container {
     display: flex;
     justify-content: center;

@@ -1051,6 +1051,7 @@ export default function CritiquePost({ postId, initialData }) {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img
+                  className="post-action-icon"
                   src={isLiked ? HeartClickedIcon : HeartIcon}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1067,6 +1068,7 @@ export default function CritiquePost({ postId, initialData }) {
 
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img
+                  className="post-action-icon"
                   src={CommentIcon}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1083,6 +1085,7 @@ export default function CritiquePost({ postId, initialData }) {
 
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img
+                  className="post-action-icon"
                   src={ShareIcon}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1099,7 +1102,7 @@ export default function CritiquePost({ postId, initialData }) {
               </div>
 
               <img
-                className="post-reply-icon"
+                className="post-action-icon post-reply-icon"
                 src={ArrowIcon}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1116,6 +1119,7 @@ export default function CritiquePost({ postId, initialData }) {
               {!isAuthor && (
                 <div style={{ position: "relative" }}>
                   <img
+                    className="post-action-icon"
                     src={FlagIcon}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1127,6 +1131,7 @@ export default function CritiquePost({ postId, initialData }) {
               )}
 
               <img
+                className="post-action-icon"
                 src={isSaved ? TagClickedIcon : TagIcon}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1138,6 +1143,7 @@ export default function CritiquePost({ postId, initialData }) {
               {isAuthor && (
                 <div style={{ position: "relative" }}>
                   <img
+                    className="post-action-icon"
                     src={MenuIcon}
                     onClick={(e) => {
                       e.stopPropagation();

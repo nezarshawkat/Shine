@@ -373,6 +373,10 @@ html[data-theme="dark"] .post-reply-icon {
   filter: brightness(0) invert(1) !important;
 }
 
+html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-card-shell, .postbody-container) .post-action-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
 /* Forum/community/article dividers */
 html[data-theme="dark"] .forum-trending-card [style*="height: 0.5px"],
 html[data-theme="dark"] .forum-messages-card [style*="height: 0.5px"],
@@ -545,6 +549,10 @@ html[data-theme="dark"] .profile-page .divider {
 
 /* Mobile donate heart icon -> white */
 @media (max-width: 1216px) {
+  html[data-theme="dark"] .forum-mobile-topbar {
+    background: #000 !important;
+  }
+
   html[data-theme="dark"] .mobile-donate-heart,
   html[data-theme="dark"] .mobile-controls img[alt="Donate"] {
     filter: brightness(0) invert(1) !important;

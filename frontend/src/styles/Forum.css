@@ -155,7 +155,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: transparent;
+    background: #f7f9fc;
   }
 
   /* Drawer Overlay */

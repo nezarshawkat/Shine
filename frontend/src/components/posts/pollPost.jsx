@@ -250,7 +250,7 @@ export default function PollPost({ postId, initialData }) {
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ fontSize: 14, fontWeight: 500, color: "#1C274C" }}>{post.viewsCount || 0} views</div>
             <div style={{ fontSize: 14, fontWeight: 500, color: "#1C274C" }}>{totalVotes} voted</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#FFC847" }}>poll</div>
+            <div className="post-type-label" style={{ fontSize: 16, fontWeight: 800, color: "#FFC847" }}>poll</div>
           </div>
         </div>
 
@@ -304,17 +304,18 @@ export default function PollPost({ postId, initialData }) {
                   e.stopPropagation();
                   setShowSources(!showSources);
                 }}
+                className="sources-toggle-btn"
                 style={{ background: "transparent", border: "none", color: "#FFC847", fontSize: 16, fontWeight: 500, cursor: "pointer" }}
               >
-                {showSources ? "Hide Sources" : "View Sources"}
+                <span className="sources-btn-text">{showSources ? "Hide Sources" : "View Sources"}</span>
               </button>
             )}
           </div>
-          <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
-              <img src={ShareIcon} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} style={{ width: 18, cursor: "pointer" }} alt="" />
-              <img src={isSaved ? TagClickedIcon : TagIcon} onClick={toggleSave} style={{ width: 18, cursor: "pointer" }} alt="" />
+          <div className="post-action-row" style={{ display: "flex", gap: 15, alignItems: "center" }}>
+              <img className="post-action-icon" src={ShareIcon} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} style={{ width: 18, cursor: "pointer" }} alt="" />
+              <img className="post-action-icon" src={isSaved ? TagClickedIcon : TagIcon} onClick={toggleSave} style={{ width: 18, cursor: "pointer" }} alt="" />
               <div style={{ position: "relative" }}>
-                <img src={isAuthor ? MenuIcon : FlagIcon} onClick={(e) => { e.stopPropagation(); isAuthor ? setShowMenuPopup(!showMenuPopup) : setShowFlagPopup(!showFlagPopup); }} style={{ width: 18, cursor: "pointer" }} alt="" />
+                <img className="post-action-icon" src={isAuthor ? MenuIcon : FlagIcon} onClick={(e) => { e.stopPropagation(); isAuthor ? setShowMenuPopup(!showMenuPopup) : setShowFlagPopup(!showFlagPopup); }} style={{ width: 18, cursor: "pointer" }} alt="" />
                 {showFlagPopup && !isAuthor && (
                   <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 8, padding: 6, width: 180, zIndex: 10 }}>
                     {["Invalid resources", "Inappropriate language", "Spam"].map((opt) => (

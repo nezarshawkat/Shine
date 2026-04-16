@@ -458,27 +458,27 @@ export default function AnalysisPost({ postId, initialData }) {
               )}
             </div>
             
-            <div style={{ display: "flex", gap: 17, alignItems: "center" }}>
+            <div className="post-action-row" style={{ display: "flex", gap: 17, alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <img src={isLiked ? HeartClickedIcon : HeartIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('like', setIsLiked, "Liked"); }} style={{ width: 20, cursor: "pointer" }} />
+                <img className="post-action-icon" src={isLiked ? HeartClickedIcon : HeartIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('like', setIsLiked, "Liked"); }} style={{ width: 20, cursor: "pointer" }} />
                 <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>{post.likesCount || 0}</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <img src={CommentIcon} onClick={() => navigate(`/post/${post.id || post._id}`)} style={{ width: 20, cursor: "pointer" }} />
+                <img className="post-action-icon" src={CommentIcon} onClick={() => navigate(`/post/${post.id || post._id}`)} style={{ width: 20, cursor: "pointer" }} />
                 <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>{post.commentsCount || 0}</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <img src={ShareIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('share', () => {}, "Shared"); setShowShare(true); }} style={{ width: 20, cursor: "pointer" }} />
+                <img className="post-action-icon" src={ShareIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('share', () => {}, "Shared"); setShowShare(true); }} style={{ width: 20, cursor: "pointer" }} />
                 <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>{post.sharesCount || 0}</span>
               </div>
 
-              <img className="post-reply-icon" src={ArrowIcon} onClick={(e) => { e.stopPropagation(); navigate("/critique-create", { state: { replyToId: post.id || post._id, replyToContent: post.text } }); }} style={{ width: 20, cursor: "pointer" }} />
+              <img className="post-action-icon post-reply-icon" src={ArrowIcon} onClick={(e) => { e.stopPropagation(); navigate("/critique-create", { state: { replyToId: post.id || post._id, replyToContent: post.text } }); }} style={{ width: 20, cursor: "pointer" }} />
               
               {!isAuthor && (
                 <div style={{ position: "relative" }}>
-                  <img src={FlagIcon} onClick={(e) => { e.stopPropagation(); setShowFlagPopup(!showFlagPopup); }} style={{ width: 20, cursor: "pointer" }} />
+                  <img className="post-action-icon" src={FlagIcon} onClick={(e) => { e.stopPropagation(); setShowFlagPopup(!showFlagPopup); }} style={{ width: 20, cursor: "pointer" }} />
                   {showFlagPopup && (
                     <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 8, width: 200, zIndex: 10 }}>
                       {["Spam", "False Info", "Inappropriate"].map(opt => (
@@ -489,11 +489,11 @@ export default function AnalysisPost({ postId, initialData }) {
                 </div>
               )}
 
-              <img src={isSaved ? TagClickedIcon : TagIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('save', setIsSaved, "Saved"); }} style={{ width: 20, cursor: "pointer" }} />
+              <img className="post-action-icon" src={isSaved ? TagClickedIcon : TagIcon} onClick={(e) => { e.stopPropagation(); handleInteraction('save', setIsSaved, "Saved"); }} style={{ width: 20, cursor: "pointer" }} />
               
               {isAuthor && (
                 <div style={{ position: "relative" }}>
-                  <img src={MenuIcon} onClick={(e) => { e.stopPropagation(); setShowMenuPopup(!showMenuPopup); }} style={{ width: 20, cursor: "pointer" }} />
+                  <img className="post-action-icon" src={MenuIcon} onClick={(e) => { e.stopPropagation(); setShowMenuPopup(!showMenuPopup); }} style={{ width: 20, cursor: "pointer" }} />
                   {showMenuPopup && (
                     <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 0px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
                       <div onClick={() => { setIsEditing(true); setShowMenuPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#1C274C" }}>Edit</div>
