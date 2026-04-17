@@ -19,6 +19,13 @@ import HeartClickedIcon from "../../assets/HeartC.svg";
 import MenuIcon from "../../assets/Menu.svg"; 
 import profileDefault from "../../assets/profileDefault.svg";
 
+const HASHTAG_SPLIT_REGEX = /(#[\p{L}\p{N}_]+)/gu;
+const renderTextWithHashtags = (text) => {
+  if (!text) return "";
+  return String(text).split(HASHTAG_SPLIT_REGEX).map((part, idx) =>
+    part.startsWith("#") ? <span key={`hash-${idx}`} className="post-hashtag">{part}</span> : part
+  );
+};
 
 // --- Sub-components ---
 
@@ -414,7 +421,7 @@ export default function AnalysisPost({ postId, initialData }) {
                </div>
              ) : (
                <div onClick={() => navigate(`/post/${post.id || post._id}`)} style={{ cursor: "pointer" }}>
-                 <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{displayText}</div>
+                 <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{renderTextWithHashtags(displayText)}</div>
                  {post.text?.length > MAX_CHARS && (
                    <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "none", border: "none", color: "#FFC847", cursor: "pointer", fontWeight: 600 }}>
                      {expanded ? "Show less" : "... Read more"}

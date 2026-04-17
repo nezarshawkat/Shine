@@ -18,12 +18,26 @@ import HeartClickedIcon from "../../assets/HeartC.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 
 const BASE_URL = BACKEND_URL;
+const HASHTAG_SPLIT_REGEX = /(#[\p{L}\p{N}_]+)/gu;
 
 // --- HELPERS ---
 const getImageUrl = (path) => {
   if (!path) return profileDefault;
   if (path.startsWith("http")) return path;
   return `${BASE_URL}${path}`;
+};
+
+const renderTextWithHashtags = (text) => {
+  if (!text) return "";
+  return String(text).split(HASHTAG_SPLIT_REGEX).map((part, index) =>
+    part.startsWith("#") ? (
+      <span key={`hashtag-${index}`} className="post-hashtag">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
 };
 
 // --- SUB-COMPONENTS ---
@@ -718,6 +732,7 @@ export default function PostBody() {
                 fontWeight: 800,
                 color: "#FFC847",
               }}
+              className="post-type-label"
             >
               {post.type?.toLowerCase()}
             </div>
@@ -806,9 +821,11 @@ export default function PostBody() {
             <div
               style={{ fontSize: 16, lineHeight: 1.5, whiteSpace: "pre-wrap" }}
             >
-              {!expanded && post.text?.length > 900
+              {renderTextWithHashtags(
+                !expanded && post.text?.length > 900
                 ? post.text.slice(0, 900) + "..."
-                : post.text}
+                : post.text,
+              )}
             </div>
             {post.text?.length > 900 && (
               <button
@@ -957,6 +974,7 @@ export default function PostBody() {
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
               {(post.keywords || []).map((k, i) => (
                 <div
+                  className="post-keyword-chip"
                   key={`mobile-${i}`}
                   style={{
                     background: "#ECF2F6",

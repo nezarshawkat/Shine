@@ -110,6 +110,15 @@ input, textarea, select {
   scrollbar-width: none;
 }
 
+.post-hashtag {
+  color: #FFC847 !important;
+  font-weight: 600;
+}
+
+.post-type-label {
+  color: #FFC847 !important;
+}
+
 /* ---------------------------------------------------------
    Animations
 --------------------------------------------------------- */

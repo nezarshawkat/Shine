@@ -13,6 +13,13 @@ import PostCard from "./PostCard.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { submitReport } from "../reporting/reportUtils";
 
+const HASHTAG_SPLIT_REGEX = /(#[\p{L}\p{N}_]+)/gu;
+const renderTextWithHashtags = (text) => {
+  if (!text) return "";
+  return String(text).split(HASHTAG_SPLIT_REGEX).map((part, idx) =>
+    part.startsWith("#") ? <span key={`hash-${idx}`} className="post-hashtag">{part}</span> : part
+  );
+};
 
 // --- Sub-Components ---
 function DeleteModal({ onConfirm, onCancel }) {
@@ -254,7 +261,7 @@ export default function PollPost({ postId, initialData }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{post.text}</div>
+        <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{renderTextWithHashtags(post.text)}</div>
         {!!post.keywords?.length && (
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             {post.keywords.map((k, i) => (

@@ -20,6 +20,14 @@ import HeartClickedIcon from "../../assets/HeartC.svg";
 import MenuIcon from "../../assets/Menu.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 
+const HASHTAG_SPLIT_REGEX = /(#[\p{L}\p{N}_]+)/gu;
+const renderTextWithHashtags = (text) => {
+  if (!text) return "";
+  return String(text).split(HASHTAG_SPLIT_REGEX).map((part, idx) =>
+    part.startsWith("#") ? <span key={`hash-${idx}`} className="post-hashtag">{part}</span> : part
+  );
+};
+
 // --- Sub-components ---
 
 function ImageMaximizer({ media, currentIndex, onClose, onPrev, onNext }) {
@@ -919,7 +927,7 @@ export default function CritiquePost({ postId, initialData }) {
                     wordBreak: "break-word",
                   }}
                 >
-                  {displayText}
+                  {renderTextWithHashtags(displayText)}
                 </div>
                 {post.text?.length > MAX_CHARS && (
                   <button
