@@ -236,6 +236,12 @@
     padding: 0; /* Remove side padding to let posts touch the edges */
     width: 100vw; /* Force viewport width */
   }
+  html[data-theme="light"] .forum-page,
+  html[data-theme="light"] .forum-container,
+  html[data-theme="light"] .forum-container .center-column,
+  html[data-theme="light"] .forum-container .feed-scroll {
+    border-radius: 0 !important;
+  }
 
   .mobile-search-wrapper {
     display: block;

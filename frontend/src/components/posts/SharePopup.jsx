@@ -11,6 +11,7 @@ export default function SharePopup({ id, type = "article", title = "", descripti
   const previewOrigin = BACKEND_URL || window.location.origin;
   const shareUrl = `${previewOrigin}/share/${shareType}/${id}`;
   const [showToast, setShowToast] = useState(false);
+  const isDarkMode = document.documentElement.getAttribute("data-theme") === "dark";
   const readableType = shareType.charAt(0).toUpperCase() + shareType.slice(1);
   const isCommunityShare = shareType === "community";
 
@@ -48,7 +49,8 @@ export default function SharePopup({ id, type = "article", title = "", descripti
           width: 56,
           height: 56,
           borderRadius: "50%",
-          background: bg,
+          background: isDarkMode ? "#000" : bg,
+          border: isDarkMode ? "1px solid #fff" : "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -58,7 +60,7 @@ export default function SharePopup({ id, type = "article", title = "", descripti
       >
         {content}
       </div>
-      <div style={{ fontSize: 14, color: "#6B7280" }}>{label}</div>
+      <div style={{ fontSize: 14, color: isDarkMode ? "#fff" : "#6B7280" }}>{label}</div>
     </div>
   );
 
@@ -85,7 +87,8 @@ export default function SharePopup({ id, type = "article", title = "", descripti
           transform: "translate(-50%, -50%)",
           width: "90%",
           maxWidth: 620,
-          background: "#fff",
+          background: isDarkMode ? "#1d1d1d" : "#fff",
+          border: isDarkMode ? "1px solid #fff" : "none",
           borderRadius: 16,
           padding: 24,
           zIndex: 1000,
@@ -101,7 +104,7 @@ export default function SharePopup({ id, type = "article", title = "", descripti
             marginBottom: 24,
           }}
         >
-          <div style={{ fontSize: 22, fontWeight: 600, color: "#1C274C" }}>
+          <div style={{ fontSize: 22, fontWeight: 600, color: isDarkMode ? "#fff" : "#1C274C" }}>
             Share {readableType}
           </div>
           <button
@@ -111,7 +114,7 @@ export default function SharePopup({ id, type = "article", title = "", descripti
               border: "none",
               fontSize: 28,
               cursor: "pointer",
-              color: "#6B7280"
+              color: isDarkMode ? "#fff" : "#6B7280"
             }}
           >
             ×
@@ -127,9 +130,9 @@ export default function SharePopup({ id, type = "article", title = "", descripti
               marginBottom: 18,
               padding: "12px 14px",
               borderRadius: 10,
-              border: "1px solid #e5e7eb",
-              background: "#f9fafb",
-              color: "#1C274C",
+              border: isDarkMode ? "1px solid #fff" : "1px solid #e5e7eb",
+              background: isDarkMode ? "#000" : "#f9fafb",
+              color: isDarkMode ? "#fff" : "#1C274C",
               fontSize: 15,
               fontWeight: 600,
               cursor: "pointer",
@@ -138,12 +141,12 @@ export default function SharePopup({ id, type = "article", title = "", descripti
           >
             Share community
             {(title || description) && (
-              <div style={{ marginTop: 6, fontWeight: 500, color: "#6B7280", fontSize: 13 }}>
+              <div style={{ marginTop: 6, fontWeight: 500, color: isDarkMode ? "#fff" : "#6B7280", fontSize: 13 }}>
                 {[title, description].filter(Boolean).join(" • ")}
               </div>
             )}
             {image && (
-              <div style={{ marginTop: 6, fontWeight: 500, color: "#9CA3AF", fontSize: 12 }}>
+              <div style={{ marginTop: 6, fontWeight: 500, color: isDarkMode ? "#fff" : "#9CA3AF", fontSize: 12 }}>
                 Community icon included in preview
               </div>
             )}
@@ -193,8 +196,8 @@ export default function SharePopup({ id, type = "article", title = "", descripti
             width: "100%",
             padding: 14,
             borderRadius: 10,
-            border: "none",
-            background: "#F9FAFB",
+            background: isDarkMode ? "#000" : "#F9FAFB",
+            border: isDarkMode ? "1px solid #fff" : "none",
             color: "#FBBF24",
             fontSize: 16,
             fontWeight: 600,

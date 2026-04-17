@@ -324,8 +324,8 @@ export default function PollPost({ postId, initialData }) {
                   </div>
                 )}
                 {showMenuPopup && isAuthor && (
-                  <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
-                    <div onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); setShowMenuPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#FF4C4C", fontWeight: 600 }}>Delete Post</div>
+                  <div className="post-owner-menu-popup" style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
+                    <div onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); setShowMenuPopup(false); }} className="post-owner-menu-delete" style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#FF4C4C", fontWeight: 600 }}>Delete Post</div>
                   </div>
                 )}
               </div>

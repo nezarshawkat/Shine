@@ -29,12 +29,7 @@ export default function Communities() {
       {/* 1. Mobile Top Bar (Single Menu Icon) */}
       <div className="forum-mobile-topbar">
         <button className="forum-mobile-menu-btn" onClick={() => setMobileNavOpen(true)}>
-          <img
-            src="/src/assets/Adobe-Express-file.svg"
-            alt=""
-            aria-hidden="true"
-            className="forum-mobile-menu-icon"
-          />
+          <span className="forum-mobile-menu-hamburger" aria-hidden="true">☰</span>
           <span>Menu</span>
         </button>
         {showScrollTop && (

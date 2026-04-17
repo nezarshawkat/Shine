@@ -182,6 +182,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
   const currentUserId = user?.id;
   const isOwner = currentUserId === comment.authorId;
   const likesCount = comment._count?.likes ?? 0;
+  const isDarkMode = document.documentElement.getAttribute("data-theme") === "dark";
 
   const commentAuthorImg = getImageUrl(comment.author?.image);
 
@@ -204,18 +205,19 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
       <div style={{ flex: 1 }}>
         <div
           style={{
-            background: "#F6F6F6",
+            background: isDarkMode ? "#000" : "#F6F6F6",
             padding: "10px 14px",
             borderRadius: 15,
             display: "inline-block",
             minWidth: 120,
+            border: isDarkMode ? "1px solid rgba(255,255,255,0.35)" : "none",
           }}
         >
           <div
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: "#1C274C",
+              color: isDarkMode ? "#fff" : "#1C274C",
               marginBottom: 2,
             }}
           >
@@ -233,7 +235,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
               </span>
             )}
           </div>
-          <div style={{ fontSize: 14, color: "#1C274C" }}>{comment.text}</div>
+          <div style={{ fontSize: 14, color: isDarkMode ? "#fff" : "#1C274C" }}>{comment.text}</div>
         </div>
 
         <div
@@ -243,7 +245,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
             marginTop: 5,
             marginLeft: 5,
             fontSize: 12,
-            color: "#666",
+            color: isDarkMode ? "#fff" : "#666",
             fontWeight: 600,
           }}
         >
@@ -251,7 +253,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
           <span
             style={{
               cursor: "pointer",
-              color: comment.isLiked ? "#FFC847" : "#666",
+              color: comment.isLiked ? "#FFC847" : isDarkMode ? "#fff" : "#666",
               transition: "color 0.2s",
             }}
             onClick={() => onLike(comment.id)}
@@ -266,14 +268,15 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
         style={{ cursor: "pointer", padding: "0 5px" }}
         onClick={() => setShowOptions(!showOptions)}
       >
-        <div style={{ color: "#1C274C", fontWeight: "bold" }}>...</div>
+        <div style={{ color: isDarkMode ? "#fff" : "#1C274C", fontWeight: "bold" }}>...</div>
         {showOptions && (
           <div
+            className="post-owner-menu-popup"
             style={{
               position: "absolute",
               right: 0,
               top: 20,
-              background: "#FFF",
+              background: isDarkMode ? "#000" : "#FFF",
               border: "0.5px solid #1C274C",
               borderRadius: 8,
               zIndex: 10,
@@ -284,6 +287,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
             {isOwner ? (
               <>
                 <div
+                  className="post-owner-menu-item"
                   style={{
                     padding: "8px 12px",
                     fontSize: 13,
@@ -297,6 +301,7 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
                   Edit
                 </div>
                 <div
+                  className="post-owner-menu-delete"
                   style={{
                     padding: "8px 12px",
                     fontSize: 13,
@@ -356,6 +361,7 @@ export default function PostBody() {
 
   // For responsive layout detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const isDarkMode = document.documentElement.getAttribute("data-theme") === "dark";
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 600);
@@ -620,12 +626,13 @@ export default function PostBody() {
       />
 
       <div
+        className="postview-post-card"
         style={{
           width: "100%",
           maxWidth: 900,
           margin: "20px auto",
-          background: "#fff",
-          border: "0.5px solid #1C274C",
+          background: isDarkMode ? "#1d1d1d" : "#fff",
+          border: isDarkMode ? "1px solid #fff" : "0.5px solid #1C274C",
           borderRadius: 23,
           padding: isMobile ? 15 : 20,
           boxSizing: "border-box",
@@ -1011,11 +1018,13 @@ export default function PostBody() {
             {!isPoll && (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <img
+                  className="postview-action-icon"
                   src={isLiked ? HeartClickedIcon : HeartIcon}
                   onClick={() => handleInteraction("like", setIsLiked, "Liked")}
                   style={{ width: 20, cursor: "pointer" }}
                 />
                 <span
+                  className="postview-action-label"
                   style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}
                 >
                   {post.likesCount || 0}
@@ -1025,8 +1034,9 @@ export default function PostBody() {
 
             {!isPoll && (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <img src={CommentIcon} style={{ width: 20 }} />
+                <img className="postview-action-icon" src={CommentIcon} style={{ width: 20 }} />
                 <span
+                  className="postview-action-label"
                   style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}
                 >
                   {post.commentsCount || 0}
@@ -1036,6 +1046,7 @@ export default function PostBody() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <img
+                className="postview-action-icon"
                 src={ShareIcon}
                 onClick={() => {
                   handleInteraction("share", () => {}, "Shared");
@@ -1043,13 +1054,14 @@ export default function PostBody() {
                 }}
                 style={{ width: 20, cursor: "pointer" }}
               />
-              <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>
+              <span className="postview-action-label" style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>
                 {post.sharesCount || 0}
               </span>
             </div>
 
             {!isPoll && (
               <img
+                className="postview-action-icon"
                 src={ArrowIcon}
                 onClick={() =>
                   navigate("/critique-create", {
@@ -1062,6 +1074,7 @@ export default function PostBody() {
 
             <div style={{ position: "relative" }}>
               <img
+                className="postview-action-icon"
                 src={FlagIcon}
                 onClick={() => setShowFlagPopup(true)}
                 style={{ width: 20, cursor: "pointer" }}
@@ -1069,6 +1082,7 @@ export default function PostBody() {
             </div>
 
             <img
+              className="postview-action-icon"
               src={isSaved ? TagClickedIcon : TagIcon}
               onClick={() => handleInteraction("save", setIsSaved, "Saved")}
               style={{ width: 20, cursor: "pointer" }}
@@ -1176,6 +1190,7 @@ export default function PostBody() {
               )}
               <div style={{ display: "flex", gap: 10 }}>
                 <input
+                  className="postview-comment-input"
                   type="text"
                   placeholder="Write a comment..."
                   value={commentText}
@@ -1242,6 +1257,7 @@ export default function PostBody() {
                 ))
               ) : (
                 <div
+                  className="postview-comments-count"
                   style={{
                     textAlign: "center",
                     color: "#888",

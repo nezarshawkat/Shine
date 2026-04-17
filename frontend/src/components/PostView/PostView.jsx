@@ -1,6 +1,5 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Header from "../Header";
 import PostBody from "./PostBody";
 import LeftSidebar from "../forum/LeftSidebar.jsx";
 import RightSidebar from "../forum/RightSidebar.jsx";
@@ -53,7 +52,6 @@ export default function PostView() {
         }
       `}</style>
 
-      <Header />
       <div className="forum-container">
         {/* LEFT COLUMN */}
         <div className="left-column">

@@ -1153,6 +1153,7 @@ export default function CritiquePost({ postId, initialData }) {
                   />
                   {showMenuPopup && (
                     <div
+                      className="post-owner-menu-popup"
                       style={{
                         position: "absolute",
                         bottom: "100%",
@@ -1171,6 +1172,7 @@ export default function CritiquePost({ postId, initialData }) {
                           setIsEditing(true);
                           setShowMenuPopup(false);
                         }}
+                        className="post-owner-menu-item"
                         style={{
                           padding: "8px",
                           cursor: "pointer",
@@ -1186,6 +1188,7 @@ export default function CritiquePost({ postId, initialData }) {
                           setShowDeleteModal(true);
                           setShowMenuPopup(false);
                         }}
+                        className="post-owner-menu-delete"
                         style={{
                           padding: "8px",
                           cursor: "pointer",

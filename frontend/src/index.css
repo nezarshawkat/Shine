@@ -272,7 +272,7 @@ html[data-theme="dark"] .menu-toggle {
 }
 
 html[data-theme="dark"] .menu-toggle {
-  background: #1d1d1d !important;
+  background: transparent !important;
   border: none !important;
 }
 
@@ -410,6 +410,16 @@ html[data-theme="dark"] .members-popup-card {
   border-color: rgba(255,255,255,0.25) !important;
 }
 
+html[data-theme="dark"] .post-owner-menu-popup {
+  background: #000 !important;
+  border: 1px solid #fff !important;
+}
+
+html[data-theme="dark"] .post-owner-menu-item,
+html[data-theme="dark"] .post-owner-menu-delete {
+  color: #fff !important;
+}
+
 html[data-theme="dark"] .side-menu-item,
 html[data-theme="dark"] .profile-menu-popup div,
 html[data-theme="dark"] .members-popup-header button {
@@ -449,6 +459,30 @@ html[data-theme="dark"] .profile-page .follow-btn {
   background: #000 !important;
   border-color: rgba(255,255,255,0.4) !important;
   color: #fff !important;
+}
+
+html[data-theme="dark"] .profile-page .mobile-search-bar input {
+  border: 1px solid #fff !important;
+}
+
+html[data-theme="dark"] .postview-post-card,
+html[data-theme="dark"] .postview-comment-input,
+html[data-theme="dark"] .postview-comments-count {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+html[data-theme="dark"] .postview-action-label {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .postview-comment-input::placeholder {
+  color: #b8b8b8 !important;
+}
+
+html[data-theme="dark"] .postview-action-icon {
+  filter: brightness(0) invert(1) !important;
 }
 
 html[data-theme="dark"] .full-settings-layer,

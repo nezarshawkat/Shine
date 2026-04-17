@@ -221,13 +221,13 @@ background-color: #ffffff;
 
 .menu-toggle {
   border: none !important;
-  background: #ffffff;
+  background: transparent;
   color: #1C274C;
   font-size: 24px;
   cursor: pointer;
   line-height: 1;
-  padding: 4px 10px;
-  border-radius: 8px;
+  padding: 0;
+  border-radius: 0;
   box-shadow: none;
 }
 

@@ -495,9 +495,9 @@ export default function AnalysisPost({ postId, initialData }) {
                 <div style={{ position: "relative" }}>
                   <img className="post-action-icon" src={MenuIcon} onClick={(e) => { e.stopPropagation(); setShowMenuPopup(!showMenuPopup); }} style={{ width: 20, cursor: "pointer" }} />
                   {showMenuPopup && (
-                    <div style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 0px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
-                      <div onClick={() => { setIsEditing(true); setShowMenuPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#1C274C" }}>Edit</div>
-                      <div onClick={() => { setShowDeleteModal(true); setShowMenuPopup(false); }} style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#FF4C4C" }}>Delete</div>
+                    <div className="post-owner-menu-popup" style={{ position: "absolute", bottom: "100%", right: 0, background: "white", boxShadow: "0 0px 10px rgba(0,0,0,0.1)", borderRadius: 8, padding: 6, width: 120, zIndex: 10 }}>
+                      <div onClick={() => { setIsEditing(true); setShowMenuPopup(false); }} className="post-owner-menu-item" style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#1C274C" }}>Edit</div>
+                      <div onClick={() => { setShowDeleteModal(true); setShowMenuPopup(false); }} className="post-owner-menu-delete" style={{ padding: "8px", cursor: "pointer", fontSize: 13, color: "#FF4C4C" }}>Delete</div>
                     </div>
                   )}
                 </div>
