@@ -14,7 +14,11 @@ const DETECT_ENDPOINTS = [
 function getInitialLanguage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved || FALLBACK_LANGUAGE;
+    if (saved) return saved;
+    const browserLang = (navigator.language || navigator.userLanguage || FALLBACK_LANGUAGE)
+      .toLowerCase()
+      .split("-")[0];
+    return browserLang || FALLBACK_LANGUAGE;
   } catch {
     return FALLBACK_LANGUAGE;
   }
@@ -40,10 +44,153 @@ function setCache(cache) {
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(getInitialLanguage);
 
+  const restoreOriginalDomTexts = () => {
+    document.querySelectorAll("[data-original-text]").forEach((el) => {
+      el.textContent = el.getAttribute("data-original-text") || "";
+      el.removeAttribute("data-original-text");
+    });
+    document.querySelectorAll("[data-original-placeholder]").forEach((el) => {
+      el.setAttribute("placeholder", el.getAttribute("data-original-placeholder") || "");
+      el.removeAttribute("data-original-placeholder");
+    });
+    document.querySelectorAll("[data-original-aria-label]").forEach((el) => {
+      el.setAttribute("aria-label", el.getAttribute("data-original-aria-label") || "");
+      el.removeAttribute("data-original-aria-label");
+    });
+    document.querySelectorAll("[data-original-title]").forEach((el) => {
+      el.setAttribute("title", el.getAttribute("data-original-title") || "");
+      el.removeAttribute("data-original-title");
+    });
+  };
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.setAttribute("lang", language);
     document.documentElement.setAttribute("dir", RTL_LANGS.has(language) ? "rtl" : "ltr");
+  }, [language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let observer;
+    let translatingDom = false;
+
+    const skipSelector = [
+      ".notranslate",
+      ".post-text-pane",
+      ".postbody-container",
+      ".article-detail-content",
+      ".article-post-excerpt",
+      ".community-name",
+      ".member-name",
+      ".member-username",
+      "[data-no-ui-translate='true']",
+    ].join(", ");
+
+    const shouldSkipElement = (element) => {
+      if (!element) return true;
+      if (element.closest(skipSelector)) return true;
+      const tag = element.tagName?.toLowerCase();
+      return tag === "script" || tag === "style" || tag === "code" || tag === "pre";
+    };
+
+    const collectTextNodes = (root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+          const value = (node.nodeValue || "").trim();
+          if (!value) return NodeFilter.FILTER_REJECT;
+          if (value.length < 2) return NodeFilter.FILTER_REJECT;
+          if (/^[\d\s.,:;!?()[\]{}\-_/\\]+$/.test(value)) return NodeFilter.FILTER_REJECT;
+          if (shouldSkipElement(node.parentElement)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      return nodes;
+    };
+
+    const translateAttributes = async (rootEl) => {
+      const elements = rootEl.querySelectorAll("input, textarea, button, a, [title], [aria-label]");
+      for (const el of elements) {
+        if (cancelled || shouldSkipElement(el)) break;
+        const placeholder = el.getAttribute("placeholder");
+        if (placeholder && placeholder.trim()) {
+          if (!el.hasAttribute("data-original-placeholder")) {
+            el.setAttribute("data-original-placeholder", placeholder);
+          }
+          const translatedPlaceholder = await translateText(
+            el.getAttribute("data-original-placeholder"),
+            language
+          );
+          if (!cancelled) el.setAttribute("placeholder", translatedPlaceholder);
+        }
+        const ariaLabel = el.getAttribute("aria-label");
+        if (ariaLabel && ariaLabel.trim()) {
+          if (!el.hasAttribute("data-original-aria-label")) {
+            el.setAttribute("data-original-aria-label", ariaLabel);
+          }
+          const translatedAria = await translateText(
+            el.getAttribute("data-original-aria-label"),
+            language
+          );
+          if (!cancelled) el.setAttribute("aria-label", translatedAria);
+        }
+        const title = el.getAttribute("title");
+        if (title && title.trim()) {
+          if (!el.hasAttribute("data-original-title")) {
+            el.setAttribute("data-original-title", title);
+          }
+          const translatedTitle = await translateText(el.getAttribute("data-original-title"), language);
+          if (!cancelled) el.setAttribute("title", translatedTitle);
+        }
+      }
+    };
+
+    const applyDomTranslation = async (root = document.body) => {
+      if (language === FALLBACK_LANGUAGE) {
+        restoreOriginalDomTexts();
+        return;
+      }
+      if (translatingDom || cancelled) return;
+      translatingDom = true;
+
+      const textNodes = collectTextNodes(root);
+      for (const textNode of textNodes) {
+        if (cancelled) break;
+        const parent = textNode.parentElement;
+        if (!parent) continue;
+
+        const currentText = (textNode.nodeValue || "").trim();
+        if (!currentText) continue;
+        if (!parent.hasAttribute("data-original-text")) {
+          parent.setAttribute("data-original-text", currentText);
+        }
+        const originalText = parent.getAttribute("data-original-text") || currentText;
+        const translated = await translateText(originalText, language);
+        if (!cancelled && translated) {
+          textNode.nodeValue = textNode.nodeValue.replace(currentText, translated);
+        }
+      }
+
+      await translateAttributes(document.body);
+      translatingDom = false;
+    };
+
+    if (language === FALLBACK_LANGUAGE) {
+      restoreOriginalDomTexts();
+    } else {
+      applyDomTranslation();
+      observer = new MutationObserver(() => {
+        if (translatingDom) return;
+        applyDomTranslation();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      cancelled = true;
+      if (observer) observer.disconnect();
+    };
   }, [language]);
 
   const detectLanguage = async (text) => {
