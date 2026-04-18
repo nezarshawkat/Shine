@@ -322,9 +322,22 @@ export default function ProfilePage({
 
   const getFilteredData = (data, searchKey = "content") => {
     if (!searchQuery) return data;
+    const normalizedQuery = searchQuery.toLowerCase();
     return data.filter((item) => {
-      const val = item[searchKey] || item.title || item.name || item.communityName || "";
-      return val.toLowerCase().includes(searchQuery.toLowerCase());
+      const candidates = [
+        item?.[searchKey],
+        item?.text,
+        item?.content,
+        item?.title,
+        item?.name,
+        item?.communityName,
+        item?.post?.text,
+        item?.post?.content,
+        item?.post?.title,
+      ]
+        .filter(Boolean)
+        .map((val) => String(val).toLowerCase());
+      return candidates.some((val) => val.includes(normalizedQuery));
     });
   };
 

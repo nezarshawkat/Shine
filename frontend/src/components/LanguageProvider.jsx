@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 const STORAGE_KEY = "shine-language-preference";
+const TRANSLATION_STORAGE_KEY = "shine-translation-language-preference";
 const FALLBACK_LANGUAGE = "en";
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 
@@ -10,6 +11,25 @@ const DETECT_ENDPOINTS = [
   "https://libretranslate.com/detect",
   "https://translate.argosopentech.com/detect",
 ];
+
+const LANG_CODE_MAP = {
+  zh: "zh-CN",
+  no: "nb",
+  he: "he",
+};
+
+const SOCIAL_SLANG_MAP = {
+  tbh: "to be honest",
+  imo: "in my opinion",
+  imho: "in my humble opinion",
+  idk: "I don't know",
+  ngl: "not gonna lie",
+  brb: "be right back",
+  ttyl: "talk to you later",
+  irl: "in real life",
+  fyi: "for your information",
+  afaik: "as far as I know",
+};
 
 function getInitialLanguage() {
   try {
@@ -22,6 +42,43 @@ function getInitialLanguage() {
   } catch {
     return FALLBACK_LANGUAGE;
   }
+}
+
+function getInitialTranslationLanguage() {
+  try {
+    const saved = localStorage.getItem(TRANSLATION_STORAGE_KEY);
+    if (saved) return saved;
+    return getInitialLanguage();
+  } catch {
+    return getInitialLanguage();
+  }
+}
+
+function normalizeLangCode(lang) {
+  const normalized = String(lang || FALLBACK_LANGUAGE).trim().toLowerCase();
+  return LANG_CODE_MAP[normalized] || normalized;
+}
+
+function protectMentionsHashtags(text) {
+  const tokens = [];
+  let protectedText = String(text || "");
+  protectedText = protectedText.replace(/([@#][\w.]+)/g, (match) => {
+    const token = `__SHINE_TOKEN_${tokens.length}__`;
+    tokens.push(match);
+    return token;
+  });
+  return { protectedText, tokens };
+}
+
+function restoreMentionsHashtags(text, tokens) {
+  return String(text || "").replace(/__SHINE_TOKEN_(\d+)__/g, (match, idx) => tokens[Number(idx)] || match);
+}
+
+function expandSocialSlang(text) {
+  return String(text || "").replace(/\b([a-z]{2,6})\b/gi, (full, word) => {
+    const mapped = SOCIAL_SLANG_MAP[word.toLowerCase()];
+    return mapped || full;
+  });
 }
 
 function getCache() {
@@ -43,6 +100,7 @@ function setCache(cache) {
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(getInitialLanguage);
+  const [translationLanguage, setTranslationLanguage] = useState(getInitialTranslationLanguage);
   const cacheRef = useRef(getCache());
   const pendingRef = useRef(new Map());
   const saveTimerRef = useRef(null);
@@ -80,6 +138,10 @@ export function LanguageProvider({ children }) {
   }, [language]);
 
   useEffect(() => {
+    localStorage.setItem(TRANSLATION_STORAGE_KEY, translationLanguage);
+  }, [translationLanguage]);
+
+  useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
@@ -99,6 +161,8 @@ export function LanguageProvider({ children }) {
       ".community-name",
       ".member-name",
       ".member-username",
+      ".profile-username",
+      ".follow-username",
       "[data-no-ui-translate='true']",
     ].join(", ");
 
@@ -255,7 +319,7 @@ export function LanguageProvider({ children }) {
         });
         if (!res.ok) continue;
         const data = await res.json();
-        const detected = data?.[0]?.language;
+        const detected = normalizeLangCode(data?.[0]?.language);
         if (detected) return detected;
       } catch {
         // try next endpoint
@@ -264,21 +328,25 @@ export function LanguageProvider({ children }) {
     return "unknown";
   };
 
-  const translateText = async (text, targetLanguage = language) => {
+  const translateText = async (text, targetLanguage = translationLanguage) => {
     const payload = String(text || "").trim();
     if (!payload) return payload;
     if (!targetLanguage) return payload;
+    const normalizedTarget = normalizeLangCode(targetLanguage);
 
     const cache = cacheRef.current;
-    const cacheKey = `${targetLanguage}::${payload}`;
+    const cacheKey = `${normalizedTarget}::${payload}`;
     if (cache[cacheKey]) return cache[cacheKey];
     if (pendingRef.current.has(cacheKey)) return pendingRef.current.get(cacheKey);
 
     const pendingPromise = (async () => {
-      const sourceLanguage = await detectLanguage(payload);
-      if (sourceLanguage !== "unknown" && sourceLanguage === targetLanguage) return payload;
+      const sourceLanguage = normalizeLangCode(await detectLanguage(payload));
+      if (sourceLanguage !== "unknown" && sourceLanguage === normalizedTarget) return payload;
 
-      let translated = payload;
+      const { protectedText, tokens } = protectMentionsHashtags(payload);
+      const socialReadyText = expandSocialSlang(protectedText);
+
+      let translated = socialReadyText;
       const libreEndpoints = [
         "https://libretranslate.com/translate",
         "https://translate.argosopentech.com/translate",
@@ -290,9 +358,9 @@ export function LanguageProvider({ children }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              q: payload,
+              q: socialReadyText,
               source: sourceLanguage === "unknown" ? "auto" : sourceLanguage,
-              target: targetLanguage,
+              target: normalizedTarget,
               format: "text",
             }),
           });
@@ -307,18 +375,21 @@ export function LanguageProvider({ children }) {
         }
       }
 
-      if (translated === payload) {
+      if (translated === socialReadyText) {
+        const mmSource = sourceLanguage === "unknown" ? "en" : sourceLanguage;
+        const mmTarget = normalizedTarget === "he" ? "iw" : normalizedTarget;
         const mmRes = await fetch(
-          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(payload)}&langpair=${encodeURIComponent(
-            `${sourceLanguage === "unknown" ? "en" : sourceLanguage}|${targetLanguage}`
+          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(socialReadyText)}&langpair=${encodeURIComponent(
+            `${mmSource}|${mmTarget}`
           )}`
         );
         if (mmRes.ok) {
           const mmData = await mmRes.json();
-          translated = mmData?.responseData?.translatedText || payload;
+          translated = mmData?.responseData?.translatedText || socialReadyText;
         }
       }
 
+      translated = restoreMentionsHashtags(translated, tokens);
       cache[cacheKey] = translated;
       cacheRef.current = cache;
       flushCacheToStorage();
@@ -337,6 +408,8 @@ export function LanguageProvider({ children }) {
     () => ({
       language,
       setLanguage,
+      translationLanguage,
+      setTranslationLanguage,
       isRTL: RTL_LANGS.has(language),
       detectLanguage,
       translateText,

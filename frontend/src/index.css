@@ -514,6 +514,10 @@ html[data-theme="dark"] .profile-page .follow-btn img[src*="User Plus"] {
   filter: brightness(0) invert(1) !important;
 }
 
+html[data-theme="dark"] img[src*="profileDefault"] {
+  filter: brightness(0) invert(1) !important;
+}
+
 html[data-theme="dark"] .profile-page .menu-btn {
   background: #1d1d1d !important;
   border-color: rgba(255,255,255,0.4) !important;

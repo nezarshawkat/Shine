@@ -150,7 +150,7 @@ export default function AnalysisPost({ postId, initialData }) {
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
   const [isSameLanguage, setIsSameLanguage] = useState(false);
-  const { language, translateText, detectLanguage } = useLanguage();
+  const { translationLanguage, translateText, detectLanguage } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [toast, setToast] = useState(null);
@@ -335,13 +335,13 @@ export default function AnalysisPost({ postId, initialData }) {
   useEffect(() => {
     let mounted = true;
     const resolveLanguageMatch = async () => {
-      if (!post?.text || !language) return;
+      if (!post?.text || !translationLanguage) return;
       const source = await detectLanguage(post.text);
-      if (mounted) setIsSameLanguage(source === language);
+      if (mounted) setIsSameLanguage(source === translationLanguage);
     };
     resolveLanguageMatch();
     return () => { mounted = false; };
-  }, [post?.text, language, detectLanguage]);
+  }, [post?.text, translationLanguage, detectLanguage]);
 
   const handleTranslatePost = async (e) => {
     e.stopPropagation();
@@ -354,7 +354,7 @@ export default function AnalysisPost({ postId, initialData }) {
       return;
     }
     setIsTranslating(true);
-    const translated = await translateText(post.text, language);
+    const translated = await translateText(post.text, translationLanguage);
     setTranslatedText(translated);
     setShowTranslated(true);
     setIsTranslating(false);

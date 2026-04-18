@@ -56,7 +56,7 @@ function Toast({ message, type = "success", duration = 2000, onClose }) {
 export default function PollPost({ postId, initialData }) {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { language, translateText, detectLanguage } = useLanguage();
+  const { translationLanguage, translateText, detectLanguage } = useLanguage();
   const postRef = useRef(null);
   const hasRecordedView = useRef(false);
 
@@ -224,13 +224,13 @@ export default function PollPost({ postId, initialData }) {
   useEffect(() => {
     let mounted = true;
     const resolveLanguageMatch = async () => {
-      if (!post?.text || !language) return;
+      if (!post?.text || !translationLanguage) return;
       const source = await detectLanguage(post.text);
-      if (mounted) setIsSameLanguage(source === language);
+      if (mounted) setIsSameLanguage(source === translationLanguage);
     };
     resolveLanguageMatch();
     return () => { mounted = false; };
-  }, [post?.text, language, detectLanguage]);
+  }, [post?.text, translationLanguage, detectLanguage]);
 
   const handleTranslatePost = async (e) => {
     e.stopPropagation();
@@ -243,7 +243,7 @@ export default function PollPost({ postId, initialData }) {
       return;
     }
     setIsTranslating(true);
-    const translated = await translateText(post.text, language);
+    const translated = await translateText(post.text, translationLanguage);
     setTranslatedText(translated);
     setShowTranslated(true);
     setIsTranslating(false);

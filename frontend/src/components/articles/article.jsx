@@ -47,7 +47,7 @@ export default function Article() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
   const [isSameLanguage, setIsSameLanguage] = useState(false);
-  const { language, translateText, detectLanguage } = useLanguage();
+  const { translationLanguage, translateText, detectLanguage } = useLanguage();
   
   const [width, setWidth] = useState(window.innerWidth);
   const isMobile = width < 1024;
@@ -94,13 +94,13 @@ export default function Article() {
   useEffect(() => {
     let mounted = true;
     const resolveLanguageMatch = async () => {
-      if (!article?.content || !language) return;
+      if (!article?.content || !translationLanguage) return;
       const source = await detectLanguage(article.content);
-      if (mounted) setIsSameLanguage(source === language);
+      if (mounted) setIsSameLanguage(source === translationLanguage);
     };
     resolveLanguageMatch();
     return () => { mounted = false; };
-  }, [article?.content, language, detectLanguage]);
+  }, [article?.content, translationLanguage, detectLanguage]);
 
   // Prevent scroll when image is full screen
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function Article() {
       return;
     }
     setIsTranslating(true);
-    const translated = await translateText(article.content, language);
+    const translated = await translateText(article.content, translationLanguage);
     setTranslatedContent(translated);
     setShowTranslated(true);
     setIsTranslating(false);
