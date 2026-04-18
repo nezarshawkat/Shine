@@ -232,11 +232,11 @@ const Post = ({ article: initialArticle, profileUser }) => {
             </div>
           </div>
 
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#1C274C", marginBottom: "12px", lineHeight: 1.2 }}>
+          <h2 className="article-post-title" style={{ fontSize: "1.8rem", fontWeight: 800, color: "#1C274C", marginBottom: "12px", lineHeight: 1.2 }}>
             {article.title}
           </h2>
 
-          <p style={{
+          <p className="article-post-excerpt" style={{
               fontSize: "1.05rem", color: "#555", flex: 1, lineHeight: 1.7,
               display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical",
               overflow: "hidden", margin: 0
@@ -244,7 +244,7 @@ const Post = ({ article: initialArticle, profileUser }) => {
             {article.content}
           </p>
 
-          <div className="interaction-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", paddingTop: "20px", borderTop: "1px solid #f5f5f5" }}>
+          <div className="interaction-bar article-interaction-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", paddingTop: "20px", borderTop: "1px solid #f5f5f5" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <img 

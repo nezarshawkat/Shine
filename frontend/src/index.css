@@ -424,6 +424,11 @@ html[data-theme="dark"] .post-owner-menu-popup {
   border: 1px solid #fff !important;
 }
 
+html[data-theme="dark"] .post-popup-action-btn {
+  background: #000 !important;
+  color: #fff !important;
+}
+
 html[data-theme="dark"] .post-owner-menu-item,
 html[data-theme="dark"] .post-owner-menu-delete {
   color: #fff !important;
@@ -472,6 +477,92 @@ html[data-theme="dark"] .profile-page .follow-btn {
 
 html[data-theme="dark"] .profile-page .mobile-search-bar input {
   border: 1px solid #fff !important;
+}
+
+html[data-theme="dark"] .follow-page,
+html[data-theme="dark"] .followers-page,
+html[data-theme="dark"] .following-page {
+  background: #000 !important;
+}
+
+html[data-theme="dark"] .follow-card,
+html[data-theme="dark"] .back-btn,
+html[data-theme="dark"] .follow-action,
+html[data-theme="dark"] .feed-user-result-card,
+html[data-theme="dark"] .article-post-card,
+html[data-theme="dark"] .article-detail-page,
+html[data-theme="dark"] .article-contributor-card,
+html[data-theme="dark"] .article-detail-sources {
+  background: #1d1d1d !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.3) !important;
+}
+
+html[data-theme="dark"] .follow-card:hover,
+html[data-theme="dark"] .back-btn:hover {
+  background: #252525 !important;
+}
+
+html[data-theme="dark"] .follow-name,
+html[data-theme="dark"] .follow-username,
+html[data-theme="dark"] .feed-user-result-name,
+html[data-theme="dark"] .feed-user-result-username,
+html[data-theme="dark"] .article-post-title,
+html[data-theme="dark"] .article-post-excerpt,
+html[data-theme="dark"] .article-detail-title,
+html[data-theme="dark"] .article-detail-meta,
+html[data-theme="dark"] .article-detail-content,
+html[data-theme="dark"] .article-contributor-name,
+html[data-theme="dark"] .article-contributor-role,
+html[data-theme="dark"] .article-interaction-bar span {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .article-interaction-bar,
+html[data-theme="dark"] .article-detail-sources,
+html[data-theme="dark"] .article-contributor-card {
+  border-color: rgba(255,255,255,0.22) !important;
+}
+
+html[data-theme="dark"] .article-post-card img[src*="Heart"],
+html[data-theme="dark"] .article-post-card img[src*="heart"],
+html[data-theme="dark"] .article-post-card img[src*="Share"],
+html[data-theme="dark"] .article-post-card img[src*="Tag"],
+html[data-theme="dark"] .article-contributor-card img[src*="Heart"],
+html[data-theme="dark"] .article-contributor-card img[src*="heart"],
+html[data-theme="dark"] .article-contributor-card img[src*="Share"],
+html[data-theme="dark"] .article-contributor-card img[src*="Tag"] {
+  filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .article-contributor-card button {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.25) !important;
+}
+
+html[data-theme="dark"] .community-page .critique-post-mobile-keywords span,
+html[data-theme="dark"] .community-page .post-keyword-chip {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .community-members-btn {
+  background: rgba(28, 39, 76, 0.65) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.45) !important;
+  backdrop-filter: blur(6px);
+}
+
+html[data-theme="dark"] .delete-modal-card {
+  background: #000 !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+}
+
+html[data-theme="dark"] .delete-modal-title,
+html[data-theme="dark"] .delete-modal-cancel {
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.5) !important;
 }
 
 html[data-theme="dark"] .postview-post-card,

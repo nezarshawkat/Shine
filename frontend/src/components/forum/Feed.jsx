@@ -252,6 +252,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
 
               return (
                 <div
+                  className="feed-user-result-card"
                   key={foundUser.id}
                   onClick={() => navigate(`/profile/${foundUser.username}`)}
                   style={{
@@ -276,11 +277,12 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
                   />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: "#1C274C" }}>{foundUser.name || foundUser.username}</div>
-                    <div style={{ fontSize: "13px", color: "#6b7280" }}>@{foundUser.username}</div>
+                    <div className="feed-user-result-name" style={{ fontWeight: 600, color: "#1C274C" }}>{foundUser.name || foundUser.username}</div>
+                    <div className="feed-user-result-username" style={{ fontSize: "13px", color: "#6b7280" }}>@{foundUser.username}</div>
                   </div>
 
                   <button
+                    className="feed-user-result-action"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!isSelf) handleFollowToggle(foundUser.id, isFollowing);

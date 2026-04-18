@@ -24,11 +24,11 @@ const renderTextWithHashtags = (text) => {
 // --- Sub-Components ---
 function DeleteModal({ onConfirm, onCancel }) {
   return (
-    <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(28, 39, 76, 0.2)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
-      <div style={{ background: "white", padding: 30, borderRadius: 20, width: 350, textAlign: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
-        <h3 style={{ color: "#1C274C", marginBottom: 20 }}>Do you want to delete this post?</h3>
+    <div className="delete-modal-overlay" onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(28, 39, 76, 0.2)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
+      <div className="delete-modal-card" style={{ background: "white", padding: 30, borderRadius: 20, width: 350, textAlign: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
+        <h3 className="delete-modal-title" style={{ color: "#1C274C", marginBottom: 20 }}>Do you want to delete this post?</h3>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button onClick={onCancel} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #1C274C", background: "none", color: "#1C274C", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+          <button className="delete-modal-cancel" onClick={onCancel} style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #1C274C", background: "none", color: "#1C274C", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
           <button onClick={onConfirm} style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#FF4C4C", color: "white", cursor: "pointer", fontWeight: 600 }}>Delete</button>
         </div>
       </div>

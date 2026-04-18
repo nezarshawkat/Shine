@@ -288,20 +288,22 @@ const RightSidebar = ({ showOnly = null }) => {
               ].map((item, i) => (
                 <React.Fragment key={i}>
                   <button
+                    className="post-popup-action-btn"
                     onClick={() => handleCreateClick(item.route)}
                     style={{
-                      background: "none",
-                      border: "none",
+                      background: "#000000",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      borderRadius: "10px",
                       fontSize: "19px",
                       fontWeight: 500,
                       color: "#FFFFFF",
                       padding: "12px 0",
                       cursor: "pointer",
-                      width: "100%",
+                      width: "85%",
                       transition: "background 0.2s"
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = "#2a2a2a"}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#111111"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "#000000"}
                   >
                     {item.label}
                   </button>
@@ -310,12 +312,16 @@ const RightSidebar = ({ showOnly = null }) => {
               ))}
               
               <button 
+                className="post-popup-action-btn post-popup-cancel-btn"
                 onClick={() => setShowPopup(false)}
                 style={{ 
                   marginTop: '15px', 
-                  color: '#FF4D4D', 
-                  border: 'none', 
-                  background: 'none', 
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: '#000000',
+                  borderRadius: '10px',
+                  width: "85%",
+                  padding: "10px 0",
                   cursor: 'pointer',
                   fontSize: '16px' 
                 }}

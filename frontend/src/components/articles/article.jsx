@@ -137,7 +137,7 @@ export default function Article() {
   const mainImage = article.media?.length > 0 ? getFullUrl(article.media[0].url) : getFullUrl(article.image);
 
   const SidebarContent = () => (
-    <div style={{ 
+    <div className="article-contributor-card" style={{ 
       padding: isMobile ? "24px" : "32px", 
       borderRadius: "28px", 
       border: "1px solid #F0F0F0", 
@@ -148,8 +148,8 @@ export default function Article() {
       <Link to={`/profile/${author.id}`} style={{ display: "flex", alignItems: "center", textDecoration: "none", marginBottom: "30px" }}>
         <img src={getFullUrl(author.image) || profileDefault} style={{ width: "60px", height: "60px", borderRadius: "50%", objectFit: "cover", marginRight: "16px", border: "1px solid #F0F0F0" }} alt="" />
         <div>
-          <h4 style={{ margin: 0, fontSize: "1.1rem", color: "#1C274C" }}>{author.name}</h4>
-          <p style={{ margin: 0, color: "#888", fontSize: "0.85rem" }}>Contributor</p>
+          <h4 className="article-contributor-name" style={{ margin: 0, fontSize: "1.1rem", color: "#1C274C" }}>{author.name}</h4>
+          <p className="article-contributor-role" style={{ margin: 0, color: "#888", fontSize: "0.85rem" }}>Contributor</p>
         </div>
       </Link>
 
@@ -176,7 +176,7 @@ export default function Article() {
   );
 
   return (
-    <div style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
+    <div className="article-detail-page" style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
       <Header />
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
@@ -215,8 +215,8 @@ export default function Article() {
       {/* Removed Blue Spacing: Margin top strictly follows header height */}
       <main style={{ maxWidth: "1300px", margin: "0 auto", padding: isMobile ? "20px" : "40px 24px" }}>
         
-        <header style={{ maxWidth: "850px", marginBottom: "40px" }}>
-          <h1 style={{ 
+        <header className="article-detail-header" style={{ maxWidth: "850px", marginBottom: "40px" }}>
+          <h1 className="article-detail-title" style={{ 
             fontSize: isMobile ? "2.2rem" : "3.5rem", 
             fontWeight: "850", 
             letterSpacing: "-0.04em", 
@@ -227,7 +227,7 @@ export default function Article() {
           }}>
             {article.title}
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: "15px", color: "#666", fontSize: "1rem" }}>
+          <div className="article-detail-meta" style={{ display: "flex", alignItems: "center", gap: "15px", color: "#666", fontSize: "1rem" }}>
             <span>{new Date(article.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             <span>•</span>
             <span>{article._count?.views || 0} views</span>
@@ -259,13 +259,13 @@ export default function Article() {
           alignItems: "flex-start" 
         }}>
           
-          <article style={{ flex: 1, maxWidth: isMobile ? "100%" : "800px", width: "100%" }}>
-            <div style={{ fontSize: isMobile ? "1.1rem" : "1.25rem", lineHeight: "1.8", color: "#222", whiteSpace: "pre-wrap" }}>
+          <article className="article-detail-content-wrap" style={{ flex: 1, maxWidth: isMobile ? "100%" : "800px", width: "100%" }}>
+            <div className="article-detail-content" style={{ fontSize: isMobile ? "1.1rem" : "1.25rem", lineHeight: "1.8", color: "#222", whiteSpace: "pre-wrap" }}>
               {article.content}
             </div>
 
             {article.sources?.length > 0 && (
-              <div style={{ 
+              <div className="article-detail-sources" style={{ 
                 marginTop: isMobile ? "40px" : "80px", 
                 padding: isMobile ? "24px" : "40px", 
                 backgroundColor: "#F8F9FB", 

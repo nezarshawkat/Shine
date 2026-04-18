@@ -84,18 +84,18 @@ const arrowStyle = (pos) => ({
 
 function DeleteModal({ onConfirm, onCancel }) {
   return (
-    <div style={{
+    <div className="delete-modal-overlay" style={{
       position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
       background: "rgba(28, 39, 76, 0.2)", backdropFilter: "blur(4px)",
       display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000
     }}>
-      <div style={{
+      <div className="delete-modal-card" style={{
         background: "white", padding: 30, borderRadius: 20, width: 350,
         textAlign: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
       }}>
-        <h3 style={{ color: "#1C274C", marginBottom: 20 }}>Delete this analysis?</h3>
+        <h3 className="delete-modal-title" style={{ color: "#1C274C", marginBottom: 20 }}>Delete this analysis?</h3>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button onClick={onCancel} style={{
+          <button className="delete-modal-cancel" onClick={onCancel} style={{
             padding: "10px 20px", borderRadius: 8, border: "1px solid #1C274C",
             background: "none", color: "#1C274C", cursor: "pointer", fontWeight: 600
           }}>Cancel</button>

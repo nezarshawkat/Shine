@@ -152,6 +152,7 @@ const arrowStyle = (pos) => ({
 function DeleteModal({ onConfirm, onCancel }) {
   return (
     <div
+      className="delete-modal-overlay"
       style={{
         position: "fixed",
         top: 0,
@@ -167,6 +168,7 @@ function DeleteModal({ onConfirm, onCancel }) {
       }}
     >
       <div
+        className="delete-modal-card"
         style={{
           background: "white",
           padding: 30,
@@ -176,11 +178,12 @@ function DeleteModal({ onConfirm, onCancel }) {
           boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
         }}
       >
-        <h3 style={{ color: "#1C274C", marginBottom: 20 }}>
+        <h3 className="delete-modal-title" style={{ color: "#1C274C", marginBottom: 20 }}>
           Do you want to delete this critique?
         </h3>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <button
+            className="delete-modal-cancel"
             onClick={onCancel}
             style={{
               padding: "10px 20px",
