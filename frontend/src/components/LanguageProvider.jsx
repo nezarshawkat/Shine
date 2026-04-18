@@ -1,4 +1,8 @@
+<<<<<<< ours
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+=======
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+>>>>>>> theirs
 
 const STORAGE_KEY = "shine-language-preference";
 const FALLBACK_LANGUAGE = "en";
@@ -43,6 +47,19 @@ function setCache(cache) {
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(getInitialLanguage);
+<<<<<<< ours
+=======
+  const cacheRef = useRef(getCache());
+  const pendingRef = useRef(new Map());
+  const saveTimerRef = useRef(null);
+
+  const flushCacheToStorage = () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      setCache(cacheRef.current);
+    }, 250);
+  };
+>>>>>>> theirs
 
   const restoreOriginalDomTexts = () => {
     document.querySelectorAll("[data-original-text]").forEach((el) => {
@@ -70,6 +87,15 @@ export function LanguageProvider({ children }) {
   }, [language]);
 
   useEffect(() => {
+<<<<<<< ours
+=======
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+>>>>>>> theirs
     let cancelled = false;
     let observer;
     let translatingDom = false;
@@ -111,6 +137,10 @@ export function LanguageProvider({ children }) {
 
     const translateAttributes = async (rootEl) => {
       const elements = rootEl.querySelectorAll("input, textarea, button, a, [title], [aria-label]");
+<<<<<<< ours
+=======
+      const attributeTargets = [];
+>>>>>>> theirs
       for (const el of elements) {
         if (cancelled || shouldSkipElement(el)) break;
         const placeholder = el.getAttribute("placeholder");
@@ -118,32 +148,59 @@ export function LanguageProvider({ children }) {
           if (!el.hasAttribute("data-original-placeholder")) {
             el.setAttribute("data-original-placeholder", placeholder);
           }
+<<<<<<< ours
           const translatedPlaceholder = await translateText(
             el.getAttribute("data-original-placeholder"),
             language
           );
           if (!cancelled) el.setAttribute("placeholder", translatedPlaceholder);
+=======
+          attributeTargets.push({
+            el,
+            attr: "placeholder",
+            original: el.getAttribute("data-original-placeholder"),
+          });
+>>>>>>> theirs
         }
         const ariaLabel = el.getAttribute("aria-label");
         if (ariaLabel && ariaLabel.trim()) {
           if (!el.hasAttribute("data-original-aria-label")) {
             el.setAttribute("data-original-aria-label", ariaLabel);
           }
+<<<<<<< ours
           const translatedAria = await translateText(
             el.getAttribute("data-original-aria-label"),
             language
           );
           if (!cancelled) el.setAttribute("aria-label", translatedAria);
+=======
+          attributeTargets.push({
+            el,
+            attr: "aria-label",
+            original: el.getAttribute("data-original-aria-label"),
+          });
+>>>>>>> theirs
         }
         const title = el.getAttribute("title");
         if (title && title.trim()) {
           if (!el.hasAttribute("data-original-title")) {
             el.setAttribute("data-original-title", title);
           }
+<<<<<<< ours
           const translatedTitle = await translateText(el.getAttribute("data-original-title"), language);
           if (!cancelled) el.setAttribute("title", translatedTitle);
         }
       }
+=======
+          attributeTargets.push({
+            el,
+            attr: "title",
+            original: el.getAttribute("data-original-title"),
+          });
+        }
+      }
+      return attributeTargets;
+>>>>>>> theirs
     };
 
     const applyDomTranslation = async (root = document.body) => {
@@ -155,6 +212,12 @@ export function LanguageProvider({ children }) {
       translatingDom = true;
 
       const textNodes = collectTextNodes(root);
+<<<<<<< ours
+=======
+      const attributeTargets = await translateAttributes(document.body);
+      const originals = new Set();
+
+>>>>>>> theirs
       for (const textNode of textNodes) {
         if (cancelled) break;
         const parent = textNode.parentElement;
@@ -166,13 +229,47 @@ export function LanguageProvider({ children }) {
           parent.setAttribute("data-original-text", currentText);
         }
         const originalText = parent.getAttribute("data-original-text") || currentText;
+<<<<<<< ours
         const translated = await translateText(originalText, language);
         if (!cancelled && translated) {
+=======
+        originals.add(originalText);
+      }
+
+      for (const target of attributeTargets) {
+        if (target?.original) originals.add(target.original);
+      }
+
+      const translateQueue = Array.from(originals);
+      await Promise.all(translateQueue.map((text) => translateText(text, language)));
+
+      for (const textNode of textNodes) {
+        if (cancelled) break;
+        const parent = textNode.parentElement;
+        if (!parent) continue;
+        const currentText = (textNode.nodeValue || "").trim();
+        const originalText = parent.getAttribute("data-original-text") || currentText;
+        const cacheKey = `${language}::${originalText}`;
+        const translated = cacheRef.current[cacheKey];
+        if (translated && currentText) {
+>>>>>>> theirs
           textNode.nodeValue = textNode.nodeValue.replace(currentText, translated);
         }
       }
 
+<<<<<<< ours
       await translateAttributes(document.body);
+=======
+      for (const target of attributeTargets) {
+        if (cancelled) break;
+        const cacheKey = `${language}::${target.original}`;
+        const translated = cacheRef.current[cacheKey];
+        if (translated) {
+          target.el.setAttribute(target.attr, translated);
+        }
+      }
+
+>>>>>>> theirs
       translatingDom = false;
     };
 
@@ -220,11 +317,20 @@ export function LanguageProvider({ children }) {
     if (!payload) return payload;
     if (!targetLanguage) return payload;
 
+<<<<<<< ours
     const cache = getCache();
     const cacheKey = `${targetLanguage}::${payload}`;
     if (cache[cacheKey]) return cache[cacheKey];
 
     try {
+=======
+    const cache = cacheRef.current;
+    const cacheKey = `${targetLanguage}::${payload}`;
+    if (cache[cacheKey]) return cache[cacheKey];
+    if (pendingRef.current.has(cacheKey)) return pendingRef.current.get(cacheKey);
+
+    const pendingPromise = (async () => {
+>>>>>>> theirs
       const sourceLanguage = await detectLanguage(payload);
       if (sourceLanguage !== "unknown" && sourceLanguage === targetLanguage) return payload;
 
@@ -270,11 +376,25 @@ export function LanguageProvider({ children }) {
       }
 
       cache[cacheKey] = translated;
+<<<<<<< ours
       setCache(cache);
       return translated;
     } catch {
       return payload;
     }
+=======
+      cacheRef.current = cache;
+      flushCacheToStorage();
+      return translated;
+    })().catch(() => {
+      return payload;
+    }).finally(() => {
+      pendingRef.current.delete(cacheKey);
+    });
+
+    pendingRef.current.set(cacheKey, pendingPromise);
+    return pendingPromise;
+>>>>>>> theirs
   };
 
   const value = useMemo(
