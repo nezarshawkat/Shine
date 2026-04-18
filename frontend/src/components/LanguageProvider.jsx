@@ -6,8 +6,10 @@ const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 
 const LanguageContext = createContext(null);
 
-const TRANSLATE_ENDPOINT = "https://libretranslate.com/translate";
-const DETECT_ENDPOINT = "https://libretranslate.com/detect";
+const DETECT_ENDPOINTS = [
+  "https://libretranslate.com/detect",
+  "https://translate.argosopentech.com/detect",
+];
 
 function getInitialLanguage() {
   try {
@@ -46,25 +48,30 @@ export function LanguageProvider({ children }) {
 
   const detectLanguage = async (text) => {
     const payload = String(text || "").trim();
-    if (!payload) return FALLBACK_LANGUAGE;
-    try {
-      const res = await fetch(DETECT_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: payload }),
-      });
-      if (!res.ok) return FALLBACK_LANGUAGE;
-      const data = await res.json();
-      return data?.[0]?.language || FALLBACK_LANGUAGE;
-    } catch {
-      return FALLBACK_LANGUAGE;
+    if (!payload) return "unknown";
+
+    for (const endpoint of DETECT_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ q: payload }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const detected = data?.[0]?.language;
+        if (detected) return detected;
+      } catch {
+        // try next endpoint
+      }
     }
+    return "unknown";
   };
 
   const translateText = async (text, targetLanguage = language) => {
     const payload = String(text || "").trim();
     if (!payload) return payload;
-    if (!targetLanguage || targetLanguage === FALLBACK_LANGUAGE) return payload;
+    if (!targetLanguage) return payload;
 
     const cache = getCache();
     const cacheKey = `${targetLanguage}::${payload}`;
@@ -72,22 +79,49 @@ export function LanguageProvider({ children }) {
 
     try {
       const sourceLanguage = await detectLanguage(payload);
-      if (sourceLanguage === targetLanguage) return payload;
+      if (sourceLanguage !== "unknown" && sourceLanguage === targetLanguage) return payload;
 
-      const res = await fetch(TRANSLATE_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          q: payload,
-          source: sourceLanguage || "auto",
-          target: targetLanguage,
-          format: "text",
-        }),
-      });
+      let translated = payload;
+      const libreEndpoints = [
+        "https://libretranslate.com/translate",
+        "https://translate.argosopentech.com/translate",
+      ];
 
-      if (!res.ok) return payload;
-      const data = await res.json();
-      const translated = data?.translatedText || payload;
+      for (const endpoint of libreEndpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              q: payload,
+              source: sourceLanguage === "unknown" ? "auto" : sourceLanguage,
+              target: targetLanguage,
+              format: "text",
+            }),
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data?.translatedText) {
+            translated = data.translatedText;
+            break;
+          }
+        } catch {
+          // try next endpoint
+        }
+      }
+
+      if (translated === payload) {
+        const mmRes = await fetch(
+          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(payload)}&langpair=${encodeURIComponent(
+            `${sourceLanguage === "unknown" ? "en" : sourceLanguage}|${targetLanguage}`
+          )}`
+        );
+        if (mmRes.ok) {
+          const mmData = await mmRes.json();
+          translated = mmData?.responseData?.translatedText || payload;
+        }
+      }
+
       cache[cacheKey] = translated;
       setCache(cache);
       return translated;
@@ -115,4 +149,3 @@ export function useLanguage() {
   if (!ctx) throw new Error("useLanguage must be used within LanguageProvider");
   return ctx;
 }
-

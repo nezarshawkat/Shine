@@ -450,7 +450,7 @@ const MessengerPage = ({ currentUser }) => {
 
   return (
     <>
-      <div className={`messenger-fixed-layout ${view === 'chat' ? 'mobile-chat-active' : 'mobile-list-active'}`}>
+      <div className={`messenger-fixed-layout force-light-page ${view === 'chat' ? 'mobile-chat-active' : 'mobile-list-active'}`}>
         <div className="shine-messenger">
         <div className={`ms-sidebar ${view === 'chat' ? 'mobile-hide' : ''}`}>
           <div className="ms-sidebar-header">

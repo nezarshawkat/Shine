@@ -32,7 +32,7 @@ const LogIn = () => {
   };
 
   return (
-    <div className="login-page-container">
+    <div className="login-page-container force-light-page">
       {/* LEFT SIDE */}
       <div className="login-left-side">
         <img src={logo} alt="SHINE Logo" className="logo" />

@@ -8,6 +8,7 @@ const RightSidebar = ({ showOnly = null }) => {
   const [eventsData, setEventsData] = useState([]);
   const [friends, setFriends] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDarkImage, setIsDarkImage] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const popupRef = useRef(null);
 
@@ -60,6 +61,33 @@ const RightSidebar = ({ showOnly = null }) => {
     }, 3000);
     return () => clearInterval(interval);
   }, [eventsData]);
+
+  useEffect(() => {
+    if (!activeEvent?.image) {
+      setIsDarkImage(false);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = activeEvent.image;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const w = 100;
+      const h = Math.max(80, Math.round((img.height / img.width) * w));
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      let colorSum = 0;
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        colorSum += (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+      }
+      const brightness = colorSum / (imageData.data.length / 4);
+      setIsDarkImage(brightness < 155);
+    };
+    img.onerror = () => setIsDarkImage(false);
+  }, [activeEvent]);
 
   /* ==============================
       CLICK OUTSIDE
@@ -161,10 +189,10 @@ const RightSidebar = ({ showOnly = null }) => {
                 ))}
               </div>
               <div style={{ position: "absolute", bottom: "14px", left: "14px", right: "14px", zIndex: 3 }}>
-                <div style={{ fontSize: "19px", fontWeight: 700, color: "#1C274C" }}>
+                <div style={{ fontSize: "19px", fontWeight: 700, color: isDarkImage ? "#fff" : "#1C274C" }}>
                   {truncateWords(activeEvent.title, 9)}
                 </div>
-                <div style={{ fontSize: "17px", color: "#1C274C" }}>
+                <div style={{ fontSize: "17px", color: isDarkImage ? "#fff" : "#1C274C" }}>
                   {truncateWords(activeEvent.description, 9)}
                 </div>
               </div>
@@ -302,7 +330,7 @@ const RightSidebar = ({ showOnly = null }) => {
                       width: "85%",
                       transition: "background 0.2s"
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(28,39,76,0.06)"}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(0,0,0,0.08)"}
                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                   >
                     {item.label}

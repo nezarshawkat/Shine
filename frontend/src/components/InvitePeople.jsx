@@ -105,7 +105,7 @@ export default function InvitePeople() {
   if (!communityName) return null;
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="force-light-page" style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {toast && <Toast message={toast} type={toast.includes("success") ? "success" : "error"} onClose={() => setToast(null)} />}
 
       <div style={{ display: "flex", alignItems: "center", padding: "24px 40px", gap: 20 }}>

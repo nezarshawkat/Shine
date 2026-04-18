@@ -764,3 +764,13 @@ html[data-theme="dark"] .force-light-page {
   background: #f7f9fc !important;
   color: #1c274c !important;
 }
+
+/* Explicit light-theme forum surface reset */
+html[data-theme="light"] .forum-page,
+html[data-theme="light"] .forum-container,
+html[data-theme="light"] .forum-page .left-column,
+html[data-theme="light"] .forum-page .center-column,
+html[data-theme="light"] .forum-page .right-column {
+  background-color: #f7f9fc !important;
+  color: #1c274c !important;
+}

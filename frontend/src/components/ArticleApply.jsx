@@ -89,7 +89,7 @@ export default function ArticleApply() {
   };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", paddingBottom: 120 }}>
+    <div className="force-light-page" style={{ background: BG, minHeight: "100vh", paddingBottom: 120 }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* HEADER */}

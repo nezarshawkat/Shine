@@ -48,7 +48,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="signup-page-container">
+    <div className="signup-page-container force-light-page">
       {/* LEFT SIDE */}
       <div className="signup-left-side">
         <img src={logo} alt="SHINE Logo" className="logo" />
