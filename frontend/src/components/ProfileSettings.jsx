@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import API from "../api.js";
 import { useTheme } from "./ThemeProvider.jsx";
+import { useLanguage } from "./LanguageProvider.jsx";
 
 export default function ProfileSettings({ onClose, user, logout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState("Account");
@@ -13,6 +14,7 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
   const [toast, setToast] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState(user?.blockedUsers || []);
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const showToast = (message, type = "success") => setToast({ message, type });
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
@@ -257,6 +259,51 @@ export default function ProfileSettings({ onClose, user, logout, onUserUpdate })
                       <p style={{ marginTop: "4px", color: "#666", fontWeight: 400 }}>{option.description}</p>
                     </button>
                   ))}
+                </div>
+
+                <div className="setting-row" style={{ alignItems: "stretch", flexDirection: "column", gap: "12px" }}>
+                  <div className="info">
+                    <label>Language</label>
+                    <p>Choose the interface language. Post/community content stays original unless translated manually.</p>
+                  </div>
+                  <select
+                    className="shine-input"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    style={{ maxWidth: "100%" }}
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="de">German</option>
+                    <option value="fr">French</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="nl">Dutch</option>
+                    <option value="pl">Polish</option>
+                    <option value="tr">Turkish</option>
+                    <option value="ru">Russian</option>
+                    <option value="uk">Ukrainian</option>
+                    <option value="ar">Arabic (RTL)</option>
+                    <option value="he">Hebrew (RTL)</option>
+                    <option value="fa">Persian (RTL)</option>
+                    <option value="ur">Urdu (RTL)</option>
+                    <option value="hi">Hindi</option>
+                    <option value="bn">Bengali</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="zh">Chinese (Simplified)</option>
+                    <option value="id">Indonesian</option>
+                    <option value="vi">Vietnamese</option>
+                    <option value="th">Thai</option>
+                    <option value="sv">Swedish</option>
+                    <option value="no">Norwegian</option>
+                    <option value="da">Danish</option>
+                    <option value="fi">Finnish</option>
+                    <option value="el">Greek</option>
+                    <option value="cs">Czech</option>
+                    <option value="ro">Romanian</option>
+                    <option value="hu">Hungarian</option>
+                  </select>
                 </div>
               </div>
             )}

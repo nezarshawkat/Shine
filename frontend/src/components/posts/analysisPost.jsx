@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { getCommunityById } from "../../utlis/getCommunity.js";
 import SharePopup from "./SharePopup"; 
 import { AuthContext } from "../AuthProvider.jsx";
+import { useLanguage } from "../LanguageProvider.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { submitReport } from "../reporting/reportUtils";
 
@@ -145,6 +146,11 @@ export default function AnalysisPost({ postId, initialData }) {
   const [showFlagPopup, setShowFlagPopup] = useState(false); 
   const [showMenuPopup, setShowMenuPopup] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [translatedText, setTranslatedText] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [isSameLanguage, setIsSameLanguage] = useState(false);
+  const { language, translateText, detectLanguage } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [toast, setToast] = useState(null);
@@ -319,11 +325,40 @@ export default function AnalysisPost({ postId, initialData }) {
   const community = post.community || getCommunityById(post.communityId);
   const MAX_CHARS = 900;
   const displayText = !expanded && post.text?.length > MAX_CHARS ? post.text.slice(0, MAX_CHARS) + "..." : post.text;
+  const activeText = showTranslated && translatedText ? translatedText : displayText;
   const sources = post.sources || (post.sourceLink ? [{ name: post.sourceName || "Source", link: post.sourceLink }] : []);
 
   const postDate = new Date(post.createdAt);
   const formattedDate = postDate.toLocaleDateString();
   const formattedTime = postDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  useEffect(() => {
+    let mounted = true;
+    const resolveLanguageMatch = async () => {
+      if (!post?.text || !language) return;
+      const source = await detectLanguage(post.text);
+      if (mounted) setIsSameLanguage(source === language);
+    };
+    resolveLanguageMatch();
+    return () => { mounted = false; };
+  }, [post?.text, language, detectLanguage]);
+
+  const handleTranslatePost = async (e) => {
+    e.stopPropagation();
+    if (showTranslated) {
+      setShowTranslated(false);
+      return;
+    }
+    if (translatedText) {
+      setShowTranslated(true);
+      return;
+    }
+    setIsTranslating(true);
+    const translated = await translateText(post.text, language);
+    setTranslatedText(translated);
+    setShowTranslated(true);
+    setIsTranslating(false);
+  };
 
   return (
     <>
@@ -421,7 +456,15 @@ export default function AnalysisPost({ postId, initialData }) {
                </div>
              ) : (
                <div onClick={() => navigate(`/post/${post.id || post._id}`)} style={{ cursor: "pointer" }}>
-                 <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{renderTextWithHashtags(displayText)}</div>
+                 <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{renderTextWithHashtags(activeText)}</div>
+                 {!isSameLanguage && (
+                   <button
+                     onClick={handleTranslatePost}
+                     style={{ background: "none", border: "none", padding: 0, marginTop: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C274C" }}
+                   >
+                     {isTranslating ? "Translating..." : showTranslated ? "Original" : "Translate"}
+                   </button>
+                 )}
                  {post.text?.length > MAX_CHARS && (
                    <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "none", border: "none", color: "#FFC847", cursor: "pointer", fontWeight: 600 }}>
                      {expanded ? "Show less" : "... Read more"}

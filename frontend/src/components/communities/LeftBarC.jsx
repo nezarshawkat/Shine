@@ -23,9 +23,13 @@ const LeftBarC = ({
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/analytics/trending-searches`);
+        const response = await fetch(`${API_BASE_URL}/posts/trends`);
         const data = await response.json();
-        if (data.topSearches) setTrendingTopics(data.topSearches.slice(0, 10));
+        if (Array.isArray(data?.viralKeywords)) {
+          setTrendingTopics(data.viralKeywords.slice(0, 10));
+        } else if (Array.isArray(data?.topSearches)) {
+          setTrendingTopics(data.topSearches.slice(0, 10));
+        }
       } catch (err) {
         console.error("Failed to fetch trending topics:", err);
         setTrendingTopics(["Reform", "Education", "Elections", "Tech"]);
@@ -80,6 +84,7 @@ const LeftBarC = ({
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         {trendingTopics.map((topic, index) => (
           <button
+            className={`search-keyword-chip ${searchText === topic ? "active" : ""}`}
             key={index}
             onClick={() => handleTopicClick(topic)}
             style={{

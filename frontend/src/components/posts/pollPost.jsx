@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCommunityById } from "../../utlis/getCommunity.js";
 import { AuthContext } from "../AuthProvider.jsx";
+import { useLanguage } from "../LanguageProvider.jsx";
 import FlagIcon from "../../assets/Flag.svg";
 import ShareIcon from "../../assets/Share.svg";
 import TagIcon from "../../assets/Tag.svg";
@@ -55,6 +56,7 @@ function Toast({ message, type = "success", duration = 2000, onClose }) {
 export default function PollPost({ postId, initialData }) {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { language, translateText, detectLanguage } = useLanguage();
   const postRef = useRef(null);
   const hasRecordedView = useRef(false);
 
@@ -66,6 +68,10 @@ export default function PollPost({ postId, initialData }) {
   const [showMenuPopup, setShowMenuPopup] = useState(false);
   const [showFlagPopup, setShowFlagPopup] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [translatedText, setTranslatedText] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [isSameLanguage, setIsSameLanguage] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showSources, setShowSources] = useState(false);
   const [toast, setToast] = useState(null);
@@ -214,6 +220,34 @@ export default function PollPost({ postId, initialData }) {
   if (!post) return null;
 
   const totalVotes = pollData.reduce((sum, o) => sum + (o._count?.votedUsers || 0), 0);
+
+  useEffect(() => {
+    let mounted = true;
+    const resolveLanguageMatch = async () => {
+      if (!post?.text || !language) return;
+      const source = await detectLanguage(post.text);
+      if (mounted) setIsSameLanguage(source === language);
+    };
+    resolveLanguageMatch();
+    return () => { mounted = false; };
+  }, [post?.text, language, detectLanguage]);
+
+  const handleTranslatePost = async (e) => {
+    e.stopPropagation();
+    if (showTranslated) {
+      setShowTranslated(false);
+      return;
+    }
+    if (translatedText) {
+      setShowTranslated(true);
+      return;
+    }
+    setIsTranslating(true);
+    const translated = await translateText(post.text, language);
+    setTranslatedText(translated);
+    setShowTranslated(true);
+    setIsTranslating(false);
+  };
   const community = post.community || getCommunityById(post.communityId);
   const sources =
     Array.isArray(post.sources) && post.sources.length > 0
@@ -261,7 +295,15 @@ export default function PollPost({ postId, initialData }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{renderTextWithHashtags(post.text)}</div>
+        <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{renderTextWithHashtags(showTranslated && translatedText ? translatedText : post.text)}</div>
+        {!isSameLanguage && (
+          <button
+            onClick={handleTranslatePost}
+            style={{ background: "none", border: "none", padding: 0, marginTop: 2, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C274C", alignSelf: "flex-start" }}
+          >
+            {isTranslating ? "Translating..." : showTranslated ? "Original" : "Translate"}
+          </button>
+        )}
         {!!post.keywords?.length && (
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             {post.keywords.map((k, i) => (

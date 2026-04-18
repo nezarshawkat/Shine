@@ -4,6 +4,7 @@ import { AuthContext } from "../AuthProvider.jsx";
 import SharePopup from "../posts/SharePopup.jsx";
 import Header from "../Header.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
+import { useLanguage } from "../LanguageProvider.jsx";
 
 // Icons
 import heartIcon from "../../assets/Heart.svg";
@@ -42,6 +43,11 @@ export default function Article() {
   const [showShare, setShowShare] = useState(false);
   const [toast, setToast] = useState(null);
   const [isImageFull, setIsImageFull] = useState(false); 
+  const [translatedContent, setTranslatedContent] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [isSameLanguage, setIsSameLanguage] = useState(false);
+  const { language, translateText, detectLanguage } = useLanguage();
   
   const [width, setWidth] = useState(window.innerWidth);
   const isMobile = width < 1024;
@@ -84,6 +90,17 @@ export default function Article() {
     window.scrollTo(0, 0);
     return () => window.removeEventListener("resize", handleResize);
   }, [id, currentUserId]);
+
+  useEffect(() => {
+    let mounted = true;
+    const resolveLanguageMatch = async () => {
+      if (!article?.content || !language) return;
+      const source = await detectLanguage(article.content);
+      if (mounted) setIsSameLanguage(source === language);
+    };
+    resolveLanguageMatch();
+    return () => { mounted = false; };
+  }, [article?.content, language, detectLanguage]);
 
   // Prevent scroll when image is full screen
   useEffect(() => {
@@ -129,6 +146,23 @@ export default function Article() {
     } catch (err) { showToast("Server error during deletion", "error"); }
   };
 
+  const handleTranslateArticle = async () => {
+    if (!article?.content) return;
+    if (showTranslated) {
+      setShowTranslated(false);
+      return;
+    }
+    if (translatedContent) {
+      setShowTranslated(true);
+      return;
+    }
+    setIsTranslating(true);
+    const translated = await translateText(article.content, language);
+    setTranslatedContent(translated);
+    setShowTranslated(true);
+    setIsTranslating(false);
+  };
+
   if (loading) return <div style={fullPageCenter}>Loading Article...</div>;
   if (!article) return <div style={fullPageCenter}>Article not found.</div>;
 
@@ -161,9 +195,12 @@ export default function Article() {
         <button onClick={() => setShowShare(true)} style={sidebarBtn("#F5F7FA", "#1C274C")}>
           <img src={shareIcon} width="20" alt="" /> Share
         </button>
-        <button onClick={() => handleInteraction('save', setIsSaved)} style={{ ...sidebarBtn(isSaved ? "#1C274C" : "#F5F7FA", isSaved ? "#fff" : "#1C274C"), gridColumn: "span 2" }}>
+        <button onClick={handleTranslateArticle} disabled={isSameLanguage} style={sidebarBtn("#F5F7FA", "#1C274C")}>
+          <span style={{ fontSize: 13, fontWeight: 800 }}>{isTranslating ? "..." : showTranslated ? "Original" : "Translate"}</span>
+        </button>
+        <button onClick={() => handleInteraction('save', setIsSaved)} style={sidebarBtn(isSaved ? "#1C274C" : "#F5F7FA", isSaved ? "#fff" : "#1C274C")}>
           <img src={isSaved ? saveClickedIcon : saveIcon} width="20" style={{ filter: isSaved ? "brightness(0) invert(1)" : "none" }} alt="" />
-          {isSaved ? "Saved to Library" : "Save Article"}
+          {isSaved ? "Saved" : "Save"}
         </button>
       </div>
 
@@ -261,7 +298,7 @@ export default function Article() {
           
           <article className="article-detail-content-wrap" style={{ flex: 1, maxWidth: isMobile ? "100%" : "800px", width: "100%" }}>
             <div className="article-detail-content" style={{ fontSize: isMobile ? "1.1rem" : "1.25rem", lineHeight: "1.8", color: "#222", whiteSpace: "pre-wrap" }}>
-              {article.content}
+              {showTranslated && translatedContent ? translatedContent : article.content}
             </div>
 
             {article.sources?.length > 0 && (

@@ -43,6 +43,16 @@ body {
   overflow-x: hidden;
 }
 
+html[dir="rtl"] body,
+html[dir="rtl"] #root {
+  direction: rtl;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea {
+  text-align: right;
+}
+
 /* ---------------------------------------------------------
    Universal Styles
 --------------------------------------------------------- */
