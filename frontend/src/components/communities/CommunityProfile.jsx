@@ -384,7 +384,7 @@ export default function CommunityProfile() {
               </div>
               <div className="trend-tags">
                 {!loadingTrends ? trends.viralKeywords.map((topic, i) => (
-                  <button key={i} onClick={() => setSearchQuery(searchQuery === topic ? "" : topic)} className={searchQuery === topic ? "active" : ""}>{topic}</button>
+                  <button key={i} onClick={() => setSearchQuery(searchQuery === topic ? "" : topic)} className={`search-keyword-chip ${searchQuery === topic ? "active" : ""}`}>{topic}</button>
                 )) : <span>Loading...</span>}
               </div>
             </div>

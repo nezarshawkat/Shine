@@ -419,14 +419,31 @@ html[data-theme="dark"] .members-popup-card {
   border-color: rgba(255,255,255,0.25) !important;
 }
 
+html[data-theme="dark"] .popup-menu {
+  background: #000 !important;
+}
+
 html[data-theme="dark"] .post-owner-menu-popup {
   background: #000 !important;
   border: 1px solid #fff !important;
 }
 
 html[data-theme="dark"] .post-popup-action-btn {
-  background: #000 !important;
+  background: transparent !important;
   color: #fff !important;
+}
+
+html[data-theme="dark"] .post-popup-container {
+  background: #000 !important;
+  border-color: rgba(255,255,255,0.25) !important;
+}
+
+html[data-theme="dark"] .post-popup-title {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .post-popup-action-btn:hover {
+  background: rgba(255,255,255,0.08) !important;
 }
 
 html[data-theme="dark"] .post-owner-menu-item,
@@ -455,8 +472,32 @@ html[data-theme="dark"] .forum-search-card .trend-tags button {
 html[data-theme="dark"] .forum-search-card .sidebar-topic-chip.active,
 html[data-theme="dark"] .forum-search-card .trend-tags button.active {
   background: #fff !important;
-  color: #1c274c !important;
+  color: #000 !important;
   border-color: #fff !important;
+}
+
+.search-keyword-chip {
+  background: transparent;
+}
+
+html[data-theme="dark"] .search-keyword-chip,
+html[data-theme="dark"] .sidebar-topic-chip,
+html[data-theme="dark"] .trend-tags button {
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.85) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .search-keyword-chip.active,
+html[data-theme="dark"] .sidebar-topic-chip.active,
+html[data-theme="dark"] .trend-tags button.active {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: #fff !important;
+}
+
+html[data-theme="dark"] img[alt="clear"] {
+  filter: brightness(0) invert(1) !important;
 }
 
 html[data-theme="dark"] .profile-page .follow-btn img[src*="User Plus"] {

@@ -59,6 +59,7 @@ const SearchSection = memo(({
             const isSelected = searchQuery === topic;
             return (
               <button
+                className={`search-keyword-chip ${isSelected ? "active" : ""}`}
                 key={index}
                 onClick={() => handleTopicClick(topic)}
                 style={{ 

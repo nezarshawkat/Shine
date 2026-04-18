@@ -268,9 +268,9 @@ const RightSidebar = ({ showOnly = null }) => {
                 transform: "translate(-50%, -50%)",
                 width: "90%",
                 maxWidth: "320px",
-                backgroundColor: "#1d1d1d",
+                backgroundColor: "#ffffff",
                 borderRadius: "28px",
-                border: "1px solid #3a3a3a",
+                border: "1px solid rgba(28,39,76,0.18)",
                 padding: "25px 0",
                 display: "flex",
                 flexDirection: "column",
@@ -279,7 +279,7 @@ const RightSidebar = ({ showOnly = null }) => {
                 boxShadow: "0px 10px 40px rgba(0,0,0,0.2)"
               }}
             >
-              <h3 style={{ marginBottom: '15px', color: '#FFFFFF', fontSize: '20px' }}>Create a Post</h3>
+              <h3 className="post-popup-title" style={{ marginBottom: '15px', color: '#1C274C', fontSize: '20px' }}>Create a Post</h3>
               {[
                 { label: "Opinion", route: "/opinion-create" },
                 { label: "Analysis", route: "/analysis-create" },
@@ -291,19 +291,19 @@ const RightSidebar = ({ showOnly = null }) => {
                     className="post-popup-action-btn"
                     onClick={() => handleCreateClick(item.route)}
                     style={{
-                      background: "#000000",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      borderRadius: "10px",
+                      background: "transparent",
+                      border: "none",
+                      borderRadius: "0px",
                       fontSize: "19px",
                       fontWeight: 500,
-                      color: "#FFFFFF",
+                      color: "#1C274C",
                       padding: "12px 0",
                       cursor: "pointer",
                       width: "85%",
                       transition: "background 0.2s"
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = "#111111"}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = "#000000"}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(28,39,76,0.06)"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                   >
                     {item.label}
                   </button>
@@ -316,10 +316,10 @@ const RightSidebar = ({ showOnly = null }) => {
                 onClick={() => setShowPopup(false)}
                 style={{ 
                   marginTop: '15px', 
-                  color: '#FFFFFF',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: '#000000',
-                  borderRadius: '10px',
+                  color: '#1C274C',
+                  border: 'none',
+                  background: 'transparent',
+                  borderRadius: '0px',
                   width: "85%",
                   padding: "10px 0",
                   cursor: 'pointer',

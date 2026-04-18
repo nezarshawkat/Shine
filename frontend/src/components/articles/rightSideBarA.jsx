@@ -55,6 +55,7 @@ export const TrendSearch = ({ trends, loading }) => {
         {!loading ? (
           trends.viralKeywords.map((topic, index) => (
             <button
+              className={`search-keyword-chip ${selectedTopic === topic ? "active" : ""}`}
               key={index} onClick={() => handleTopicClick(topic)}
               style={{
                 padding: "5px 10px", borderRadius: "10px", fontSize: "13px", cursor: "pointer",
