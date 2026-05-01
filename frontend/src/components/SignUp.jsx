@@ -8,6 +8,8 @@ import logo from "../assets/shine-logo.png";
 import googleIcon from "../assets/google.svg";
 import { API_BASE_URL } from "../api";
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
+
 const SignUp = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
@@ -29,6 +31,10 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!USERNAME_REGEX.test(formData.username)) {
+      setError("Username must be 3-30 characters using only letters, numbers, or underscores.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -104,6 +110,8 @@ const SignUp = () => {
               onChange={handleChange}
               required
               autoComplete="username"
+              pattern="[A-Za-z0-9_]{3,30}"
+              title="3-30 characters, letters, numbers, and underscores only"
             />
           </label>
 

@@ -383,47 +383,21 @@ router.post("/:id/comments", async (req, res) => {
 
 router.post("/:id/view", async (req, res) => {
   const { id } = req.params;
-  const userId = getUserIdFromToken(req) || req.body.userId || req.ip; // Fallback to IP for guests
-  const redisClient = req.app.get("redisClient");
-  
-  // The key used to track this specific user viewing this specific post
-  const VIEW_COOLDOWN_KEY = `view_cooldown:${id}:${userId}`;
-  const COOLDOWN_TIME = 3600; // 1 hour cooldown (Professional standard)
+  const userId = getUserIdFromToken(req) || req.body.userId || `guest:${req.ip}`;
 
   try {
-    let alreadyCounted = false;
+    await prisma.postView.create({
+      data: {
+        postId: id,
+        userId: String(userId),
+      },
+    });
 
-    // 1. Check Redis first (The "Professional" Filter)
-    if (redisClient?.isReady) {
-      const exists = await redisClient.get(VIEW_COOLDOWN_KEY);
-      if (exists) {
-        alreadyCounted = true;
-      }
-    }
-
-    if (!alreadyCounted) {
-      // 2. Record the view in Postgres
-      await prisma.postView.create({
-        data: { 
-          postId: id, 
-          userId: (userId && userId.length > 15) ? userId : null // Basic check if it's a UUID/CUID
-        },
-      });
-
-      // 3. Set a cooldown in Redis so we ignore this user for the next hour
-      if (redisClient?.isReady) {
-        await redisClient.setEx(VIEW_COOLDOWN_KEY, COOLDOWN_TIME, "1");
-      }
-    }
-
-    // 4. Return the total count
     const count = await prisma.postView.count({ where: { postId: id } });
     res.json({ viewsCount: count });
-
   } catch (err) {
-    // If it fails (e.g. database unique constraint), just return the current count silently
     const count = await prisma.postView.count({ where: { postId: id } });
-    res.json({ viewsCount: count }); 
+    res.json({ viewsCount: count });
   }
 });
 

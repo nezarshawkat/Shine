@@ -7,6 +7,7 @@ const prisma = require("../prisma");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const DEFAULT_PROFILE_IMAGE = null;
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
 
 // Helper to include common user relations
 const userIncludeOptions = {
@@ -24,6 +25,10 @@ router.post("/signup", async (req, res) => {
 
     if (!name || !email || !password || !username) {
       return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!USERNAME_REGEX.test(username)) {
+      return res.status(400).json({ error: "Username must be 3-30 characters and use only letters, numbers, or underscores." });
     }
 
     const existingUser = await prisma.user.findFirst({

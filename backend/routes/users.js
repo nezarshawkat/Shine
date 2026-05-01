@@ -7,6 +7,7 @@ const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage
 const { deleteUserWithRelations } = require("../controllers/admin/deletionHelpers");
 const DEFAULT_PROFILE_IMAGE = null;
 const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
 
 const getRequesterId = (req) => {
   const authHeader = req.headers.authorization;
@@ -31,6 +32,10 @@ router.post("/signup", async (req, res) => {
 
     if (!name || !email || !password || !username) {
       return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!USERNAME_REGEX.test(username)) {
+      return res.status(400).json({ error: "Username must be 3-30 characters and use only letters, numbers, or underscores." });
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -244,7 +249,12 @@ router.put("/:userId", memoryUpload.single("image"), async (req, res) => {
   try {
     let updateData = {};
     if (name) updateData.name = name;
-    if (username) updateData.username = username;
+    if (username) {
+      if (!USERNAME_REGEX.test(username)) {
+        return res.status(400).json({ error: "Username must be 3-30 characters and use only letters, numbers, or underscores." });
+      }
+      updateData.username = username;
+    }
     if (description !== undefined) updateData.description = description;
     if (email) updateData.email = email;
 
