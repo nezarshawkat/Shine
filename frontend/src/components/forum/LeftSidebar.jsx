@@ -101,7 +101,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
       try {
         const headers = { headers: getAuthHeader() };
         const [trendRes, inboxRes, systemRes] = await Promise.allSettled([
-          axios.get(`${API_BASE_URL}/posts/trends`),
+          axios.get(`${API_BASE_URL}/posts/trends`, { params: { limit: 5 } }),
           axios.get(`${API_BASE_URL}/messenger/inbox`, headers),
           axios.get(`${API_BASE_URL}/messenger/system`, headers)
         ]);
@@ -118,8 +118,12 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
     fetchAllSidebarData();
   }, []);
 
+  const normalizeKeyword = (value) => String(value || "").replace(/^#/, "");
+
   const handleTopicClick = (topic) => {
-    setSearchQuery(searchQuery === topic ? "" : topic);
+    const normalizedTopic = normalizeKeyword(topic);
+    const normalizedCurrent = normalizeKeyword(searchQuery);
+    setSearchQuery(normalizedCurrent === normalizedTopic ? "" : normalizedTopic);
   };
 
   const unreadMsgCount = inbox.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
@@ -169,7 +173,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               sidebarHashtags.map((tag, index) => (
                 <div 
                   key={index} 
-                  onClick={() => setSearchQuery(tag.name?.startsWith("#") ? tag.name : `#${tag.name}`)}
+                  onClick={() => handleTopicClick(tag.name)}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                 >
                   <span>

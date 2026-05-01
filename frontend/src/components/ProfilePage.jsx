@@ -274,7 +274,7 @@ export default function ProfilePage({
     const Component = componentMap[post.type] || OpinionPost;
     return (
       <div key={post.id || index} className="profile-post-wrapper">
-        <Component postId={post.id} initialData={post} />
+        <Component postId={post.id || post._id || post.postId} initialData={post.post || post} />
       </div>
     );
   };

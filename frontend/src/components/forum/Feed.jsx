@@ -55,11 +55,16 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     if (isUserSearch) return [];
     if (!searchQuery) return feed;
     const query = searchQuery.toLowerCase();
-    return feed.filter(
-      (post) =>
-        post.text?.toLowerCase().includes(query) ||
-        post.keywords?.some((k) => k.toLowerCase().includes(query))
-    );
+    const normalizedQuery = query.startsWith("#") ? query.slice(1) : query;
+    return feed.filter((post) => {
+      const text = (post.text || "").toLowerCase();
+      const keywords = (post.keywords || []).map((k) => String(k).toLowerCase());
+      return (
+        text.includes(query) ||
+        text.includes(normalizedQuery) ||
+        keywords.some((k) => k.includes(query) || k.includes(normalizedQuery))
+      );
+    });
   }, [feed, searchQuery, isUserSearch]);
 
   useEffect(() => {

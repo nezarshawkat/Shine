@@ -428,7 +428,7 @@ export default function PostBody() {
 
         if (postData.type?.toLowerCase() === "poll" && postData.pollOptions) {
           const userVote = postData.pollOptions.find((opt) =>
-            opt.votedUsers?.some((v) => v.id === user?.id),
+            opt.votedUsers?.some((v) => (v.id || v._id) === (user?.id || user?._id)),
           );
           if (userVote) setVotedOptionId(userVote.id);
         }
