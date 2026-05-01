@@ -457,7 +457,7 @@ export default function AnalysisPost({ postId, initialData }) {
              ) : (
                <div onClick={() => navigate(`/post/${post.id || post._id}`)} style={{ cursor: "pointer" }}>
                  <div style={{ fontSize: 16, color: "#000", lineHeight: 1.5 }}>{renderTextWithHashtags(activeText)}</div>
-                 {!isSameLanguage && (
+                 {(
                    <button
                      onClick={handleTranslatePost}
                      style={{ background: "none", border: "none", padding: 0, marginTop: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C274C" }}

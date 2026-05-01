@@ -296,7 +296,7 @@ export default function PollPost({ postId, initialData }) {
         </div>
 
         <div style={{ fontSize: 16, color: "#000", fontWeight: 500 }}>{renderTextWithHashtags(showTranslated && translatedText ? translatedText : post.text)}</div>
-        {!isSameLanguage && (
+        {(
           <button
             onClick={handleTranslatePost}
             style={{ background: "none", border: "none", padding: 0, marginTop: 2, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C274C", alignSelf: "flex-start" }}

@@ -358,6 +358,18 @@ html[data-theme="dark"] .forum-page .post-keyword-chip {
   color: #1c274c !important;
 }
 
+html[data-theme="dark"] .forum-page .post-hashtag,
+html[data-theme="dark"] .community-page .post-hashtag,
+html[data-theme="dark"] .profile-page .post-hashtag {
+  color: #ffc847 !important;
+}
+
+html[data-theme="dark"] .forum-page .post-keyword-chip,
+html[data-theme="dark"] .community-page .post-keyword-chip,
+html[data-theme="dark"] .profile-page .post-keyword-chip {
+  color: #1c274c !important;
+}
+
 html[data-theme="dark"] [class*="sources-btn"],
 html[data-theme="dark"] .postbody-readmore,
 html[data-theme="dark"] .postbody-sources-title {

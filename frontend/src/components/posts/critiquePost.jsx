@@ -967,7 +967,7 @@ export default function CritiquePost({ postId, initialData }) {
                 >
                   {renderTextWithHashtags(activeText)}
                 </div>
-                {!isSameLanguage && (
+                {(
                   <button
                     onClick={handleTranslatePost}
                     style={{ background: "none", border: "none", padding: 0, marginTop: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C274C" }}

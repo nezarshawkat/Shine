@@ -470,6 +470,8 @@ export default function PostBody() {
         ...prev,
         likesCount:
           data.likesCount !== undefined ? data.likesCount : prev.likesCount,
+        savesCount:
+          data.savesCount !== undefined ? data.savesCount : prev.savesCount,
         sharesCount:
           data.sharesCount !== undefined ? data.sharesCount : prev.sharesCount,
         commentsCount:

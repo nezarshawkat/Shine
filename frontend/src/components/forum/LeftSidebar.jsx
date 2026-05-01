@@ -127,6 +127,9 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const totalAlerts = unreadMsgCount + unreadSysCount;
 
   const shouldShow = (section) => !showOnly || showOnly.includes(section);
+  const sidebarHashtags = (trends.trendingHashtags?.length
+    ? trends.trendingHashtags
+    : (trends.viralKeywords || []).map((name) => ({ name, views: "—" }))).slice(0, 5);
 
   const searchEl = (
     <SearchSection 
@@ -163,7 +166,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           
           <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
             {!loading ? (
-              trends.trendingHashtags?.map((tag, index) => (
+              sidebarHashtags.map((tag, index) => (
                 <div 
                   key={index} 
                   onClick={() => setSearchQuery(`#${tag.name}`)}
