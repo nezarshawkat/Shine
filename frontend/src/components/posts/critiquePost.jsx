@@ -274,6 +274,7 @@ export default function CritiquePost({ postId, initialData }) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
+  const viewedPostIdRef = useRef(null);
   const [isMobileView, setIsMobileView] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false,
   );
@@ -327,6 +328,12 @@ export default function CritiquePost({ postId, initialData }) {
 
   useEffect(() => {
     const currentId = initialData?.id || initialData?._id || postId;
+
+    if (currentId && viewedPostIdRef.current !== currentId) {
+      viewedPostIdRef.current = currentId;
+      setHasViewed(false);
+    }
+
     if (!currentId || hasViewed) return;
 
     const sessionKey = `viewed_critique_${currentId}`;

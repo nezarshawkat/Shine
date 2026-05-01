@@ -140,6 +140,11 @@ export default function PollPost({ postId, initialData }) {
     }
   }, [pollData, loggedUserId]);
 
+
+  useEffect(() => {
+    hasRecordedView.current = false;
+  }, [currentPostId]);
+
   useEffect(() => {
     fetchPostData();
     const interval = setInterval(fetchPostData, 15000);

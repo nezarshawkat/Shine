@@ -156,6 +156,7 @@ export default function AnalysisPost({ postId, initialData }) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
+  const viewedPostIdRef = useRef(null);
   const [maximizedIndex, setMaximizedIndex] = useState(null);
 
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -184,9 +185,15 @@ export default function AnalysisPost({ postId, initialData }) {
 
   useEffect(() => {
     const currentId = initialData?.id || initialData?._id || postId;
+
+    if (currentId && viewedPostIdRef.current !== currentId) {
+      viewedPostIdRef.current = currentId;
+      setHasViewed(false);
+    }
+
     if (!currentId || hasViewed) return;
 
-    const sessionKey = `viewed_analysis_${currentId}`;
+    const sessionKey = `viewed_opinion_${currentId}`;
     if (sessionStorage.getItem(sessionKey)) {
       setHasViewed(true);
       return;
