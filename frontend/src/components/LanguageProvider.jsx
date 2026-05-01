@@ -333,6 +333,7 @@ export function LanguageProvider({ children }) {
     if (!payload) return payload;
     if (!targetLanguage) return payload;
     const normalizedTarget = normalizeLangCode(targetLanguage);
+    if (normalizedTarget === normalizeLangCode(language)) return payload;
 
     const cache = cacheRef.current;
     const cacheKey = `${normalizedTarget}::${payload}`;

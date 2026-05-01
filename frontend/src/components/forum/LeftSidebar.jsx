@@ -169,12 +169,12 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
               sidebarHashtags.map((tag, index) => (
                 <div 
                   key={index} 
-                  onClick={() => setSearchQuery(`#${tag.name}`)}
+                  onClick={() => setSearchQuery(tag.name?.startsWith("#") ? tag.name : `#${tag.name}`)}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                 >
                   <span>
                     <span style={{ fontWeight: "500", color: "#FFC847" }}>#{index + 1}. </span>
-                    <span style={{ color: "#1C274C", fontWeight: "400" }}>#{tag.name}</span>
+                    <span style={{ color: "#1C274C", fontWeight: "400" }}>{tag.name?.startsWith("#") ? tag.name : `#${tag.name}`}</span>
                   </span>
                   <span style={{ fontSize: "0.85rem", fontWeight: "500", color: "#1C274C" }}>
                     {tag.views} {/* Now shows real count like "5" or "1.2K" */}

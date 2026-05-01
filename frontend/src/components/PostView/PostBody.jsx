@@ -579,6 +579,22 @@ export default function PostBody() {
     }
   };
 
+
+
+  useEffect(() => {
+    if (!post?.id) return;
+    const token = localStorage.getItem("token");
+    fetch(`${BASE_URL}/api/posts/${post.id}/view`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({}),
+    }).then((r) => r.json()).then((data) => {
+      if (data?.viewsCount !== undefined) setPost((prev) => ({ ...prev, viewsCount: data.viewsCount }));
+    }).catch(() => {});
+  }, [post?.id]);
   const handleLikeComment = async (id) => {
     if (!user) return showToast("Login to like", "error");
     try {
