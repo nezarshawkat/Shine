@@ -149,7 +149,7 @@ router.get("/trends", async (req, res) => {
 
     const hashtagMap = {};
     trendingPosts.forEach((p) => {
-      const tags = p.text?.match(/#\w+/g);
+      const tags = p.text?.match(/#[\p{L}\p{N}_]+/gu);
       tags?.forEach((t) => {
         const k = t.slice(1).toLowerCase();
         hashtagMap[k] = (hashtagMap[k] || 0) + 1;

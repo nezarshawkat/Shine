@@ -120,8 +120,8 @@ input, textarea, select {
   scrollbar-width: none;
 }
 
-.post-hashtag {
-  color: #FFC847 !important;
+ .post-hashtag {
+  color: #FFD84D !important;
   font-weight: 600;
 }
 
@@ -299,8 +299,8 @@ html[data-theme="dark"] .menu-toggle {
 html[data-theme="dark"] .tab-btn.active,
 html[data-theme="dark"] [style*="#FFC847" i],
 html[data-theme="dark"] [style*="rgb(255, 200, 71)"] {
-  color: #ffc847 !important;
-  border-color: #ffc847 !important;
+  color: #ffd84d !important;
+  border-color: #ffd84d !important;
 }
 
 /* 1C274C and dark text/borders become white in dark mode */
@@ -337,11 +337,11 @@ html[data-theme="dark"] .postbody-keyword {
 }
 
 html[data-theme="dark"] .postbody-type {
-  color: #ffc847 !important;
+  color: #ffd84d !important;
 }
 
 html[data-theme="dark"] .post-type-label {
-  color: #ffc847 !important;
+  color: #ffd84d !important;
 }
 
 html[data-theme="dark"] .forum-page .post-type-label,
@@ -351,7 +351,7 @@ html[data-theme="dark"] .forum-page .sources-btn-label,
 html[data-theme="dark"] .forum-page .sources-btn-root,
 html[data-theme="dark"] .forum-page .critique-post-sources-btn-full,
 html[data-theme="dark"] .forum-page .critique-post-sources-btn-mobile {
-  color: #ffc847 !important;
+  color: #ffd84d !important;
 }
 
 html[data-theme="dark"] .forum-page .post-keyword-chip {
@@ -361,7 +361,7 @@ html[data-theme="dark"] .forum-page .post-keyword-chip {
 html[data-theme="dark"] .forum-page .post-hashtag,
 html[data-theme="dark"] .community-page .post-hashtag,
 html[data-theme="dark"] .profile-page .post-hashtag {
-  color: #ffc847 !important;
+  color: #ffd84d !important;
 }
 
 html[data-theme="dark"] .forum-page .post-keyword-chip,
@@ -373,7 +373,7 @@ html[data-theme="dark"] .profile-page .post-keyword-chip {
 html[data-theme="dark"] [class*="sources-btn"],
 html[data-theme="dark"] .postbody-readmore,
 html[data-theme="dark"] .postbody-sources-title {
-  color: #ffc847 !important;
+  color: #ffd84d !important;
 }
 
 /* Post action SVG icons + post tool icons must be white */
@@ -430,7 +430,7 @@ html[data-theme="dark"] .forum-messages-card [style*="background-color: rgb(224,
 html[data-theme="dark"] .forum-post-card button,
 html[data-theme="dark"] .sidebar-post-btn-style {
   background-color: #1c274c !important;
-  color: #ffc847 !important;
+  color: #ffd84d !important;
   border-color: #1c274c !important;
 }
 
@@ -789,4 +789,14 @@ html[data-theme="light"] .forum-page .center-column,
 html[data-theme="light"] .forum-page .right-column {
   background-color: #f7f9fc !important;
   color: #1c274c !important;
+}
+
+
+html[data-theme="dark"] .forum-page .post-keyword-chip,
+html[data-theme="dark"] .community-page .post-keyword-chip,
+html[data-theme="dark"] .profile-page .post-keyword-chip,
+html[data-theme="dark"] .forum-page .critique-post-mobile-keywords span,
+html[data-theme="dark"] .community-page .critique-post-mobile-keywords span,
+html[data-theme="dark"] .profile-page .critique-post-mobile-keywords span {
+  color: #000 !important;
 }

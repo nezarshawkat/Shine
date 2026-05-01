@@ -46,8 +46,7 @@ export default function Article() {
   const [translatedContent, setTranslatedContent] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
-  const [isSameLanguage, setIsSameLanguage] = useState(false);
-  const { translationLanguage, translateText, detectLanguage } = useLanguage();
+  const { translationLanguage, translateText } = useLanguage();
   
   const [width, setWidth] = useState(window.innerWidth);
   const isMobile = width < 1024;
@@ -90,17 +89,6 @@ export default function Article() {
     window.scrollTo(0, 0);
     return () => window.removeEventListener("resize", handleResize);
   }, [id, currentUserId]);
-
-  useEffect(() => {
-    let mounted = true;
-    const resolveLanguageMatch = async () => {
-      if (!article?.content || !translationLanguage) return;
-      const source = await detectLanguage(article.content);
-      if (mounted) setIsSameLanguage(source === translationLanguage);
-    };
-    resolveLanguageMatch();
-    return () => { mounted = false; };
-  }, [article?.content, translationLanguage, detectLanguage]);
 
   // Prevent scroll when image is full screen
   useEffect(() => {
@@ -195,7 +183,7 @@ export default function Article() {
         <button onClick={() => setShowShare(true)} style={sidebarBtn("#F5F7FA", "#1C274C")}>
           <img src={shareIcon} width="20" alt="" /> Share
         </button>
-        <button onClick={handleTranslateArticle} disabled={isSameLanguage} style={sidebarBtn("#F5F7FA", "#1C274C")}>
+        <button onClick={handleTranslateArticle} style={sidebarBtn("#F5F7FA", "#1C274C")}>
           <span style={{ fontSize: 13, fontWeight: 800 }}>{isTranslating ? "..." : showTranslated ? "Original" : "Translate"}</span>
         </button>
         <button onClick={() => handleInteraction('save', setIsSaved)} style={sidebarBtn(isSaved ? "#1C274C" : "#F5F7FA", isSaved ? "#fff" : "#1C274C")}>

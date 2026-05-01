@@ -267,8 +267,7 @@ export default function CritiquePost({ postId, initialData }) {
   const [translatedText, setTranslatedText] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
-  const [isSameLanguage, setIsSameLanguage] = useState(false);
-  const { translationLanguage, translateText, detectLanguage } = useLanguage();
+  const { translationLanguage, translateText } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [toast, setToast] = useState(null);
@@ -521,17 +520,6 @@ export default function CritiquePost({ postId, initialData }) {
     hour: "2-digit",
     minute: "2-digit",
   });
-
-  useEffect(() => {
-    let mounted = true;
-    const resolveLanguageMatch = async () => {
-      if (!post?.text || !translationLanguage) return;
-      const source = await detectLanguage(post.text);
-      if (mounted) setIsSameLanguage(source === translationLanguage);
-    };
-    resolveLanguageMatch();
-    return () => { mounted = false; };
-  }, [post?.text, translationLanguage, detectLanguage]);
 
   const handleTranslatePost = async (e) => {
     e.stopPropagation();

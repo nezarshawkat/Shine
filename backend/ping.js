@@ -12,7 +12,7 @@ pingRouter.get("/ping", (req, res) => {
   });
 });
 
-// Background interval to keep the backend active with a lightweight periodic task.
+// Background interval to keep the backend active only (no database call).
 function startping() {
   if (pingInterval) {
     return pingInterval;
