@@ -14,6 +14,7 @@ import Support from "../pages/Support";
 import SystemMessages from "../pages/SystemMessages";
 import ArticleApplications from "../pages/ArticleApplications";
 import EmailSystem from "../pages/EmailSystem";
+import AutoActivity from "../pages/AutoActivity";
 
 export default function AdminApp() {
   return (
@@ -167,6 +168,7 @@ export default function AdminApp() {
           <Route path="article-applications" element={<ArticleApplications />} />
           <Route path="system-messages" element={<SystemMessages />} />
           <Route path="email-system" element={<EmailSystem />} />
+          <Route path="auto-activity" element={<AutoActivity />} />
 
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>

@@ -16,6 +16,15 @@ const {
   getAdminEmailPreview,
 } = require("../../controllers/admin/emailSystemController");
 
+const {
+  getAutoActivityOverview,
+  startAutoActivity,
+  stopAutoActivity,
+  triggerAutoPost,
+  triggerAutoArticle,
+  resetAutoActivityErrors,
+} = require('../../controllers/admin/autoActivityController');
+
 const router = express.Router();
 
 /* ---------- helper to inject content type ---------- */
@@ -78,5 +87,12 @@ router.post("/email-system/send", sendAdminEmail);
 router.post("/email-system/trigger-digest", triggerDigestNow);
 router.post("/email-system/scheduler", updateDigestSchedulerState);
 router.post("/email-system/preview", getAdminEmailPreview);
+
+router.get('/auto-activity', getAutoActivityOverview);
+router.post('/auto-activity/start', startAutoActivity);
+router.post('/auto-activity/stop', stopAutoActivity);
+router.post('/auto-activity/trigger-post', triggerAutoPost);
+router.post('/auto-activity/trigger-article', triggerAutoArticle);
+router.post('/auto-activity/reset-errors', resetAutoActivityErrors);
 
 module.exports = router;

@@ -14,6 +14,7 @@ const tabs = [
   ["article-applications", "Article Applications"],
   ["system-messages", "System Messages"],
   ["email-system", "Email System"],
+  ["auto-activity", "Auto Activity"],
 ];
 
 export default function AdminLayout() {
