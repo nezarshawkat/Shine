@@ -109,13 +109,23 @@ app.use("/share", require("./routes/sharePreview"));
 app.use("/", pingRouter); // Ping endpoint
 startping();               // Automatic interval every 30 seconds
 
-// ================= 8. Health Check =================
-app.get("/health", async (req, res) => {
+// ================= 8. Health Checks =================
+// Lightweight endpoint for uptime monitors. Does not touch the database.
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    environment: process.env.NODE_ENV,
+    database: "not-checked",
+  });
+});
+
+// Deep health endpoint for manual diagnostics or platform checks that must validate DB connectivity.
+app.get("/health/db", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: "ok", environment: process.env.NODE_ENV });
+    res.json({ status: "ok", environment: process.env.NODE_ENV, database: "ok" });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ status: "error", error: e.message, database: "down" });
   }
 });
 
