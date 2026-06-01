@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "seed:ai-accounts": "node scripts_seed_ai_accounts.js"
+    "seed:ai-accounts": "node scripts_seed_ai_accounts.js",
+    "seed:geopolitical-posts": "node scripts_seed_geopolitical_posts.js"
   },
   "keywords": [],
   "author": "",

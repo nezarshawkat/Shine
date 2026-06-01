@@ -1,4 +1,5 @@
 const prisma = require('./prisma');
+const { SEEDED_PROFILE_IMAGES } = require('./seed_profile_images');
 
 const accounts = [
   ['Ava Brooks','avabrooksy','iced coffee + overthinking ☕'],
@@ -64,6 +65,7 @@ async function main() {
         description,
         email,
         isAuthorized: true,
+        image: SEEDED_PROFILE_IMAGES[username],
       },
       create: {
         name,
@@ -71,6 +73,7 @@ async function main() {
         description,
         email,
         provider: 'seed',
+        image: SEEDED_PROFILE_IMAGES[username],
         isAuthorized: true,
       },
     });
