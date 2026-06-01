@@ -1,9 +1,14 @@
 const prisma = require('./prisma');
-const { SEEDED_PROFILE_IMAGES, GUEST_PROFILE_IMAGE } = require('./seed_profile_images');
+const { SEEDED_PROFILES, SEEDED_PROFILE_BY_USERNAME, GUEST_PROFILE_IMAGE } = require('./seed_profile_images');
+const { deleteUserWithRelations } = require('./controllers/admin/deletionHelpers');
 
 const authors = {
   karl_in_berlin: 'Karl Weber', texas_oil_man: 'John Walker', kyiv_defender: 'Maksym Petrenko', global_econ_prof: 'Professor Elena Novak', dr_leila_s: 'Dr. Leila Sadeghi', moscow_expat: 'Pavel Antonov', brit_politics_now: 'Oliver Grant', shipper_john: 'John Mercer', idf_supporter: 'David Cohen', anti_imperialist: 'Maya Ortiz', dc_insider: 'Rachel Brooks', energy_trader: 'Ryan Cole', french_nato_rep: 'Jean Moreau', guterres_fan: 'Sam Rivera', gulf_analyst: 'Hassan Al-Fayed', tehran_youth: 'Sara Nouri', israeli_tech_bro: 'Avi Ben-David', war_mapper: 'Alex Voss', trump_war_room: 'Grant Miller', climate_doom: 'Luna Hart', iraqi_voice: 'Omar Al-Karim', slava_ukraini_88: 'Olena Shevchenko', saudi_econ: 'Fahad Al Saud', market_watcher: 'R. Patel', peace_now_plz: 'Grace Miller', vlad_fan: 'Viktor Sokolov', eu_diplomat: 'Clara Fischer', cynic_supreme: 'Ash Morgan', history_buff: 'Professor Grant', lebanon_diaspora: 'Nadia Haddad', tank_commander_z: 'Dmitri Orlov', un_observer: 'Daniel Reeves', tech_bull: 'Trevor Pike', human_rights_watchdog: 'Sana Malik', military_historian: 'Marcus Hale', peace_activist: 'Lily Park', geo_realist: 'Theo Carter', free_iran_now: 'Maryam Azadi', eu_bureaucrat: 'Nikolai Weiss', trucker_dave: 'Dave Miller', ccp_watcher: 'Nikhil S.', uk_nurse_sarah: 'Sarah Clarke', russian_dissident: 'Irina Volkova', shipping_insider: 'Mike D.', maga_patriot_24: 'Brad King', eco_warrior_x: 'Ivy Green', un_critic: 'Adrian Fox', yemen_watcher: 'Ahmed Noor', farm_girl_ia: 'Kayla Sun', void_gazer: 'Noah Black', geopol_junkie: 'Jordan Lee', sarah_smiles_99: 'Sarah Miles', liberty_bell_76: 'Ben Turner', realist_thinker: 'Leo Stone', eco_warrior_x: 'Ivy Green', human_rights_watchdog: 'Sana Malik', free_iran_now: 'Maryam Azadi', pavel_v: 'Pavel Volkov', z_force_win: 'Zakhar Morozov', neutral_guy: 'Ethan Miles', tory_boy_99: 'Harry Wilson', left_wing_larry: 'Larry White', royal_navy_vet: 'Victor Reyes', farm_girl_ia: 'Kayla Sun', city_slicker: 'Chloe James', beirut_survivor: 'Rana Haddad', un_critic: 'Adrian Fox', peace_activist: 'Lily Park', marxist_student: 'Mia Brooks', ccp_watcher: 'Nikhil S.', eu_diplomat: 'Clara Fischer', america_first_24: 'Derek White', nato_skeptic: 'Leo Fischer', paris_strong: 'Camille Dupont', legal_eagle: 'Marcus Hale', econ_wonk: 'Naomi Clarke', ny_zionist: 'Daniel Stein', defense_contractor: 'Max Ortega', green_berlin: 'Hannah Klein', tech_bull: 'Trevor Pike', crypto_king_99: 'Zach Rivera', drone_pilot_x: 'Alex Rivera', navy_vet: 'Victor Reyes', taiwan_strong: 'Priya Lin', shipping_insider: 'Mike D.', sammy_sunshine: 'Samantha Ray'
 };
+
+const AUTHOR_USERNAMES = SEEDED_PROFILES.slice(0, 20).map((profile) => profile.username);
+const COMMENT_USERNAMES = SEEDED_PROFILES.map((profile) => profile.username);
+const SHINE_COMMUNITY_NAME = 'Shine';
 
 const posts = [
 {n:1,a:'karl_in_berlin',d:'2026-05-14',t:'opinion',k:['Iran ceasefire','Supreme Leader','Middle East strategy'],v:1890,l:412,s:88,c:18,x:['Everyone cheering about the "temporary ceasefire" with Iran is utterly delusional. We literally assassinated their Supreme Leader. You don\'t just sign a 60-day MoU and go back to normal after that. Tehran is just buying time to rebuild their missile stockpiles while the Strait of Hormuz stays choked. We are being played.'],m:[['geopol_junkie','Exactly. Mojtaba Khamenei cannot afford to look weak right now.'],['sarah_smiles_99','I just want gas prices under €3 a liter again. I don\'t care what they sign.'],['void_gazer','The US thought "regime change from the skies" would work. It never does.']]},
@@ -76,81 +81,276 @@ function dateFor(post, minutes = 0) {
   return new Date(`${post.d}T12:00:00.000Z`).getTime() + (post.n * 60 + minutes) * 60000;
 }
 
-async function upsertUser(username, name, options = {}) {
-  const image = options.guest ? GUEST_PROFILE_IMAGE : SEEDED_PROFILE_IMAGES[username];
-  return prisma.user.upsert({
-    where: { username },
-    update: { name, email: `${username}@mock.shine.local`, image, isAuthorized: true },
-    create: { username, name, email: `${username}@mock.shine.local`, provider: 'seed', description: 'Seeded profile', image, isAuthorized: true },
+function cleanPostText(text) {
+  return text.replace(/^Replying to @[^:]+ from Post \d+:\s*/i, '');
+}
+
+function naturalizeNumber(value) {
+  let result = Math.max(1, Math.floor(value));
+  if (result % 1000 === 0) result += 478;
+  if (result % 500 === 0) result += 137;
+  if (result % 100 === 0) result += 57;
+  if (result % 10 === 0) result += 7;
+  if (result % 5 === 0) result += 3;
+  return result;
+}
+
+function engagementFor(post) {
+  const views = naturalizeNumber(4200 + post.v + ((post.n * 271) % 3900));
+  const likes = naturalizeNumber(680 + (post.l || Math.floor(post.v * 0.23)) + ((post.n * 113) % 1300));
+  const shares = naturalizeNumber(120 + post.s + ((post.n * 47) % 620));
+  return { views, likes, shares };
+}
+
+function pollOptionsFor(post, engagement) {
+  const choices = post.o || [
+    'Agree',
+    'Disagree',
+    'Need more context',
+    'Following updates',
+  ];
+  const voteBudget = Math.max(choices.length, Math.floor(engagement.views * (0.18 + ((post.n % 7) * 0.015))));
+  const weights = [0.37, 0.28, 0.21, 0.14];
+  let used = 0;
+
+  return choices.slice(0, 4).map((text, idx, arr) => {
+    const remainingSlots = arr.length - idx - 1;
+    const rawVotes = idx === arr.length - 1
+      ? voteBudget - used
+      : Math.floor(voteBudget * weights[idx]) + ((post.n * (idx + 5)) % 31);
+    const votes = Math.max(1, Math.min(rawVotes, voteBudget - used - remainingSlots));
+    used += votes;
+    return { text, votes: naturalizeNumber(votes) };
   });
 }
 
+function postAuthorUsername(post) {
+  return AUTHOR_USERNAMES[(post.n - 1) % AUTHOR_USERNAMES.length];
+}
+
+function commentAuthorUsername(post, index) {
+  return COMMENT_USERNAMES[(post.n * 7 + index * 3) % COMMENT_USERNAMES.length];
+}
+
+function getSeedNames() {
+  return new Map(SEEDED_PROFILES.map((profile) => [profile.username, profile.name]));
+}
+
+function getMaxEngagement() {
+  return Math.max(...posts.map((post) => {
+    const engagement = engagementFor(post);
+    return Math.max(engagement.views, engagement.likes, engagement.shares);
+  }));
+}
+
+async function cleanupPostIds(postIds) {
+  if (!postIds.length) return 0;
+
+  const comments = await prisma.comment.findMany({ where: { postId: { in: postIds } }, select: { id: true } });
+  const commentIds = comments.map((comment) => comment.id);
+
+  if (commentIds.length) await prisma.like.deleteMany({ where: { commentId: { in: commentIds } } });
+  await prisma.adminReport.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.share.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.postView.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.like.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.save.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.flag.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.comment.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.media.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.source.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.pollOption.deleteMany({ where: { postId: { in: postIds } } });
+  await prisma.post.updateMany({ where: { parentId: { in: postIds } }, data: { parentId: null } });
+  await prisma.post.deleteMany({ where: { id: { in: postIds } } });
+  return postIds.length;
+}
+
+async function cleanupExistingSeedPosts(seedUserIds = []) {
+  const seedTexts = [...new Set(posts.flatMap((post) => [post.x[0], cleanPostText(post.x[0])]))];
+  const textPostIds = (await prisma.post.findMany({ where: { text: { in: seedTexts } }, select: { id: true } })).map((item) => item.id);
+  const userPostIds = seedUserIds.length
+    ? (await prisma.post.findMany({ where: { authorId: { in: seedUserIds } }, select: { id: true } })).map((item) => item.id)
+    : [];
+  return cleanupPostIds([...new Set([...textPostIds, ...userPostIds])]);
+}
+
+async function upsertUser(username, fallbackName, options = {}) {
+  const profile = SEEDED_PROFILE_BY_USERNAME[username];
+  const image = options.guest ? GUEST_PROFILE_IMAGE : profile?.image;
+  const name = options.guest ? fallbackName : (profile?.name || fallbackName);
+  const description = options.guest ? 'Seeded engagement account.' : (profile?.description || 'Seeded profile.');
+  return prisma.user.upsert({
+    where: { username },
+    update: { name, email: `${username}@mock.shine.local`, description, image, isAuthorized: true },
+    create: { username, name, email: `${username}@mock.shine.local`, provider: 'seed', description, image, isAuthorized: true },
+  });
+}
+
+async function getShineCommunity(creatorId) {
+  const existing = await prisma.community.findFirst({ orderBy: { name: 'asc' } });
+  if (existing) return existing;
+
+  return prisma.community.create({
+    data: {
+      name: SHINE_COMMUNITY_NAME,
+      slogan: 'The main Shine community',
+      discription: 'Default community for seeded conversations.',
+      creatorId,
+    },
+  });
+}
+
+async function addCommunityMemberships(communityId, users) {
+  await prisma.communityMember.createMany({
+    data: users.map((user) => ({ userId: user.id, communityId })),
+    skipDuplicates: true,
+  });
+}
+
+async function createFollowGraph(users, guests) {
+  const follows = [];
+  users.forEach((user, index) => {
+    const followingCount = index < 20 ? 23 + (index % 11) : index < 40 ? 5 + (index % 12) : 2 + (index % 4);
+    for (let step = 1; step <= followingCount; step += 1) {
+      const target = users[(index + step * 3) % users.length];
+      if (target.id !== user.id) follows.push({ followerId: user.id, followingId: target.id });
+    }
+  });
+
+  users.slice(0, 20).forEach((user, index) => {
+    const guestFollowers = 18 + (index % 17);
+    for (let i = 0; i < guestFollowers; i += 1) {
+      follows.push({ followerId: guests[(index * 41 + i) % guests.length].id, followingId: user.id });
+    }
+  });
+
+  await prisma.follows.createMany({ data: follows, skipDuplicates: true });
+}
+
+async function createUserLikesAndSaves(users, createdPosts) {
+  const seededPosts = Object.values(createdPosts);
+  const likes = [];
+  const saves = [];
+
+  users.forEach((user, userIndex) => {
+    const likeCount = 9 + (userIndex % 13);
+    for (let i = 0; i < likeCount; i += 1) {
+      const post = seededPosts[(userIndex * 5 + i * 7) % seededPosts.length];
+      likes.push({ userId: user.id, postId: post.id });
+    }
+
+    if (userIndex % 2 === 0 || userIndex < 20) {
+      const saveCount = 3 + (userIndex % 6);
+      for (let i = 0; i < saveCount; i += 1) {
+        const post = seededPosts[(userIndex * 11 + i * 4) % seededPosts.length];
+        saves.push({ userId: user.id, postId: post.id });
+      }
+    }
+  });
+
+  await prisma.like.createMany({ data: likes, skipDuplicates: true });
+  await prisma.save.createMany({ data: saves, skipDuplicates: true });
+}
+
+async function deleteGuestUsers(guestUserIds) {
+  if (!guestUserIds.length) return 0;
+
+  await prisma.postView.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.like.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.share.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.save.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.flag.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.comment.deleteMany({ where: { authorId: { in: guestUserIds } } });
+  await prisma.notification.deleteMany({ where: { userId: { in: guestUserIds } } });
+  await prisma.follows.deleteMany({ where: { OR: [{ followerId: { in: guestUserIds } }, { followingId: { in: guestUserIds } }] } });
+  await prisma.user.deleteMany({ where: { id: { in: guestUserIds } } });
+  return guestUserIds.length;
+}
+
+async function deleteSeedData() {
+  const allNames = getSeedNames();
+  const seedUsers = await prisma.user.findMany({ where: { username: { in: [...allNames.keys()] } }, select: { id: true, username: true } });
+  const guestUsers = await prisma.user.findMany({ where: { username: { startsWith: 'guest_engagement_' } }, select: { id: true } });
+  const deletedPosts = await cleanupExistingSeedPosts(seedUsers.map((user) => user.id));
+
+  const deletedGuests = await deleteGuestUsers(guestUsers.map((user) => user.id));
+  for (const user of seedUsers) {
+    await deleteUserWithRelations(user.id);
+  }
+
+  console.log(`Deleted ${deletedPosts} seeded geopolitical posts, ${seedUsers.length} seeded profile accounts, and ${deletedGuests} guest engagement accounts.`);
+}
+
 async function main() {
-  const allNames = new Map(Object.entries(authors));
-  posts.forEach((p) => { allNames.set(p.a, authors[p.a] || p.a); p.m.forEach(([u]) => allNames.set(u, authors[u] || u.replace(/_/g, ' '))); });
+  if (process.argv.includes('--delete')) {
+    await deleteSeedData();
+    return;
+  }
+
+  const allNames = getSeedNames();
   for (const [username, name] of allNames) await upsertUser(username, name);
 
-  const maxEngagement = Math.max(...posts.map(p => Math.max(p.v, p.l || 0, p.s)));
+  const unorderedSeedUsers = await prisma.user.findMany({ where: { username: { in: [...allNames.keys()] } } });
+  const userByUsername = Object.fromEntries(unorderedSeedUsers.map((user) => [user.username, user]));
+  const seedUsers = SEEDED_PROFILES.map((profile) => userByUsername[profile.username]).filter(Boolean);
+  await cleanupExistingSeedPosts(seedUsers.map((user) => user.id));
+
+  const shineCommunity = await getShineCommunity(seedUsers[0].id);
+  await addCommunityMemberships(shineCommunity.id, seedUsers);
+
+  const maxEngagement = getMaxEngagement();
   const guests = [];
   for (let i = 1; i <= maxEngagement; i += 1) {
-    const username = `guest_engagement_${String(i).padStart(4, '0')}`;
-    guests.push(await upsertUser(username, `Guest ${String(i).padStart(4, '0')}`, { guest: true }));
+    const username = `guest_engagement_${String(i).padStart(5, '0')}`;
+    guests.push(await upsertUser(username, `Guest ${String(i).padStart(5, '0')}`, { guest: true }));
   }
 
+  await createFollowGraph(seedUsers, guests);
+
   const users = Object.fromEntries((await prisma.user.findMany({ where: { username: { in: [...allNames.keys()] } } })).map(u => [u.username, u]));
-  const existingSeedPostIds = (await prisma.post.findMany({ where: { text: { in: posts.map((post) => post.x[0]) } }, select: { id: true } })).map((item) => item.id);
-  if (existingSeedPostIds.length) {
-    await prisma.share.deleteMany({ where: { postId: { in: existingSeedPostIds } } });
-    await prisma.postView.deleteMany({ where: { postId: { in: existingSeedPostIds } } });
-    await prisma.like.deleteMany({ where: { postId: { in: existingSeedPostIds } } });
-    await prisma.comment.deleteMany({ where: { postId: { in: existingSeedPostIds } } });
-    await prisma.pollOption.deleteMany({ where: { postId: { in: existingSeedPostIds } } });
-    await prisma.post.updateMany({ where: { parentId: { in: existingSeedPostIds } }, data: { parentId: null } });
-    await prisma.post.deleteMany({ where: { id: { in: existingSeedPostIds } } });
-  }
   const createdPosts = {};
 
   for (const post of posts.sort((a,b)=>a.n-b.n)) {
+    const engagement = engagementFor(post);
+    const authorUsername = postAuthorUsername(post);
     const created = await prisma.post.create({
       data: {
         type: post.t,
-        text: post.x[0],
+        text: cleanPostText(post.x[0]),
         keywords: post.k,
-        authorId: users[post.a].id,
+        authorId: users[authorUsername].id,
+        communityId: shineCommunity.id,
         parentId: post.p ? createdPosts[post.p]?.id : null,
         createdAt: new Date(dateFor(post)),
         updatedAt: new Date(dateFor(post)),
-        pollOptions: post.t === 'poll' ? { create: post.o.map((text, idx) => ({ text, votes: Math.max(0, Math.floor((post.v || 0) / (idx + 6))) })) } : undefined,
+        pollOptions: { create: pollOptionsFor(post, engagement) },
       }
     });
     createdPosts[post.n] = created;
 
     await prisma.postView.createMany({
-      data: Array.from({ length: post.v }, (_, i) => ({ userId: guests[i].id, postId: created.id, viewedAt: new Date(dateFor(post, 1 + i)) })),
+      data: Array.from({ length: engagement.views }, (_, i) => ({ userId: guests[i].id, postId: created.id, viewedAt: new Date(dateFor(post, 1 + i)) })),
     });
-    if (post.l) {
-      await prisma.like.createMany({
-        data: Array.from({ length: post.l }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
-      });
-    }
+    await prisma.like.createMany({
+      data: Array.from({ length: engagement.likes }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
+    });
     await prisma.share.createMany({
-      data: Array.from({ length: post.s }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
+      data: Array.from({ length: engagement.shares }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
     });
 
-    const comments = [...post.m];
+    const comments = post.m.map(([, text], index) => [commentAuthorUsername(post, index), text]);
     while (comments.length < post.c) {
       const idx = comments.length;
-      comments.push([fillerUsers[(post.n + idx) % fillerUsers.length], fillerTemplates[(post.n + idx) % fillerTemplates.length]]);
-    }
-    for (const [username] of comments) {
-      if (!users[username]) users[username] = await upsertUser(username, authors[username] || username.replace(/_/g, ' '));
+      comments.push([commentAuthorUsername(post, idx), fillerTemplates[(post.n + idx) % fillerTemplates.length]]);
     }
     await prisma.comment.createMany({
-      data: comments.map(([username, text], i) => ({ postId: created.id, authorId: users[username].id, text, createdAt: new Date(dateFor(post, post.v + i + 1)) })),
+      data: comments.map(([username, text], i) => ({ postId: created.id, authorId: users[username].id, text, createdAt: new Date(dateFor(post, engagement.views + i + 1)) })),
     });
   }
 
-  console.log(`Seeded ${posts.length} geopolitical posts oldest-to-newest with guest-backed views, likes, shares, comments, poll choices, immutable profile images, and latest-week keywords.`);
+  await createUserLikesAndSaves(seedUsers, createdPosts);
+
+  console.log(`Seeded ${posts.length} posts by ${AUTHOR_USERNAMES.length} profiles in the ${shineCommunity.name} community with realistic follows, likes, saves, poll options, and natural-looking engagement numbers.`);
 }
 
 main().catch((error) => { console.error(error); process.exit(1); }).finally(async () => { await prisma.$disconnect(); });

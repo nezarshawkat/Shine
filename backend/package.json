@@ -6,7 +6,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "seed:ai-accounts": "node scripts_seed_ai_accounts.js",
-    "seed:geopolitical-posts": "node scripts_seed_geopolitical_posts.js"
+    "seed:geopolitical-posts": "node scripts_seed_geopolitical_posts.js",
+    "seed:ai-accounts:delete": "node scripts_seed_ai_accounts.js --delete",
+    "seed:geopolitical-posts:delete": "node scripts_seed_geopolitical_posts.js --delete",
+    "seed:all:delete": "npm run seed:geopolitical-posts:delete && npm run seed:ai-accounts:delete"
   },
   "keywords": [],
   "author": "",
