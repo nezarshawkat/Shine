@@ -120,7 +120,7 @@ function pollOptionsFor(post, engagement) {
       : Math.floor(voteBudget * weights[idx]) + ((post.n * (idx + 5)) % 31);
     const votes = Math.max(1, Math.min(rawVotes, voteBudget - used - remainingSlots));
     used += votes;
-    return { text, votes: naturalizeNumber(votes) };
+    return { text, votes };
   });
 }
 
@@ -252,6 +252,29 @@ async function createUserLikesAndSaves(users, createdPosts) {
   await prisma.save.createMany({ data: saves, skipDuplicates: true });
 }
 
+async function createAnonymousPollVotes(pollOptionsByPost, guests) {
+  const pollVotes = [];
+
+  Object.values(pollOptionsByPost).forEach((options, postIndex) => {
+    let cursor = postIndex * 97;
+    options.forEach((option) => {
+      for (let i = 0; i < option.votes; i += 1) {
+        pollVotes.push({ A: option.id, B: guests[(cursor + i) % guests.length].id });
+      }
+      cursor += option.votes + 23;
+    });
+  });
+
+  const batchSize = 1000;
+  for (let start = 0; start < pollVotes.length; start += batchSize) {
+    const batch = pollVotes.slice(start, start + batchSize);
+    await prisma.$executeRawUnsafe(
+      'INSERT INTO "_PollOptionToUser" ("A", "B") VALUES ' + batch.map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`).join(', ') + ' ON CONFLICT DO NOTHING',
+      ...batch.flatMap((vote) => [vote.A, vote.B]),
+    );
+  }
+}
+
 async function deleteGuestUsers(guestUserIds) {
   if (!guestUserIds.length) return 0;
 
@@ -309,24 +332,27 @@ async function main() {
 
   const users = Object.fromEntries((await prisma.user.findMany({ where: { username: { in: [...allNames.keys()] } } })).map(u => [u.username, u]));
   const createdPosts = {};
+  const pollOptionsByPost = {};
 
   for (const post of posts.sort((a,b)=>a.n-b.n)) {
     const engagement = engagementFor(post);
     const authorUsername = postAuthorUsername(post);
+    const pollOptions = pollOptionsFor(post, engagement);
     const created = await prisma.post.create({
       data: {
         type: post.t,
         text: cleanPostText(post.x[0]),
         keywords: post.k,
         authorId: users[authorUsername].id,
-        communityId: shineCommunity.id,
+        communityId: post.n % 3 === 0 ? shineCommunity.id : null,
         parentId: post.p ? createdPosts[post.p]?.id : null,
         createdAt: new Date(dateFor(post)),
         updatedAt: new Date(dateFor(post)),
-        pollOptions: { create: pollOptionsFor(post, engagement) },
+        pollOptions: { create: pollOptions },
       }
     });
     createdPosts[post.n] = created;
+    pollOptionsByPost[post.n] = await prisma.pollOption.findMany({ where: { postId: created.id }, select: { id: true, votes: true } });
 
     await prisma.postView.createMany({
       data: Array.from({ length: engagement.views }, (_, i) => ({ userId: guests[i].id, postId: created.id, viewedAt: new Date(dateFor(post, 1 + i)) })),
@@ -348,6 +374,7 @@ async function main() {
     });
   }
 
+  await createAnonymousPollVotes(pollOptionsByPost, guests);
   await createUserLikesAndSaves(seedUsers, createdPosts);
 
   console.log(`Seeded ${posts.length} posts by ${AUTHOR_USERNAMES.length} profiles in the ${shineCommunity.name} community with realistic follows, likes, saves, poll options, and natural-looking engagement numbers.`);

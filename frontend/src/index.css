@@ -800,3 +800,33 @@ html[data-theme="dark"] .community-page .critique-post-mobile-keywords span,
 html[data-theme="dark"] .profile-page .critique-post-mobile-keywords span {
   color: #000 !important;
 }
+
+/* Dark mode readability for poll choices and critique reply previews */
+html[data-theme="dark"] .poll-option-card {
+  background: #000 !important;
+  border-color: #fff !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .poll-option-card .poll-option-text,
+html[data-theme="dark"] .poll-option-card .poll-option-percent {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .poll-option-card.poll-option-selected {
+  background: #F0F7FF !important;
+  border-color: #FFC847 !important;
+}
+
+html[data-theme="dark"] .poll-option-card.poll-option-selected .poll-option-text,
+html[data-theme="dark"] .poll-option-card.poll-option-selected .poll-option-percent {
+  color: #000 !important;
+}
+
+html[data-theme="dark"] .critique-post-original-preview {
+  background: #000 !important;
+}
+
+html[data-theme="dark"] .critique-post-original-preview .critique-post-original-preview-text {
+  color: #fff !important;
+}

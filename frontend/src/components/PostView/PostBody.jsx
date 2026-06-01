@@ -887,6 +887,7 @@ export default function PostBody() {
                   return (
                     <div
                       key={opt.id}
+                      className={`poll-option-card ${isThisVoted ? "poll-option-selected" : ""}`}
                       onClick={() => handlePollVote(opt.id)}
                       style={{
                         position: "relative",
@@ -922,9 +923,9 @@ export default function PostBody() {
                           fontWeight: isThisVoted ? 700 : 400,
                         }}
                       >
-                        <span>{opt.text}</span>
+                        <span className="poll-option-text">{opt.text}</span>
                         {votedOptionId && (
-                          <span style={{ fontSize: 12 }}>{percentage}%</span>
+                          <span className="poll-option-percent" style={{ fontSize: 12 }}>{percentage}%</span>
                         )}
                       </div>
                     </div>

@@ -317,7 +317,7 @@ export default function PollPost({ postId, initialData }) {
             const percentage = totalVotes ? Math.round((currentOptionVotes / totalVotes) * 100) : 0;
             const isSelected = selectedOption === option.id;
             return (
-              <div key={option.id} onClick={(e) => handleVote(e, option.id)}
+              <div key={option.id} className={`poll-option-card ${isSelected ? "poll-option-selected" : ""}`} onClick={(e) => handleVote(e, option.id)}
                 style={{
                   background: "#F6F6F6", borderRadius: 10, padding: "14px",
                   cursor: selectedOption ? "default" : "pointer",
@@ -329,8 +329,8 @@ export default function PollPost({ postId, initialData }) {
                     background: isSelected ? "rgba(255,200,71,0.3)" : "rgba(28, 39, 76, 0.08)", zIndex: 0 }} />
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
-                  <span style={{ fontSize: 15, color: "#1C274C", fontWeight: isSelected ? 700 : 500 }}>{option.text} {isSelected && " ✓"}</span>
-                  {showResults && <span style={{ fontSize: 14, fontWeight: 700 }}>{percentage}%</span>}
+                  <span className="poll-option-text" style={{ fontSize: 15, color: "#1C274C", fontWeight: isSelected ? 700 : 500 }}>{option.text} {isSelected && " ✓"}</span>
+                  {showResults && <span className="poll-option-percent" style={{ fontSize: 14, fontWeight: 700 }}>{percentage}%</span>}
                 </div>
               </div>
             );
