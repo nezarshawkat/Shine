@@ -8,6 +8,10 @@ const prisma = require("./prisma.js");
 const { OAuth2Client } = require("google-auth-library");
 const { startDigestScheduler } = require("./services/notificationDigestService");
 const { startAutoActivitySystem } = require("./autoActivitySystem");
+const dataService = require("./services/dataService");
+const { startSyncEngine } = require("./sync/syncEngine");
+const localUsers = require("./services/localUserService");
+const { LOCAL_UPLOAD_ROOT } = require("./lib/supabaseStorage");
 
 const { pingRouter, startping } = require("./ping");
 
@@ -15,6 +19,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const localOnly =
+  process.env.DATABASE_MODE === "local" ||
+  process.env.LOCAL_ONLY_DB === "true" ||
+  !process.env.DATABASE_URL;
 
 // ================= 1. CORS CONFIGURATION =================
 // Added your Vercel production URL to the allowed list
@@ -54,6 +62,7 @@ app.use('/api', paymentRoutes);
 
 // ================= 3. GLOBAL MIDDLEWARE =================
 app.use(express.json());
+app.use("/uploads", express.static(LOCAL_UPLOAD_ROOT));
 
 // ================= 4. REDIS SETUP =================
 let redisClient = null;
@@ -121,11 +130,30 @@ app.get("/health", (req, res) => {
 
 // Deep health endpoint for manual diagnostics or platform checks that must validate DB connectivity.
 app.get("/health/db", async (req, res) => {
+  if (localOnly) {
+    return res.json({
+      status: "ok",
+      environment: process.env.NODE_ENV,
+      database: "local-sqlite",
+      localDatabase: dataService.getStatus(),
+    });
+  }
+
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: "ok", environment: process.env.NODE_ENV, database: "ok" });
+    res.json({
+      status: "ok",
+      environment: process.env.NODE_ENV,
+      database: "ok",
+      localDatabase: dataService.getStatus(),
+    });
   } catch (e) {
-    res.status(500).json({ status: "error", error: e.message, database: "down" });
+    res.status(500).json({
+      status: "error",
+      error: e.message,
+      database: "down",
+      localDatabase: dataService.getStatus(),
+    });
   }
 });
 
@@ -140,6 +168,16 @@ app.post("/api/auth/google", async (req, res) => {
 
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
+
+    if (localOnly) {
+      const user = localUsers.upsertGoogleUser({
+        email,
+        name,
+        googleId,
+        image: payload.picture,
+      });
+      return res.json({ success: true, user });
+    }
 
     const user = await prisma.user.upsert({
       where: { email },
@@ -160,6 +198,17 @@ app.post("/api/auth/google", async (req, res) => {
 });
 
 // ================= 10. START SERVER =================
-startDigestScheduler();
-startAutoActivitySystem();
+if (localOnly) {
+  console.log("Starting Shine in local-only SQLite mode.");
+} else {
+  startDigestScheduler();
+  startAutoActivitySystem();
+  dataService
+    .bootstrapLocalCache()
+    .then((count) => {
+      if (count) console.log(`Hybrid local cache bootstrapped with ${count} recent posts`);
+    })
+    .catch((error) => console.error("Hybrid local cache bootstrap failed:", error.message));
+  startSyncEngine();
+}
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
