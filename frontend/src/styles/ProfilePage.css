@@ -1,0 +1,589 @@
+/* --------------------------------------------------
+   PAGE LAYOUT
+-------------------------------------------------- */
+.profile-page {
+  /* No horizontal padding to allow sticky bg to touch screen edges */
+  padding: 110px 0 0; 
+}
+
+/* 80px padding for centered content blocks */
+.profile-top,
+.tab-content,
+.divider-wrapper {
+  padding-left: 80px;
+  padding-right: 80px;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------
+   TOP SECTION
+-------------------------------------------------- */
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.profile-image {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profile-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1c274c;
+}
+
+.profile-username {
+  font-size: 23px;
+  font-weight: 500;
+  color: rgba(28, 39, 76, 0.5);
+}
+
+.profile-follow {
+  margin-top: 20px;
+  display: flex;
+  gap: 35px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.profile-badge {
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ffc847;
+  border-radius: 8px;
+  background: rgba(255, 200, 71, 0.2);
+  color: #ffc847;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+
+.profile-badge.role-starter {
+  border-color: #ffc847;
+  background: rgba(255, 200, 71, 0.2);
+  color: #a66c00;
+}
+
+.profile-badge.role-intermediate {
+  border-color: #7ab4ff;
+  background: rgba(122, 180, 255, 0.2);
+  color: #1d5dbf;
+}
+
+.profile-badge.role-proffesional {
+  border-color: #71d79a;
+  background: rgba(113, 215, 154, 0.2);
+  color: #147a3e;
+}
+
+.profile-description {
+  max-width: 420px;
+  font-size: 23px;
+  font-weight: 400;
+  color: rgba(28, 39, 76, 0.5);
+}
+
+/* --------------------------------------------------
+   ACTION GROUP & MENU ALIGNMENT
+-------------------------------------------------- */
+.profile-action-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap; /* Prevents wrapping on small screens */
+}
+
+.menu-btn {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  transition: background 0.2s;
+  padding: 0; /* Reset for circular shape */
+}
+
+.menu-btn:hover {
+  background: #f9f9f9;
+}
+
+/* --------------------------------------------------
+   UNIFIED SEARCH STYLE
+-------------------------------------------------- */
+.profile-search-container input,
+.mobile-search-bar input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(28, 39, 76, 0.22);
+  background-color: #ffffff;
+  color: #1c274c;
+  outline: none;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.profile-search-container input::placeholder,
+.mobile-search-bar input::placeholder {
+  color: rgba(28, 39, 76, 0.55);
+}
+
+.profile-search-container input:focus,
+.mobile-search-bar input:focus {
+  border-color: #ffc847;
+}
+
+/* --------------------------------------------------
+   DIVIDERS
+-------------------------------------------------- */
+.divider {
+  margin-top: 30px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* --------------------------------------------------
+   STICKY CONTAINER
+-------------------------------------------------- */
+.profile-sticky-container {
+  position: sticky;
+  top: 71px; 
+  z-index: 100;
+  background: #F7F9FC;
+  width: 100%;
+}
+
+.profile-tabs {
+  padding: 20px 80px 20px; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-sticky-container .divider.second {
+  margin: 0; 
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* --------------------------------------------------
+   TABS & NAVIGATION
+-------------------------------------------------- */
+.tabs-left {
+  display: flex;
+  gap: 30px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  font-weight: 300;
+  color: #000;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  color: #ffc847;
+  font-weight: 500;
+}
+
+.tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.follow-btn {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 22px;
+  font-weight: 400;
+  background: none;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------
+   CONTENT FEED
+-------------------------------------------------- */
+.tab-content {
+  margin-top: 37px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-post-wrapper {
+  width: 765px;
+  max-width: 100%;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.articles-feed-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  width: 100%;
+  padding-top: 50px;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 1.1rem;
+}
+
+/* --------------------------------------------------
+   POPUPS
+-------------------------------------------------- */
+.menu-container-relative {
+  position: relative;
+}
+
+.profile-menu-popup {
+  position: absolute;
+  right: 0;
+  top: 45px;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 0;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  width: 180px;
+  z-index: 9999; /* Higher z-index to stay on top of everything */
+}
+
+.profile-menu-popup div {
+  padding: 12px 15px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.profile-menu-popup div:hover {
+  background: #f2f2f2;
+}
+
+/* --------------------------------------------------
+   MOBILE ONLY PROFILE STYLES (768px and below)
+-------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding-top: 86px;
+  }
+
+  .profile-top,
+  .tab-content,
+  .divider-wrapper {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+
+  .profile-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+    margin-bottom: 30px; 
+  }
+
+  .profile-left {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .profile-image {
+    width: 110px;
+    height: 110px;
+  }
+
+  .profile-name {
+    font-size: 22px;
+  }
+
+  .profile-badge {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+
+  .profile-username {
+    font-size: 16px;
+  }
+
+  .profile-follow {
+    margin-top: 10px;
+    gap: 20px;
+    font-size: 15px;
+  }
+
+  .profile-follow.profile-follow-center-mobile {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .profile-description {
+    text-align: center;
+    max-width: 100%;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .profile-sticky-container {
+    top: 60px !important;
+    background: white;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .profile-tabs {
+    padding: 10px 15px !important;
+    height: 60px;
+  }
+
+  .tabs-left {
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 15px;
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .tab-btn {
+    font-size: 18px;
+  }
+
+  .tabs-right {
+    display: none;
+  }
+
+  .mobile-search-bar {
+    margin-bottom: 30px;
+    width: 100%;
+  }
+
+  .mobile-search-bar input {
+    border: 1px solid rgba(28, 39, 76, 0.14) !important;
+  }
+
+  .mobile-action-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Follow/Edit Button Mobile Styling */
+  .follow-btn {
+    font-size: 14px !important;
+    padding: 8px 20px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 9999px !important;
+    background: #fff !important;
+    color: #1c274c;
+    height: 38px !important;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* Menu Button Mobile Circle Overrides */
+  .menu-btn {
+    width: 38px !important; /* Matches follow-btn height for symmetry */
+    height: 38px !important;
+    border-radius: 50% !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    font-size: 22px !important;
+  }
+
+  .tab-content {
+    margin-top: 0;
+  }
+
+  .profile-post-wrapper,
+  .saved-post-container,
+  .articles-feed-container {
+    width: 100% !important;
+  }
+
+  .divider {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .profile-page .divider,
+  .profile-page .divider.second {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+}
+/* --- Report Modal Overlay --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Dimmed background */
+  backdrop-filter: blur(4px);    /* Modern frosted glass effect */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* --- Modal Container --- */
+.modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.modal-content p {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+/* --- Reason Buttons --- */
+.report-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.reason-btn {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+.reason-btn:hover {
+  background: #f0f2f5;
+  border-color: #ccc;
+}
+
+.reason-btn.selected {
+  background: #fff0f0; /* Soft red tint */
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+  font-weight: 600;
+}
+
+/* --- Action Buttons --- */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: none;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  color: #1a1a1a;
+}
+
+.submit-btn {
+  background: #ff4d4d; /* Matches the "Report" red */
+  color: white;
+  border: none;
+  flex: 1; /* Makes submit button more prominent */
+}
+
+.submit-btn:disabled {
+  background: #ffcccc;
+  cursor: not-allowed;
+}
+
+.submit-btn:not(:disabled):hover {
+  background: #e60000;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 20px;
+    margin-top: auto; /* Slides up from bottom on mobile */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
