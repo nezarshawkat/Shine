@@ -2,11 +2,23 @@
   "rewrites": [
     {
       "source": "/share/(.*)",
-      "destination": "https://shine-a77g.onrender.com/share/$1"
+      "destination": "https://api.sshine.org/share/$1"
     },
     {
       "source": "/api/(.*)",
-      "destination": "https://shine-a77g.onrender.com/api/$1"
+      "destination": "https://api.sshine.org/api/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://api.sshine.org/uploads/$1"
+    },
+    {
+      "source": "/health",
+      "destination": "https://api.sshine.org/health"
+    },
+    {
+      "source": "/health/(.*)",
+      "destination": "https://api.sshine.org/health/$1"
     },
     { "source": "/(.*)", "destination": "/" }
   ]
