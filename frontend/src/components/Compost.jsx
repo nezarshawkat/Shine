@@ -10,7 +10,7 @@ import TagIcon from "../assets/Tag.svg";
 import FlagIcon from "../assets/Flag.svg";
 import ArrowIcon from "../assets/arrow.svg";
 import CommentIcon from "../assets/comment.svg";
-import HeartIcon from "../assets/Heart.svg";
+import HeartIcon from "../assets/heart.svg";
 
 const PRIMARY = "#1C274C";
 const ACCENT = "#FFC847";

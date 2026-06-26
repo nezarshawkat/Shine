@@ -5,7 +5,7 @@ import SharePopup from "../posts/SharePopup.jsx";
 import { API_BASE_URL, BACKEND_URL } from "../../api";
 
 // Icons
-import heartIcon from "../../assets/Heart.svg";
+import heartIcon from "../../assets/heart.svg";
 import heartClickedIcon from "../../assets/HeartC.svg";
 import shareIcon from "../../assets/Share.svg";
 import saveIcon from "../../assets/Tag.svg";
