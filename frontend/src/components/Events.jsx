@@ -40,6 +40,11 @@ export default function Events() {
 
   const handleParticipate = async () => {
     if (!activeEvent?.id) return;
+    if (activeEvent.actionType === "LINK") {
+      if (activeEvent.externalLink) window.open(activeEvent.externalLink, "_blank", "noopener,noreferrer");
+      else showToast("This event link is unavailable.", "error");
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -211,12 +216,14 @@ export default function Events() {
 
         <div className="event-footer">
           <span className="info-text">
-            * Participation info will be sent to you after pressing this button
+            {activeEvent.actionType === "LINK"
+              ? "* The participation page will open in a new tab"
+              : "* Participation info will be sent to you after pressing this button"}
           </span>
 
           <div className="event-actions">
             <button className="btn-primary" onClick={handleParticipate}>
-              Participate
+              {activeEvent.actionType === "LINK" ? "Open Registration" : "Participate"}
             </button>
             <span className="contact-text">Contact for info.</span>
           </div>

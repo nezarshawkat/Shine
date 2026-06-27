@@ -5,101 +5,46 @@
   flex-direction: column;
 }
 
-/* Space between header and content */
+/* Match the forum's three-column proportions and orientation. */
 .communities-page .communities-container {
   display: grid;
-  grid-template-columns: 1fr 2.78fr 1fr; /* left:center:right ratio */
-  column-gap: 20px;
-  justify-content: center;
+  grid-template-columns: 1fr 2.78fr 1fr;
+  gap: 20px;
   width: 100%;
-  margin: 0; /* spacing from header */
-  padding: 0 24px; /* left & right padding */
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: stretch;
 }
 
-/* Each section basic styling */
-.communities-page .left-column,
-.communities-page .center-column,
-.communities-page .right-column {
-  background-color: #f6f8fc;
-  border-radius: 10px;
-  padding-top: 92px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Add bottom spacing only for sidebars on Communities page */
 .communities-page .left-column,
 .communities-page .right-column {
-  padding-bottom: 20px; /* spacing from bottom */
+  position: relative;
 }
 
-/* Center column stretches full width of its grid column */
 .communities-page .center-column {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100%;
 }
 
-/* Center content (Commb + FeedC) stretches fully within center column */
 .communities-page .center-column .center-content {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* spacing between Commb and FeedC */
-  width: 100%; /* stretch full width of center column */
+  gap: 16px;
+  width: 100%;
 }
 
-/* Make Commb and FeedC fill center column */
 .communities-page .center-column .center-content > .commb,
 .communities-page .center-column .center-content > .feedc {
   width: 100%;
 }
 
-/* Responsive behavior */
 @media (max-width: 1216px) {
   .communities-page .communities-container {
     grid-template-columns: 1fr;
-    row-gap: 20px;
-  }
-
-  .communities-page .center-column .center-content {
-    width: 100%;
-  }
-}
-/* Center column stretches full width of its grid column */
-.communities-page .center-column {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* center content horizontally */
-}
-
-/* Center content (Commb + FeedC) stretches fully within center column */
-.communities-page .center-column .center-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px; /* spacing between Commb and FeedC */
-  width: 100%; /* full width of center column */
-  max-width: 100%; 
-  align-items: center; /* center children horizontally */
-}
-
-/* Make Commb and FeedC fill center column but stay centered */
-.communities-page .center-column .center-content > .commb,
-.communities-page .center-column .center-content > .feedc {
-  width: 100%;
-  max-width: 1000px; /* optional: limit max width for nicer center layout */
-}
-
-
-@media (max-width: 1216px) {
-  .communities-page .communities-container { padding: 0 12px 16px; }
-  .communities-page .left-column, .communities-page .right-column { display:none; }
-  .communities-page .center-column { padding-top: 8px; }
-  .communities-page .center-column .center-content { gap: 12px; }
-
-@media (max-width: 768px) {
-  .communities-page .communities-container {
-    padding: 0 12px;
+    padding: 0 12px 20px;
   }
 
   .communities-page .left-column,
@@ -110,6 +55,16 @@
   .communities-page .center-column,
   .communities-page .center-column .center-content {
     align-items: stretch;
+  }
+
+  .communities-page .center-column .center-content {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .communities-page .communities-container {
+    padding: 0 12px;
   }
 }
 
@@ -188,5 +143,4 @@
   .floating-page-menu-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
   .floating-page-menu-tabs button { border: 1px solid #1C274C; background: #fff; color: #1C274C; border-radius: 8px; padding: 4px 10px; }
   .floating-page-menu-tabs button.active { background: #1C274C; color: #fff; }
-}
 }

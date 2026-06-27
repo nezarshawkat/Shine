@@ -37,6 +37,7 @@ export default function AutoActivity() {
         {error && <p className="error-text">{error}</p>}
         <p><strong>Running:</strong> {data?.running ? "Yes" : "No"}</p>
         <p><strong>Enabled by env:</strong> {String(data?.config?.enabled)}</p>
+        <p><strong>API keys ready:</strong> {data?.config?.ready ? "Yes" : "No"}</p>
         <p><strong>Post interval:</strong> {data?.config?.intervalMs} ms</p>
         <p><strong>Article interval:</strong> {data?.config?.articleIntervalMs} ms</p>
         <div className="actions">

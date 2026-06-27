@@ -34,7 +34,6 @@ function Toast({ message, type = "success", duration = 2000, onClose }) {
 const Post = ({ article: initialArticle, profileUser }) => {
   const navigate = useNavigate();
   const { user: loggedInUser } = useContext(AuthContext);
-  const postRef = useRef(null);
   const menuRef = useRef(null);
 
   const [article, setArticle] = useState(initialArticle);
@@ -43,7 +42,6 @@ const Post = ({ article: initialArticle, profileUser }) => {
   const [showShare, setShowShare] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [toast, setToast] = useState(null);
-  const [hasCountedView, setHasCountedView] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
 
   const showToast = (message, type = "success") => setToast({ message, type });
@@ -61,44 +59,6 @@ const Post = ({ article: initialArticle, profileUser }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // View Tracking (Observer)
-  useEffect(() => {
-    if (!article?.id || hasCountedView || isDeleted) return;
-    let timer;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !hasCountedView) {
-          timer = setTimeout(() => recordView(article.id), 2000); 
-        } else {
-          clearTimeout(timer);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (postRef.current) observer.observe(postRef.current);
-    return () => {
-      observer.disconnect();
-      clearTimeout(timer);
-    };
-  }, [article?.id, hasCountedView, isDeleted]);
-
-  const recordView = async (articleId) => {
-    try {
-      const userId = currentUserId || "anonymous";
-      const res = await fetch(`${BACKEND_URL}/api/articles/${articleId}/view?userId=${userId}`, {
-        method: "POST"
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHasCountedView(true);
-        setArticle(prev => ({
-          ...prev,
-          _count: { ...prev._count, views: data.viewsCount ?? prev._count.views }
-        }));
-      }
-    } catch (e) { console.error("View tracking error", e); }
-  };
 
   useEffect(() => {
     if (!currentUserId || !article?.id || isDeleted) return;
@@ -186,7 +146,6 @@ const Post = ({ article: initialArticle, profileUser }) => {
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       
       <div
-        ref={postRef}
         onClick={handlePostClick}
         className="article-post-card"
         style={{

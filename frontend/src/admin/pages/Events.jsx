@@ -4,7 +4,7 @@ import API, { buildMediaUrl } from "../../api";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", detailsMessage: "", image: "" });
+  const [form, setForm] = useState({ title: "", description: "", actionType: "MESSAGE", detailsMessage: "", externalLink: "", image: "" });
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -47,13 +47,14 @@ export default function Events() {
   };
 
   const createEvent = async () => {
-    if (!form.title || !form.description || !form.detailsMessage || !form.image || uploading) {
+    const missingAction = form.actionType === "LINK" ? !form.externalLink : !form.detailsMessage;
+    if (!form.title || !form.description || missingAction || !form.image || uploading) {
       return;
     }
 
     setError("");
     await adminRequest("post", "/events", form);
-    setForm({ title: "", description: "", detailsMessage: "", image: "" });
+    setForm({ title: "", description: "", actionType: "MESSAGE", detailsMessage: "", externalLink: "", image: "" });
     setImagePreview("");
     load();
   };
@@ -82,13 +83,28 @@ export default function Events() {
             setForm((f) => ({ ...f, description: e.target.value }))
           }
         />
-        <textarea
-          placeholder="Details message sent automatically to participants"
-          value={form.detailsMessage}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, detailsMessage: e.target.value }))
-          }
-        />
+        <label style={{ fontWeight: 600 }}>Participation action</label>
+        <select
+          value={form.actionType}
+          onChange={(e) => setForm((f) => ({ ...f, actionType: e.target.value }))}
+        >
+          <option value="MESSAGE">Send a Messenger notification</option>
+          <option value="LINK">Open an external link</option>
+        </select>
+        {form.actionType === "MESSAGE" ? (
+          <textarea
+            placeholder="Details message sent automatically to participants"
+            value={form.detailsMessage}
+            onChange={(e) => setForm((f) => ({ ...f, detailsMessage: e.target.value }))}
+          />
+        ) : (
+          <input
+            type="url"
+            placeholder="https://example.com/register"
+            value={form.externalLink}
+            onChange={(e) => setForm((f) => ({ ...f, externalLink: e.target.value }))}
+          />
+        )}
         <label style={{ fontWeight: 600 }}>Upload Event Image or Video</label>
         <input type="file" accept="image/*,video/*" onChange={onFileChange} />
         <input
@@ -110,7 +126,8 @@ export default function Events() {
         <button
           onClick={createEvent}
           disabled={
-            !form.title || !form.description || !form.detailsMessage || !form.image || uploading
+            !form.title || !form.description || !form.image || uploading ||
+            (form.actionType === "MESSAGE" ? !form.detailsMessage : !form.externalLink)
           }
         >
           {uploading ? "Uploading media..." : "Create Event"}
@@ -122,7 +139,7 @@ export default function Events() {
             <th>Image</th>
             <th>Title</th>
             <th>Description</th>
-            <th>Details Message</th>
+            <th>Action</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -163,17 +180,23 @@ export default function Events() {
               </td>
               <td>{eventItem.title}</td>
               <td>{eventItem.description}</td>
-              <td style={{ maxWidth: 320, whiteSpace: "pre-wrap" }}>{eventItem.detailsMessage || "-"}</td>
+              <td style={{ maxWidth: 320, whiteSpace: "pre-wrap" }}>
+                {eventItem.actionType === "LINK" ? eventItem.externalLink : eventItem.detailsMessage || "-"}
+              </td>
               <td style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={async () => {
-                    const nextMessage = window.prompt("Edit participation details message", eventItem.detailsMessage || "");
-                    if (nextMessage === null) return;
-                    await adminRequest("put", `/events/${eventItem.id}`, { detailsMessage: nextMessage });
+                    const isLink = eventItem.actionType === "LINK";
+                    const nextValue = window.prompt(
+                      isLink ? "Edit external participation link" : "Edit participation details message",
+                      isLink ? eventItem.externalLink || "" : eventItem.detailsMessage || ""
+                    );
+                    if (nextValue === null) return;
+                    await adminRequest("put", `/events/${eventItem.id}`, isLink ? { externalLink: nextValue } : { detailsMessage: nextValue });
                     load();
                   }}
                 >
-                  Edit Message
+                  Edit Action
                 </button>
                 <button className="danger" onClick={() => remove(eventItem.id)}>
                   Delete
