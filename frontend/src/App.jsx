@@ -128,7 +128,7 @@ function AppRoutes() {
     "/admin/polls",
     "/admin/surveys",
     "/admin/forms",
-    "/admin/qa",
+    "/admin/auto-activity",
     "/admin/discussions",
     "/admin/forums",
     "/admin/community",
