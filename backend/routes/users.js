@@ -305,7 +305,7 @@ router.put("/:userId", memoryUpload.single("image"), async (req, res) => {
     if (name) updateData.name = name;
     if (username) {
       if (!USERNAME_REGEX.test(username)) {
-        return res.status(400).json({ error: "Username must be 3-30 characters and use only letters, numbers, or underscores." });
+        return res.status(400).json({ error: "Username must be 3-30 characters with no spaces and use only letters, numbers, or underscores." });
       }
       updateData.username = username;
     }

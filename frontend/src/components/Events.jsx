@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
+import { Pause, Play } from "lucide-react";
 import "../styles/events.css";
 import { API_BASE_URL, buildMediaUrl } from "../api";
 
@@ -194,9 +195,11 @@ export default function Events() {
 
         <button
           className="slideshow-toggle"
-          onClick={() => setIsPlaying(!isPlaying)}
+          onClick={() => setIsPlaying((playing) => !playing)}
+          aria-label={isPlaying ? "Pause event slideshow" : "Resume event slideshow"}
+          title={isPlaying ? "Pause slideshow" : "Resume slideshow"}
         >
-          {isPlaying ? "停" : "▶️"}
+          {isPlaying ? <Pause size={23} strokeWidth={2.4} /> : <Play size={23} strokeWidth={2.4} />}
         </button>
 
         <div className="event-dots-vertical">
@@ -223,7 +226,7 @@ export default function Events() {
 
           <div className="event-actions">
             <button className="btn-primary" onClick={handleParticipate}>
-              {activeEvent.actionType === "LINK" ? "Open Registration" : "Participate"}
+              {activeEvent.actionType === "LINK" ? "Contact" : "Participate"}
             </button>
             <span className="contact-text">Contact for info.</span>
           </div>

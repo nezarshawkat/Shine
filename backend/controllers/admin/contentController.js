@@ -9,7 +9,7 @@ const config = {
   },
   events: {
     model: "event",
-    select: { id: true, title: true, description: true, detailsMessage: true, image: true, status: true, featured: true, engagement: true, createdAt: true },
+    select: { id: true, title: true, description: true, detailsMessage: true, externalLink: true, actionType: true, image: true, status: true, featured: true, engagement: true, createdAt: true },
   },
   communities: {
     model: "community",
@@ -61,7 +61,7 @@ async function listContent(req, res) {
 async function updateContent(req, res) {
   try {
     const { type, id } = req.params;
-    const { featured, status, text, title, description, detailsMessage, name, image } = req.body;
+    const { featured, status, text, title, description, detailsMessage, externalLink, actionType, name, image } = req.body;
     const found = getModel(type);
     const model = prisma[found.model];
 
@@ -72,9 +72,13 @@ async function updateContent(req, res) {
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
       ...(detailsMessage !== undefined ? { detailsMessage } : {}),
+      ...(externalLink !== undefined ? { externalLink } : {}),
+      ...(actionType !== undefined ? { actionType } : {}),
       ...(name ? { name } : {}),
       ...(image !== undefined ? { image } : {}),
     };
+    if (type === "events" && actionType === "LINK") payload.detailsMessage = null;
+    if (type === "events" && actionType === "MESSAGE") payload.externalLink = null;
 
     const data = await model.update({ where: { id }, data: payload, select: found.select });
 
@@ -133,15 +137,23 @@ async function createContent(req, res) {
     const model = prisma[found.model];
 
     if (type === "events") {
-      const { title, description, detailsMessage, image } = req.body;
-      if (!title || !description || !detailsMessage || !image) {
-        return res.status(400).json({ error: "title, description, detailsMessage and image are required" });
+      const { title, description, detailsMessage, externalLink, actionType = "MESSAGE", image } = req.body;
+      if (!title || !description || !image) {
+        return res.status(400).json({ error: "title, description and image are required" });
+      }
+      if (actionType === "MESSAGE" && !detailsMessage) {
+        return res.status(400).json({ error: "detailsMessage is required for message actions" });
+      }
+      if (actionType === "LINK" && !/^https?:\/\//i.test(externalLink || "")) {
+        return res.status(400).json({ error: "A valid externalLink is required for link actions" });
       }
       const data = await model.create({
         data: {
           title,
           description,
           detailsMessage: detailsMessage || null,
+          externalLink: actionType === "LINK" ? externalLink : null,
+          actionType,
           image,
           date: new Date(),
         },

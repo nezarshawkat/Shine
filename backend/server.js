@@ -12,6 +12,8 @@ const dataService = require("./services/dataService");
 const { startSyncEngine } = require("./sync/syncEngine");
 const localUsers = require("./services/localUserService");
 const { LOCAL_UPLOAD_ROOT } = require("./lib/supabaseStorage");
+const { ensureSeededAccounts } = require("./services/seededAccountService");
+const { ensureDefaultAdmin } = require("./services/defaultAdminService");
 
 const { pingRouter, startping } = require("./ping");
 
@@ -99,19 +101,18 @@ if (process.env.ENABLE_SOCKET_IO === "true") {
 app.use("/api/users", require("./routes/auth.routes.js"));
 app.use("/api/users", require("./routes/users.js"));
 app.use("/api/follow", require("./routes/follow"));
-app.use("/api/events", require("./routes/events"));
+app.use("/api/events", localOnly ? require("./routes/localEvents") : require("./routes/events"));
 app.use("/api/upload", require("./routes/upload"));
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/communities", require("./routes/communities"));
-app.use("/api/messenger", require("./routes/messenger.js"));
-app.use("/api/articles", require("./routes/articles"));
+app.use("/api/messenger", localOnly ? require("./routes/localMessenger.js") : require("./routes/messenger.js"));
+app.use("/api/articles", localOnly ? require("./routes/localArticles") : require("./routes/articles"));
 app.use("/api", require("./routes/comments")); 
-app.use("/api/admin", require("./routes/admin"));
+app.use("/api/admin", localOnly ? require("./routes/localAdmin") : require("./routes/admin"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/support", require("./routes/support"));
 app.use("/api/email-notifications", require("./routes/emailNotifications"));
 app.use("/api/indexnow", require("./routes/indexnow"));
-app.use("/api/auto-activity", require("./routes/autoActivitySystem"));
 app.use("/share", require("./routes/sharePreview"));
 
 // ================= 7. PING =================
@@ -200,9 +201,10 @@ app.post("/api/auth/google", async (req, res) => {
 // ================= 10. START SERVER =================
 if (localOnly) {
   console.log("Starting Shine in local-only SQLite mode.");
+  startAutoActivitySystem({ respectEnv: true });
 } else {
   startDigestScheduler();
-  startAutoActivitySystem();
+  startAutoActivitySystem({ respectEnv: true });
   dataService
     .bootstrapLocalCache()
     .then((count) => {
@@ -211,4 +213,10 @@ if (localOnly) {
     .catch((error) => console.error("Hybrid local cache bootstrap failed:", error.message));
   startSyncEngine();
 }
+Promise.all([
+  ensureSeededAccounts(localOnly ? null : prisma),
+  ensureDefaultAdmin(localOnly ? null : prisma),
+]).then(([seededCount]) => {
+  console.log(`Seeded account pool ready (${seededCount} accounts).`);
+}).catch((error) => console.error("Startup seed failed:", error.message));
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

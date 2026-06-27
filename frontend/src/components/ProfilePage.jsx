@@ -173,10 +173,16 @@ export default function ProfilePage({
   }, [activeTab, userId]);
 
   const handleSaveProfile = async () => {
+    const normalizedUsername = editedUsername.trim();
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(normalizedUsername)) {
+      alert("Username must be 3-30 characters with no spaces. Use only letters, numbers, or underscores.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("name", editedName);
-      formData.append("username", editedUsername);
+      formData.append("username", normalizedUsername);
       formData.append("description", editedDescription);
       if (imageFile) formData.append("image", imageFile);
 
@@ -386,7 +392,17 @@ export default function ProfilePage({
                 {editMode ? <input value={editedName} onChange={(e) => setEditedName(e.target.value)} /> : editedName}
               </h2>
               <div className="profile-username">
-                @{editMode ? <input value={editedUsername} onChange={(e) => setEditedUsername(e.target.value)} /> : editedUsername}
+                @{editMode ? (
+                  <input
+                    value={editedUsername}
+                    onChange={(e) => setEditedUsername(e.target.value.replace(/\s/g, ""))}
+                    pattern="[A-Za-z0-9_]{3,30}"
+                    maxLength={30}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    aria-label="Username"
+                  />
+                ) : editedUsername}
               </div>
 
               <div className={`profile-follow ${isMobile && !isCurrentUser ? "profile-follow-center-mobile" : ""}`}>

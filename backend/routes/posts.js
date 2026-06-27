@@ -4,6 +4,8 @@ const router = express.Router();
 const dataService = require("../services/dataService");
 const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
 const { queueDigestForAuthorFollowers } = require("../services/notificationDigestService");
+const { moderateCreatedPost } = require("../services/sourceModerationService");
+const prisma = require("../prisma");
 
 const FORUM_DIGEST_TYPES = new Set(["opinion", "analysis", "critique", "poll"]);
 const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
@@ -125,6 +127,19 @@ router.post("/", memoryUpload.array("files"), async (req, res) => {
       files: req.files || [],
     });
 
+    const moderation = await moderateCreatedPost({
+      post,
+      authorId,
+      dataService,
+      prisma: localOnly ? null : prisma,
+    });
+    if (!moderation.valid) {
+      return res.status(422).json({
+        error: "Post removed because its sources did not pass verification.",
+        reasons: moderation.reasons,
+      });
+    }
+
     await updatePostScore(post, redisClient);
     req.app.get("io")?.emit("newPost", post);
 
@@ -144,13 +159,23 @@ router.post("/", memoryUpload.array("files"), async (req, res) => {
 // ================== EDIT POST ==================
 router.put("/:id", async (req, res) => {
   try {
+    const userId = getUserIdFromToken(req) || req.body.userId || null;
     const updatedPost = await dataService.updatePost(
       req.params.id,
       req.body.text,
-      getUserIdFromToken(req) || req.body.userId || null
+      userId
     );
 
     if (!updatedPost) return res.status(404).json({ error: "Post not found" });
+    const moderation = await moderateCreatedPost({
+      post: updatedPost,
+      authorId: updatedPost.authorId || userId,
+      dataService,
+      prisma: localOnly ? null : prisma,
+    });
+    if (!moderation.valid) {
+      return res.status(422).json({ error: "Post removed because its sources no longer match its content.", reasons: moderation.reasons });
+    }
     res.json(updatedPost);
   } catch (err) {
     console.error("Update error:", err);

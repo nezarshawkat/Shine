@@ -246,6 +246,81 @@ function migrate(database = getDb()) {
       data TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS Article (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      authorId TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      likesCount INTEGER NOT NULL DEFAULT 0,
+      savesCount INTEGER NOT NULL DEFAULT 0,
+      viewsCount INTEGER NOT NULL DEFAULT 0,
+      deletedAt TEXT,
+      data TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS Event (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      detailsMessage TEXT,
+      externalLink TEXT,
+      actionType TEXT NOT NULL DEFAULT 'MESSAGE',
+      image TEXT NOT NULL,
+      date TEXT NOT NULL,
+      location TEXT,
+      mode TEXT NOT NULL DEFAULT 'OFFLINE',
+      creatorId TEXT,
+      status TEXT NOT NULL DEFAULT 'ACTIVE',
+      featured INTEGER NOT NULL DEFAULT 0,
+      engagement INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      data TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS EventParticipation (
+      id TEXT PRIMARY KEY,
+      eventId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      UNIQUE(eventId, userId)
+    );
+
+    CREATE TABLE IF NOT EXISTS Admin (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'SUPER_ADMIN',
+      permissionsJson TEXT NOT NULL DEFAULT '{}',
+      isActive INTEGER NOT NULL DEFAULT 1,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS Notification (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      link TEXT,
+      isRead INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS Message (
+      id TEXT PRIMARY KEY,
+      text TEXT,
+      imageUrl TEXT,
+      senderId TEXT,
+      receiverId TEXT NOT NULL,
+      isRead INTEGER NOT NULL DEFAULT 0,
+      isLiked INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      deletedByJson TEXT NOT NULL DEFAULT '[]'
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON SyncQueue(status, attempts, createdAt);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_unique ON User(email) WHERE email IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS idx_user_username_unique ON User(username) WHERE username IS NOT NULL;
@@ -263,6 +338,13 @@ function migrate(database = getDb()) {
     CREATE INDEX IF NOT EXISTS idx_share_post ON ShareRecord(postId);
     CREATE INDEX IF NOT EXISTS idx_comment_post ON Comment(postId, parentId, deletedAt, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_post_view_post ON PostView(postId);
+    CREATE INDEX IF NOT EXISTS idx_article_created ON Article(deletedAt, createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_article_author ON Article(authorId);
+    CREATE INDEX IF NOT EXISTS idx_source_article ON Source(articleId);
+    CREATE INDEX IF NOT EXISTS idx_event_date ON Event(status, date);
+    CREATE INDEX IF NOT EXISTS idx_event_participation_user ON EventParticipation(userId);
+    CREATE INDEX IF NOT EXISTS idx_notification_user ON Notification(userId, type, createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_message_receiver ON Message(receiverId, createdAt DESC);
   `);
 
   return true;
