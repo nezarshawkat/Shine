@@ -81,15 +81,15 @@ router.get("/trends", async (req, res) => {
   const cacheKey = `weekly_global_trends_hybrid:${trendLimit}`;
 
   try {
-    if (redisClient?.isReady) {
+    if (!localOnly && redisClient?.isReady) {
       const cached = await redisClient.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
     }
 
     const result = await dataService.getTrends(trendLimit);
 
-    if (redisClient?.isReady) {
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(result));
+    if (!localOnly && redisClient?.isReady) {
+      await redisClient.setEx(cacheKey, 60, JSON.stringify(result));
     }
 
     res.json(result);

@@ -16,7 +16,7 @@ import TagClickedIcon from "../../assets/TagClicked.svg";
 import FlagIcon from "../../assets/Flag.svg";
 import ArrowIcon from "../../assets/arrow.svg";
 import CommentIcon from "../../assets/comment.svg";
-import HeartIcon from "../../assets/heart.svg";
+import HeartIcon from "../../assets/solarHeart.svg";
 import HeartClickedIcon from "../../assets/HeartC.svg";
 import MenuIcon from "../../assets/Menu.svg";
 import profileDefault from "../../assets/profileDefault.svg";

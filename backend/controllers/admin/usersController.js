@@ -8,6 +8,7 @@ async function listUsers(req, res) {
     const { page, pageSize } = parsePagination(req);
 
     const where = {
+      provider: { not: "engagement" },
       ...(q
         ? {
             OR: [

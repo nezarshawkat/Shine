@@ -7,6 +7,8 @@ import FlagIcon from "../../assets/Flag.svg";
 import ShareIcon from "../../assets/Share.svg";
 import TagIcon from "../../assets/Tag.svg";
 import TagClickedIcon from "../../assets/TagClicked.svg";
+import HeartIcon from "../../assets/solarHeart.svg";
+import HeartClickedIcon from "../../assets/HeartC.svg";
 import MenuIcon from "../../assets/Menu.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 import SharePopup from "./SharePopup.jsx";
@@ -72,6 +74,7 @@ export default function PollPost({ postId, initialData }) {
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const [showSources, setShowSources] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -151,6 +154,17 @@ export default function PollPost({ postId, initialData }) {
     return () => clearInterval(interval);
   }, [currentPostId]);
 
+  useEffect(() => {
+    if (!currentPostId || !loggedUserId) {
+      setIsLiked(false);
+      return;
+    }
+    fetch(`${BACKEND_URL}/api/posts/${currentPostId}/like-status?userId=${loggedUserId}`)
+      .then((response) => response.ok ? response.json() : { liked: false })
+      .then((data) => setIsLiked(Boolean(data.liked)))
+      .catch(() => setIsLiked(false));
+  }, [currentPostId, loggedUserId]);
+
   // View recording logic
   useEffect(() => {
     if (!currentPostId || hasRecordedView.current) return;
@@ -219,6 +233,24 @@ export default function PollPost({ postId, initialData }) {
         showToastFn(data.status ? "Saved" : "Removed from saves");
       }
     } catch (err) { console.error(err); }
+  };
+
+  const toggleLike = async (e) => {
+    e.stopPropagation();
+    if (!loggedUserId) return showToastFn("Please login first", "error");
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/posts/${currentPostId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: loggedUserId }),
+      });
+      if (!res.ok) throw new Error("Like failed");
+      const data = await res.json();
+      setIsLiked(Boolean(data.liked));
+      setPost((previous) => previous ? { ...previous, likesCount: data.likesCount } : previous);
+    } catch {
+      showToastFn("Could not update like", "error");
+    }
   };
 
   if (!post) return null;
@@ -354,6 +386,10 @@ export default function PollPost({ postId, initialData }) {
             )}
           </div>
           <div className="post-action-row" style={{ display: "flex", gap: 15, alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <img className="post-action-icon" src={isLiked ? HeartClickedIcon : HeartIcon} onClick={toggleLike} style={{ width: 20, cursor: "pointer" }} alt={isLiked ? "Unlike" : "Like"} />
+                <span style={{ fontSize: 14, color: "#1C274C", fontWeight: 510 }}>{post.likesCount || 0}</span>
+              </div>
               <img className="post-action-icon" src={ShareIcon} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} style={{ width: 18, cursor: "pointer" }} alt="" />
               <img className="post-action-icon" src={isSaved ? TagClickedIcon : TagIcon} onClick={toggleSave} style={{ width: 18, cursor: "pointer" }} alt="" />
               <div style={{ position: "relative" }}>

@@ -8,7 +8,7 @@ User: ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}
 Post type: ${postType}
 Reply target (for critique only): ${targetText || 'none'}
 ${topicInstruction}
-Write natural human text with a varied tone.
+Write natural human text with a varied tone and include one or two relevant #hashtags naturally in the post text.
 Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."]}`;
 }
 

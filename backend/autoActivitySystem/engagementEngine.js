@@ -12,14 +12,37 @@ function randomInt(min, max) {
 }
 
 function shuffle(values) {
-  return [...values].sort(() => Math.random() - 0.5);
+  const result = [...values];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
 }
 
-function engagementTargets(actorCount) {
-  const views = Math.min(actorCount, randomInt(Math.max(12, Math.floor(actorCount * 0.45)), actorCount));
-  const likeRatio = 0.28 + Math.random() * 0.38;
-  const likes = Math.max(3, Math.min(views, Math.round(views * likeRatio)));
-  return { views, likes, comments: Math.min(randomInt(2, 7), actorCount), shares: randomInt(0, 4), saves: randomInt(1, 7) };
+function randomNonRoundInt(min, max) {
+  const lower = Math.ceil(Math.min(min, max));
+  const upper = Math.floor(Math.max(min, max));
+  let value = randomInt(lower, upper);
+  if (value % 10 === 0 && upper > lower) {
+    const offset = randomInt(1, Math.min(9, upper - lower));
+    value = value + offset <= upper ? value + offset : value - offset;
+  }
+  return value;
+}
+
+function engagementTargets(actorCount, commentActorCount = 50) {
+  const maxViews = Math.min(5000, Math.max(0, actorCount));
+  if (maxViews < 50) throw new Error("At least 50 anonymous engagement users are required");
+  const views = randomNonRoundInt(50, maxViews);
+  const likes = randomNonRoundInt(10, Math.min(3500, views));
+  return {
+    views,
+    likes,
+    comments: Math.min(randomInt(2, 7), commentActorCount),
+    shares: randomInt(0, 4),
+    saves: randomInt(1, 7),
+  };
 }
 
 async function generateRelatedComments(post, actors, count) {
@@ -49,13 +72,13 @@ async function generateRelatedComments(post, actors, count) {
   }
 }
 
-async function simulateLocalPostEngagement(post, actors) {
+async function simulateLocalPostEngagement(post, commentActors, engagementActors) {
   const database = local.getDb();
-  const targets = engagementTargets(actors.length);
-  const shuffled = shuffle(actors);
+  const targets = engagementTargets(engagementActors.length, commentActors.length);
+  const shuffled = shuffle(engagementActors);
   const viewers = shuffled.slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
-  const commenters = shuffle(actors).slice(0, targets.comments);
+  const commenters = shuffle(commentActors).slice(0, targets.comments);
   const comments = await generateRelatedComments(post, commenters, targets.comments);
   const now = local.nowIso();
 
@@ -84,27 +107,29 @@ async function simulateLocalPostEngagement(post, actors) {
   return targets;
 }
 
-async function simulateCloudPostEngagement(prisma, post, actors) {
-  const targets = engagementTargets(actors.length);
-  const shuffled = shuffle(actors);
+async function simulateCloudPostEngagement(prisma, post, commentActors, engagementActors) {
+  const targets = engagementTargets(engagementActors.length, commentActors.length);
+  const shuffled = shuffle(engagementActors);
   const viewers = shuffled.slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
-  const comments = await generateRelatedComments(post, shuffle(actors).slice(0, targets.comments), targets.comments);
-  await Promise.allSettled([
-    ...viewers.map((user) => prisma.postView.create({ data: { userId: user.id, postId: post.id } })),
-    ...likers.map((user) => prisma.like.create({ data: { userId: user.id, postId: post.id } })),
-    ...comments.map(({ actor, text }) => prisma.comment.create({ data: { authorId: actor.id, postId: post.id, text } })),
+  const comments = await generateRelatedComments(post, shuffle(commentActors).slice(0, targets.comments), targets.comments);
+  await prisma.$transaction([
+    prisma.postView.createMany({ data: viewers.map((user) => ({ userId: user.id, postId: post.id })) }),
+    prisma.like.createMany({ data: likers.map((user) => ({ userId: user.id, postId: post.id })), skipDuplicates: true }),
+    prisma.comment.createMany({ data: comments.map(({ actor, text }) => ({ authorId: actor.id, postId: post.id, text })) }),
   ]);
   return targets;
 }
 
-async function simulatePostEngagement(prisma, post, actors) {
-  return localOnly ? simulateLocalPostEngagement(post, actors) : simulateCloudPostEngagement(prisma, post, actors);
+async function simulatePostEngagement(prisma, post, commentActors, engagementActors) {
+  return localOnly
+    ? simulateLocalPostEngagement(post, commentActors, engagementActors)
+    : simulateCloudPostEngagement(prisma, post, commentActors, engagementActors);
 }
 
-async function simulateArticleEngagement(prisma, article, actors) {
-  const targets = engagementTargets(actors.length);
-  const viewers = shuffle(actors).slice(0, targets.views);
+async function simulateArticleEngagement(prisma, article, engagementActors) {
+  const targets = engagementTargets(engagementActors.length, 0);
+  const viewers = shuffle(engagementActors).slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
   if (localOnly) {
     const database = local.getDb();
@@ -121,9 +146,9 @@ async function simulateArticleEngagement(prisma, article, actors) {
       database.prepare("UPDATE Article SET likesCount = ?, viewsCount = ? WHERE id = ?").run(likers.length, viewers.length, article.id);
     })();
   } else {
-    await Promise.allSettled([
-      ...viewers.map((user) => prisma.postView.create({ data: { userId: user.id, articleId: article.id } })),
-      ...likers.map((user) => prisma.like.create({ data: { userId: user.id, articleId: article.id } })),
+    await prisma.$transaction([
+      prisma.postView.createMany({ data: viewers.map((user) => ({ userId: user.id, articleId: article.id })) }),
+      prisma.like.createMany({ data: likers.map((user) => ({ userId: user.id, articleId: article.id })), skipDuplicates: true }),
     ]);
   }
   return targets;

@@ -13,7 +13,7 @@ import TagClickedIcon from "../../assets/TagClicked.svg";
 import FlagIcon from "../../assets/Flag.svg";
 import ArrowIcon from "../../assets/arrow.svg";
 import CommentIcon from "../../assets/comment.svg";
-import HeartIcon from "../../assets/heart.svg";
+import HeartIcon from "../../assets/solarHeart.svg";
 import HeartClickedIcon from "../../assets/HeartC.svg";
 import profileDefault from "../../assets/profileDefault.svg";
 
@@ -269,11 +269,14 @@ function CommentItem({ comment, user, onLike, onDelete, onEdit, onReport }) {
               cursor: "pointer",
               color: comment.isLiked ? "#FFC847" : isDarkMode ? "#fff" : "#666",
               transition: "color 0.2s",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
             }}
             onClick={() => onLike(comment.id)}
           >
-            {comment.isLiked ? "Liked" : "Like"}{" "}
-            {likesCount > 0 && `(${likesCount})`}
+            <img src={comment.isLiked ? HeartClickedIcon : HeartIcon} width="16" height="16" alt={comment.isLiked ? "Unlike comment" : "Like comment"} />
+            {likesCount > 0 && likesCount}
           </span>
         </div>
       </div>

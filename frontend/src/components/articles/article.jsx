@@ -7,7 +7,7 @@ import { API_BASE_URL, BACKEND_URL } from "../../api";
 import { useLanguage } from "../LanguageProvider.jsx";
 
 // Icons
-import heartIcon from "../../assets/heart.svg";
+import heartIcon from "../../assets/solarHeart.svg";
 import heartClickedIcon from "../../assets/HeartC.svg";
 import shareIcon from "../../assets/Share.svg";
 import saveIcon from "../../assets/Tag.svg";

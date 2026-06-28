@@ -13,6 +13,7 @@ const { startSyncEngine } = require("./sync/syncEngine");
 const localUsers = require("./services/localUserService");
 const { LOCAL_UPLOAD_ROOT } = require("./lib/supabaseStorage");
 const { ensureSeededAccounts } = require("./services/seededAccountService");
+const { ensureAnonymousEngagementAccounts } = require("./services/anonymousEngagementService");
 const { ensureDefaultAdmin } = require("./services/defaultAdminService");
 
 const { pingRouter, startping } = require("./ping");
@@ -215,8 +216,9 @@ if (localOnly) {
 }
 Promise.all([
   ensureSeededAccounts(localOnly ? null : prisma),
+  ensureAnonymousEngagementAccounts(localOnly ? null : prisma),
   ensureDefaultAdmin(localOnly ? null : prisma),
-]).then(([seededCount]) => {
-  console.log(`Seeded account pool ready (${seededCount} accounts).`);
+]).then(([seededCount, anonymousCount]) => {
+  console.log(`Seeded account pool ready (${seededCount} profiles, ${anonymousCount} anonymous engagement users).`);
 }).catch((error) => console.error("Startup seed failed:", error.message));
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

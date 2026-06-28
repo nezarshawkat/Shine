@@ -131,9 +131,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
   const totalAlerts = unreadMsgCount + unreadSysCount;
 
   const shouldShow = (section) => !showOnly || showOnly.includes(section);
-  const sidebarHashtags = (trends.trendingHashtags?.length
-    ? trends.trendingHashtags
-    : (trends.viralKeywords || []).map((name) => ({ name, views: "—" }))).slice(0, 5);
+  const sidebarHashtags = (trends.trendingHashtags || []).slice(0, 5);
 
   const searchEl = (
     <SearchSection 
@@ -170,7 +168,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
           
           <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
             {!loading ? (
-              sidebarHashtags.map((tag, index) => (
+              sidebarHashtags.length > 0 ? sidebarHashtags.map((tag, index) => (
                 <div 
                   key={index} 
                   onClick={() => handleTopicClick(tag.name)}
@@ -184,7 +182,7 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
                     {tag.views} {/* Now shows real count like "5" or "1.2K" */}
                   </span>
                 </div>
-              ))
+              )) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>No hashtags trending yet.</span>
             ) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>Loading...</span>}
           </div>
         </div>

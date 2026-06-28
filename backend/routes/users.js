@@ -160,6 +160,7 @@ router.get("/search", async (req, res) => {
 
     const users = await prisma.user.findMany({
       where: {
+        provider: { not: "engagement" },
         ...(requesterId
           ? {
               AND: [
@@ -202,6 +203,7 @@ router.get("/list", async (req, res) => {
     }
 
     const users = await prisma.user.findMany({
+      where: { provider: { not: "engagement" } },
       take: limit,
       orderBy: { createdAt: "desc" },
       select: {
@@ -244,7 +246,7 @@ router.get("/:username", async (req, res) => {
         },
       },
     });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user || user.provider === "engagement") return res.status(404).json({ error: "User not found" });
 
     if (requesterId && requesterId !== user.id) {
       const blockedRelation = await prisma.block.findFirst({

@@ -3,6 +3,7 @@ const local = require("../db/local");
 const dataService = require("../services/dataService");
 const localContent = require("../services/localContentService");
 const { ensureSeededAccounts, getLocalSeededAccounts } = require("../services/seededAccountService");
+const { getAnonymousEngagementAccounts, targetCount } = require("../services/anonymousEngagementService");
 const { moderateCreatedPost } = require("../services/sourceModerationService");
 const { enabled, intervalMs, articleIntervalMs, openAiApiKey } = require("./config");
 const { generateJson, generateSourcedJson } = require("./aiClient");
@@ -48,6 +49,10 @@ async function seededUsers() {
   return prisma.user.findMany({ where: { provider: "seed" }, take: 50 });
 }
 
+async function anonymousEngagementUsers() {
+  return getAnonymousEngagementAccounts(localOnly ? null : prisma);
+}
+
 function sourceKeywords(sources) {
   return sources
     .flatMap((source) => String(source.name || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/))
@@ -66,6 +71,7 @@ async function createOnePost() {
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
+    const engagementUsers = await anonymousEngagementUsers();
     if (!users.length) throw new Error("No seeded AI users found");
     const { active, working } = partitionUsers(users);
     const actors = uniqueUsers([...active, ...working, ...users]);
@@ -121,7 +127,7 @@ async function createOnePost() {
 
     const moderation = await moderateCreatedPost({ post, authorId: author.id, dataService, prisma: localOnly ? null : prisma });
     if (!moderation.valid) throw new Error(moderation.reasons.join(" "));
-    await simulatePostEngagement(prisma, post, actors);
+    await simulatePostEngagement(prisma, post, actors, engagementUsers);
     state.postRuns += 1;
     state.lastPostAt = new Date().toISOString();
     return post;
@@ -136,6 +142,7 @@ async function createOneArticle() {
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
+    const engagementUsers = await anonymousEngagementUsers();
     const authors = users.filter((user) => Boolean(user.isAuthorized));
     if (!authors.length) throw new Error("No authorized seeded AI users found");
     const author = authors[Math.floor(Math.random() * authors.length)];
@@ -150,7 +157,7 @@ async function createOneArticle() {
     const article = localOnly
       ? localContent.createArticle({ title, content, authorId: author.id, sources })
       : await prisma.article.create({ data: { title, content, authorId: author.id, sources: { create: sources } }, include: { sources: true } });
-    await simulateArticleEngagement(prisma, article, users);
+    await simulateArticleEngagement(prisma, article, engagementUsers);
     state.articleRuns += 1;
     state.lastArticleAt = new Date().toISOString();
     return article;
@@ -188,7 +195,7 @@ function clearAutoActivityErrors() {
 
 function getAutoActivityStatus() {
   return {
-    config: { enabled, intervalMs, articleIntervalMs, ready: Boolean(openAiApiKey), sourceProvider: "OpenAI web search" },
+    config: { enabled, intervalMs, articleIntervalMs, ready: Boolean(openAiApiKey), sourceProvider: "OpenAI web search", anonymousEngagementUsers: targetCount },
     running: Boolean(postTimer || articleTimer),
     state,
   };

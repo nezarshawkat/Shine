@@ -788,43 +788,62 @@ async function getSinglePost(id, userId = null) {
 
 async function getTrends(limit = 10) {
   const db = local.getDb();
-  const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const trendLimit = Math.max(1, Math.min(Number(limit) || 10, 20));
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
   if (db) {
     const rows = db
-      .prepare("SELECT text, keywordsJson FROM Post WHERE deletedAt IS NULL AND datetime(createdAt) > datetime(?)")
-      .all(oneWeekAgo);
+      .prepare("SELECT text, keywordsJson, createdAt, viewsCount, likesCount FROM Post WHERE deletedAt IS NULL AND datetime(createdAt) > datetime(?)")
+      .all(thirtyDaysAgo);
 
     if (rows.length) {
-      const keywordCounts = new Map();
-      const hashtagCounts = new Map();
+      const keywordScores = new Map();
+      const hashtagScores = new Map();
 
       for (const row of rows) {
+        const ageDays = Math.max(0, (Date.now() - new Date(row.createdAt).getTime()) / 86400000);
+        const engagementWeight = Math.log1p(Number(row.viewsCount || 0)) * 0.3 + Math.log1p(Number(row.likesCount || 0)) * 0.8;
+        const recencyWeight = Math.max(0, 1 - ageDays / 30);
+        const seenInPost = new Set();
         for (const keyword of parseJson(row.keywordsJson, [])) {
-          if (!keyword) continue;
-          keywordCounts.set(keyword, (keywordCounts.get(keyword) || 0) + 1);
+          const label = String(keyword || "").replace(/^#+/, "").replace(/\s+/g, " ").trim();
+          const key = label.toLocaleLowerCase();
+          if (!key || key.length < 2 || seenInPost.has(key)) continue;
+          seenInPost.add(key);
+          const current = keywordScores.get(key) || { label, posts: 0, score: 0 };
+          current.posts += 1;
+          current.score += 1 + engagementWeight + recencyWeight;
+          keywordScores.set(key, current);
         }
 
-        const tags = row.text?.match(/#[\p{L}\p{N}_]+/gu) || [];
+        const tags = new Set(row.text?.match(/#[\p{L}\p{N}_]+/gu) || []);
         for (const tag of tags) {
           const key = tag.slice(1).toLowerCase();
-          hashtagCounts.set(key, (hashtagCounts.get(key) || 0) + 1);
+          const current = hashtagScores.get(key) || { name: key, uses: 0, views: 0, score: 0 };
+          current.uses += 1;
+          current.views += Number(row.viewsCount || 0);
+          current.score += 1 + engagementWeight + recencyWeight;
+          hashtagScores.set(key, current);
         }
       }
 
       return {
-        viralKeywords: [...keywordCounts.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 12)
-          .map(([word]) => word),
-        trendingHashtags: [...hashtagCounts.entries()]
-          .map(([name, count]) => ({
-            name,
-            views: count >= 1000 ? `${(count / 1000).toFixed(1)}K` : `${count}`,
-            rawCount: count,
-          }))
-          .sort((a, b) => b.rawCount - a.rawCount)
-          .slice(0, limit),
+        viralKeywords: [...keywordScores.entries()]
+          .sort((a, b) => b[1].score - a[1].score || b[1].posts - a[1].posts || a[1].label.localeCompare(b[1].label))
+          .slice(0, trendLimit)
+          .map(([, value]) => value.label),
+        trendingHashtags: [...hashtagScores.values()]
+          .sort((a, b) => b.score - a.score || b.uses - a.uses || a.name.localeCompare(b.name))
+          .slice(0, trendLimit)
+          .map((tag) => {
+            const activity = Math.max(tag.uses, tag.views);
+            return {
+              name: tag.name,
+              views: activity >= 1000 ? `${(activity / 1000).toFixed(1)}K` : `${activity}`,
+              rawCount: activity,
+              uses: tag.uses,
+            };
+          }),
       };
     }
   }
@@ -839,14 +858,14 @@ async function getTrends(limit = 10) {
   const viralKeywordsRaw = await neon.$queryRaw`
     SELECT unnest(keywords) as word, COUNT(*) as usage_count
     FROM "Post"
-    WHERE "createdAt" > ${new Date(oneWeekAgo)}
+    WHERE "createdAt" > ${new Date(thirtyDaysAgo)}
     GROUP BY word
     ORDER BY usage_count DESC
-    LIMIT 12
+    LIMIT ${trendLimit}
   `;
 
   const trendingPosts = await neon.post.findMany({
-    where: { createdAt: { gte: new Date(oneWeekAgo) } },
+    where: { createdAt: { gte: new Date(thirtyDaysAgo) } },
     select: { text: true },
   });
 
@@ -868,7 +887,7 @@ async function getTrends(limit = 10) {
         rawCount: count,
       }))
       .sort((a, b) => b.rawCount - a.rawCount)
-      .slice(0, limit),
+      .slice(0, trendLimit),
   };
 }
 

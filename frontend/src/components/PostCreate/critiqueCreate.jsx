@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { getPostPublishError } from "./postError.js";
 import Logo from "../../assets/shine-logo.png";
 import ArrowIcon from "../../assets/arrow.svg";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -199,7 +200,7 @@ export default function CritiqueCreate() {
         setTimeout(() => navigate("/forum"), 1500);
       }
     } catch (err) {
-      showToast("Failed to publish critique", "error");
+      showToast(getPostPublishError(err, "Failed to publish critique"), "error");
     } finally {
       setLoading(false);
     }

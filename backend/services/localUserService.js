@@ -50,7 +50,7 @@ function findByEmail(email) {
 function findByUsername(username) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
-  return publicUser(db.prepare("SELECT * FROM User WHERE lower(username) = lower(?) LIMIT 1").get(username));
+  return publicUser(db.prepare("SELECT * FROM User WHERE lower(username) = lower(?) AND provider != 'engagement' LIMIT 1").get(username));
 }
 
 function findById(id) {
@@ -134,6 +134,7 @@ function searchUsers(query, requesterId = null) {
       `SELECT *
        FROM User
        WHERE (@requesterId = '' OR id != @requesterId)
+         AND provider != 'engagement'
          AND lower(username) LIKE lower(@query)
        ORDER BY username ASC
        LIMIT 5`
@@ -146,7 +147,7 @@ function listUsers(limit = 500) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
   return db
-    .prepare("SELECT * FROM User ORDER BY datetime(createdAt) DESC LIMIT ?")
+    .prepare("SELECT * FROM User WHERE provider != 'engagement' ORDER BY datetime(createdAt) DESC LIMIT ?")
     .all(limit)
     .map(publicUser);
 }

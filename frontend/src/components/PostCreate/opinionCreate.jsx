@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { getPostPublishError } from "./postError.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import Logo from "../../assets/shine-logo.png";
 import { AuthContext } from "../AuthProvider.jsx";
@@ -144,7 +145,7 @@ export default function OpinionCreate() {
         setTimeout(() => navigate("/forum"), 1500);
       }
     } catch (err) {
-      showToast("Failed to publish opinion", "error");
+      showToast(getPostPublishError(err, "Failed to publish opinion"), "error");
     } finally {
       setLoading(false);
     }
