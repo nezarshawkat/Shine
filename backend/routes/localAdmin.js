@@ -47,8 +47,36 @@ router.get("/dashboard", (_req, res) => {
 });
 
 router.get("/users", (req, res) => {
-  const data = users.listUsers(Number(req.query.pageSize || 100));
+  const query = String(req.query.q || "").trim().toLowerCase();
+  const data = users.listUsers(Number(req.query.pageSize || 100)).filter((user) => (
+    !query || [user.name, user.username, user.email].some((value) => String(value || "").toLowerCase().includes(query))
+  ));
   res.json({ data, pagination: { page: 1, pageSize: data.length, total: data.length } });
+});
+
+router.put("/users/:id", (req, res) => {
+  const allowedRoles = new Set(["Starter", "Intermediate", "Proffesional"]);
+  const updateData = {};
+  if (req.body.name) updateData.name = req.body.name;
+  if (req.body.roleLevel) {
+    if (!allowedRoles.has(req.body.roleLevel)) return res.status(400).json({ error: "Invalid user stage" });
+    updateData.roleLevel = req.body.roleLevel;
+  }
+  const updated = users.updateUser(req.params.id, updateData);
+  if (!updated) return res.status(404).json({ error: "User not found" });
+  res.json({ data: updated });
+});
+
+router.patch("/users/:id/block", (req, res) => {
+  const user = users.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  const updated = users.updateUser(req.params.id, { isAuthorized: !user.isAuthorized });
+  res.json({ data: updated });
+});
+
+router.delete("/users/:id", (req, res) => {
+  if (!users.deleteUser(req.params.id)) return res.status(404).json({ error: "User not found" });
+  res.status(204).send();
 });
 
 router.get("/posts", (req, res) => {

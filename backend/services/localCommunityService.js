@@ -1,4 +1,5 @@
 const local = require("../db/local");
+const localDeletion = require("./localDeletionService");
 
 function parseJson(value, fallback = []) {
   try {
@@ -10,12 +11,38 @@ function parseJson(value, fallback = []) {
 
 function communityFromRow(row, db = local.getDb()) {
   if (!row) return null;
-  const memberCount = db
-    ? db.prepare("SELECT COUNT(*) AS count FROM CommunityMember WHERE communityId = ?").get(row.id)?.count || 0
-    : 0;
-  const requestCount = db
-    ? db.prepare("SELECT COUNT(*) AS count FROM CommunityRequest WHERE communityId = ? AND status = 'PENDING'").get(row.id)?.count || 0
-    : 0;
+  const communityMembers = db
+    ? db.prepare(`
+        SELECT cm.*, u.username, u.name, u.image
+        FROM CommunityMember cm
+        LEFT JOIN User u ON u.id = cm.userId
+        WHERE cm.communityId = ?
+        ORDER BY CASE cm.role WHEN 'MAIN_ADMIN' THEN 0 WHEN 'ADMIN' THEN 1 ELSE 2 END, datetime(cm.joinedAt)
+      `).all(row.id).map((member) => ({
+        id: member.id,
+        userId: member.userId,
+        communityId: member.communityId,
+        role: member.role,
+        joinedAt: member.joinedAt,
+        user: { id: member.userId, username: member.username, name: member.name, image: member.image },
+      }))
+    : [];
+  const requests = db
+    ? db.prepare(`
+        SELECT cr.*, u.username, u.name, u.image
+        FROM CommunityRequest cr
+        LEFT JOIN User u ON u.id = cr.userId
+        WHERE cr.communityId = ? AND cr.status = 'PENDING'
+        ORDER BY datetime(cr.createdAt)
+      `).all(row.id).map((request) => ({
+        id: request.id,
+        userId: request.userId,
+        communityId: request.communityId,
+        status: request.status,
+        createdAt: request.createdAt,
+        user: { id: request.userId, username: request.username, name: request.name, image: request.image },
+      }))
+    : [];
 
   return {
     id: row.id,
@@ -29,11 +56,11 @@ function communityFromRow(row, db = local.getDb()) {
     featured: Boolean(row.featured),
     engagement: Number(row.engagement || 0),
     creatorId: row.creatorId,
-    communityMembers: [],
-    requests: [],
+    communityMembers,
+    requests,
     _count: {
-      communityMembers: Number(memberCount),
-      requests: Number(requestCount),
+      communityMembers: communityMembers.length,
+      requests: requests.length,
     },
   };
 }
@@ -121,9 +148,7 @@ function updateCommunity(id, data) {
 function deleteCommunity(id) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
-  db.prepare("DELETE FROM CommunityMember WHERE communityId = ?").run(id);
-  db.prepare("DELETE FROM CommunityRequest WHERE communityId = ?").run(id);
-  db.prepare("DELETE FROM Community WHERE id = ?").run(id);
+  return localDeletion.deleteCommunity(db, id);
 }
 
 function joinCommunity(id, userId) {
@@ -158,12 +183,87 @@ function membership(id, userId) {
   return { isMember: false, status: "NONE" };
 }
 
+function updateMemberRole(id, targetUserId, role) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  if (!["MEMBER", "ADMIN", "MAIN_ADMIN"].includes(role)) {
+    const error = new Error("Invalid community role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const member = db.prepare("SELECT * FROM CommunityMember WHERE communityId = ? AND userId = ?").get(id, targetUserId);
+  if (!member) return null;
+  if (member.role === "MAIN_ADMIN" && role !== "MAIN_ADMIN") {
+    const error = new Error("Transfer ownership to another member before changing the Main Admin role");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const transaction = db.transaction(() => {
+    if (role === "MAIN_ADMIN") {
+      db.prepare("UPDATE CommunityMember SET role = 'ADMIN' WHERE communityId = ? AND role = 'MAIN_ADMIN'").run(id);
+      db.prepare("UPDATE Community SET creatorId = ? WHERE id = ?").run(targetUserId, id);
+    }
+    db.prepare("UPDATE CommunityMember SET role = ? WHERE communityId = ? AND userId = ?").run(role, id, targetUserId);
+  });
+  transaction();
+  return membership(id, targetUserId);
+}
+
+function removeMember(id, targetUserId) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  const member = db.prepare("SELECT role FROM CommunityMember WHERE communityId = ? AND userId = ?").get(id, targetUserId);
+  if (!member) return false;
+  if (member.role === "MAIN_ADMIN") {
+    const error = new Error("The Main Admin cannot be removed before ownership is transferred");
+    error.statusCode = 409;
+    throw error;
+  }
+  db.prepare("DELETE FROM CommunityMember WHERE communityId = ? AND userId = ?").run(id, targetUserId);
+  db.prepare("DELETE FROM CommunityRequest WHERE communityId = ? AND userId = ?").run(id, targetUserId);
+  return true;
+}
+
+function leaveCommunity(id, userId) {
+  return removeMember(id, userId);
+}
+
+function listRequests(id) {
+  return getCommunity(id)?.requests || [];
+}
+
+function resolveRequest(id, requestId, action) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  const request = db.prepare("SELECT * FROM CommunityRequest WHERE id = ? AND communityId = ?").get(requestId, id);
+  if (!request) return null;
+
+  const transaction = db.transaction(() => {
+    if (action === "ACCEPT") {
+      db.prepare(
+        `INSERT OR IGNORE INTO CommunityMember (id, userId, communityId, role, joinedAt)
+         VALUES (?, ?, ?, 'MEMBER', ?)`
+      ).run(local.newId(), request.userId, id, local.nowIso());
+    }
+    db.prepare("DELETE FROM CommunityRequest WHERE id = ?").run(requestId);
+  });
+  transaction();
+  return { message: action === "ACCEPT" ? "Accepted" : "Declined" };
+}
+
 module.exports = {
   createCommunity,
   deleteCommunity,
   getCommunity,
   joinCommunity,
+  leaveCommunity,
   listCommunities,
+  listRequests,
   membership,
+  removeMember,
+  resolveRequest,
+  updateMemberRole,
   updateCommunity,
 };

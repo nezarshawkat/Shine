@@ -1,13 +1,51 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 const prisma = require("../prisma");
 const dataService = require("../services/dataService");
 const localCommunities = require("../services/localCommunityService");
 const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
+const { deleteCommunityWithRelations } = require("../controllers/admin/deletionHelpers");
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 const localOnly =
   process.env.DATABASE_MODE === "local" ||
   process.env.LOCAL_ONLY_DB === "true" ||
   !process.env.DATABASE_URL;
+
+function getRequesterId(req) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId || decoded.id || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getCommunityRole(communityId, userId) {
+  if (!userId) return null;
+  if (localOnly) return localCommunities.membership(communityId, userId).role || null;
+  const member = await prisma.communityMember.findUnique({
+    where: { userId_communityId: { userId, communityId } },
+    select: { role: true },
+  });
+  return member?.role || null;
+}
+
+async function requireCommunityRole(req, res, roles) {
+  const requesterId = getRequesterId(req);
+  if (!requesterId) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
+  }
+  const role = await getCommunityRole(req.params.id, requesterId);
+  if (!roles.includes(role)) {
+    res.status(403).json({ error: "You do not have permission to manage this community" });
+    return null;
+  }
+  return { requesterId, role };
+}
 
 // ================== GENERAL ROUTES ==================
 
@@ -141,6 +179,7 @@ router.post(
 router.put("/:id", memoryUpload.fields([{ name: "icon", maxCount: 1 }, { name: "banner", maxCount: 1 }]), async (req, res) => {
   try {
     const { id } = req.params;
+    if (!await requireCommunityRole(req, res, ["MAIN_ADMIN"])) return;
     const { name, slogan, discription, status } = req.body;
 
     const updateData = { name, slogan, discription, status };
@@ -174,16 +213,13 @@ router.put("/:id", memoryUpload.fields([{ name: "icon", maxCount: 1 }, { name: "
  */
 router.delete("/:id", async (req, res) => {
   try {
+    if (!await requireCommunityRole(req, res, ["MAIN_ADMIN"])) return;
     if (localOnly) {
-      localCommunities.deleteCommunity(req.params.id);
+      if (!localCommunities.deleteCommunity(req.params.id)) return res.status(404).json({ error: "Community not found" });
       return res.json({ message: "Community deleted" });
     }
 
-    await prisma.$transaction([
-      prisma.communityMember.deleteMany({ where: { communityId: req.params.id } }),
-      prisma.communityRequest.deleteMany({ where: { communityId: req.params.id } }),
-      prisma.community.delete({ where: { id: req.params.id } })
-    ]);
+    await prisma.$transaction((tx) => deleteCommunityWithRelations(tx, req.params.id));
     res.json({ message: "Community deleted" });
   } catch (err) {
     res.status(500).json({ error: "Deletion failed" });
@@ -198,12 +234,14 @@ router.delete("/:id", async (req, res) => {
  */
 router.put("/:id/members/:targetUserId/role", async (req, res) => {
   try {
-    if (localOnly) {
-      return res.json({ message: "Role update is not available in local-only mode yet" });
-    }
-
+    if (!await requireCommunityRole(req, res, ["MAIN_ADMIN"])) return;
     const { id, targetUserId } = req.params;
-    const { role } = req.body; 
+    const { role } = req.body;
+    if (localOnly) {
+      const updated = localCommunities.updateMemberRole(id, targetUserId, role);
+      if (!updated) return res.status(404).json({ error: "Community member not found" });
+      return res.json(updated);
+    }
 
     if (role === "MAIN_ADMIN") {
       // Transaction to ensure one owner: demote current, promote target
@@ -215,7 +253,8 @@ router.put("/:id/members/:targetUserId/role", async (req, res) => {
         prisma.communityMember.update({
           where: { userId_communityId: { userId: targetUserId, communityId: id } },
           data: { role: "MAIN_ADMIN" }
-        })
+        }),
+        prisma.community.update({ where: { id }, data: { creatorId: targetUserId } }),
       ]);
       return res.json({ message: "Ownership transferred successfully" });
     }
@@ -236,9 +275,19 @@ router.put("/:id/members/:targetUserId/role", async (req, res) => {
  */
 router.delete("/:id/members/:targetUserId", async (req, res) => {
   try {
-    if (localOnly) return res.json({ message: "Member removed" });
-
     const { id, targetUserId } = req.params;
+    const manager = await requireCommunityRole(req, res, ["MAIN_ADMIN", "ADMIN"]);
+    if (!manager) return;
+    const targetRole = await getCommunityRole(id, targetUserId);
+    if (targetRole === "MAIN_ADMIN" || (manager.role === "ADMIN" && targetRole === "ADMIN")) {
+      return res.status(403).json({ error: "You cannot remove this community manager" });
+    }
+    if (localOnly) {
+      const removed = localCommunities.removeMember(id, targetUserId);
+      if (!removed) return res.status(404).json({ error: "Community member not found" });
+      return res.json({ message: "Member removed" });
+    }
+
     await prisma.communityMember.delete({
       where: { userId_communityId: { userId: targetUserId, communityId: id } }
     });
@@ -253,13 +302,20 @@ router.delete("/:id/members/:targetUserId", async (req, res) => {
  */
 router.post("/:id/leave", async (req, res) => {
   try {
-    if (localOnly) return res.json({ message: "Left successfully" });
-
     const { id } = req.params;
     const { userId } = req.body;
-    await prisma.communityMember.delete({
-      where: { userId_communityId: { userId, communityId: id } },
-    });
+    const requesterId = getRequesterId(req);
+    if (!requesterId || requesterId !== userId) return res.status(403).json({ error: "You can only leave for your own account" });
+    const role = await getCommunityRole(id, userId);
+    if (role === "MAIN_ADMIN") return res.status(409).json({ error: "Transfer ownership or delete the community before leaving" });
+    if (localOnly) {
+      const removed = localCommunities.leaveCommunity(id, userId);
+      if (!removed) return res.status(404).json({ error: "You are not a member of this community" });
+      return res.json({ message: "Left successfully" });
+    }
+
+    await prisma.communityMember.deleteMany({ where: { userId, communityId: id } });
+    await prisma.communityRequest.deleteMany({ where: { userId, communityId: id } });
     res.json({ message: "Left successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to leave" });
@@ -314,10 +370,15 @@ router.post("/:id/join", async (req, res) => {
  */
 router.post("/:id/requests/:requestId", async (req, res) => {
   try {
-    if (localOnly) return res.json({ message: "Request updated" });
-
     const { id, requestId } = req.params;
     const { action } = req.body;
+    if (!await requireCommunityRole(req, res, ["MAIN_ADMIN", "ADMIN"])) return;
+    if (!["ACCEPT", "DECLINE"].includes(action)) return res.status(400).json({ error: "Invalid request action" });
+    if (localOnly) {
+      const result = localCommunities.resolveRequest(id, requestId, action);
+      if (!result) return res.status(404).json({ message: "Request not found" });
+      return res.json(result);
+    }
 
     const joinReq = await prisma.communityRequest.findUnique({ where: { id: requestId } });
     if (!joinReq) return res.status(404).json({ message: "Request not found" });
@@ -344,7 +405,8 @@ router.post("/:id/requests/:requestId", async (req, res) => {
  */
 router.get("/:id/requests", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
+    if (!await requireCommunityRole(req, res, ["MAIN_ADMIN", "ADMIN"])) return;
+    if (localOnly) return res.json(localCommunities.listRequests(req.params.id));
 
     const requests = await prisma.communityRequest.findMany({
       where: { communityId: req.params.id, status: "PENDING" },

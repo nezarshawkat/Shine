@@ -60,7 +60,7 @@ export default function CommunityProfile() {
   const [editData, setEditData] = useState({});
   const [bannerFile, setBannerFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
-  const [membership, setMembership] = useState({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+  const [membership, setMembership] = useState({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false, role: null });
   const [showMembersPopup, setShowMembersPopup] = useState(false);
   const [showSharePopup, setShowSharePopup] = useState(false);
 
@@ -96,7 +96,7 @@ export default function CommunityProfile() {
 
   const fetchMembership = async () => {
     if (!currentUserId || !communityId) {
-      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false, role: null });
       return;
     }
 
@@ -108,10 +108,11 @@ export default function CommunityProfile() {
         isPending: data.status === "PENDING",
         isAdmin: data.role === "ADMIN" || data.role === "MAIN_ADMIN",
         isMainAdmin: data.role === "MAIN_ADMIN",
+        role: data.role || null,
       });
     } catch (err) {
       console.error("Membership error", err);
-      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false, role: null });
     }
   };
 
@@ -162,7 +163,7 @@ export default function CommunityProfile() {
       if (res.data?.status === "PENDING") {
         setMembership((prev) => ({ ...prev, isPending: true, isMember: false }));
       } else {
-        setMembership((prev) => ({ ...prev, isPending: false, isMember: true }));
+        setMembership((prev) => ({ ...prev, isPending: false, isMember: true, role: "MEMBER" }));
       }
       fetchCommunity();
       setFeed([]);
@@ -176,7 +177,7 @@ export default function CommunityProfile() {
       await axios.post(`${API_URL}/communities/${communityId}/leave`, { userId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false });
+      setMembership({ isMember: false, isPending: false, isAdmin: false, isMainAdmin: false, role: null });
       setFeed([]);
       setPage(1);
       fetchCommunity();
@@ -431,6 +432,7 @@ export default function CommunityProfile() {
       {showSettingsOverlay && (
         <CommunitySettings 
           community={community} 
+          membershipRole={membership.role}
           initialSection={settingsTab}
           onClose={() => setShowSettingsOverlay(false)}
           onUpdate={() => {

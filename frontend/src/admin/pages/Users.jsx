@@ -19,17 +19,31 @@ const normalizeRole = (roleLevel) => {
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState(null);
 
   const load = async () => {
-    const { data } = await adminRequest("get", "/users", null, { q: query });
-    setUsers(data.data);
+    try {
+      const { data } = await adminRequest("get", "/users", null, { q: query });
+      setUsers(data.data);
+      setError("");
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to load users");
+    }
   };
 
   useEffect(() => { load(); }, []);
 
   const update = async (id, payload) => {
-    await adminRequest("put", `/users/${id}`, payload);
-    load();
+    setBusyId(id);
+    try {
+      await adminRequest("put", `/users/${id}`, payload);
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to update user");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const promote = async (user) => {
@@ -40,18 +54,34 @@ export default function Users() {
   };
 
   const toggleBlock = async (id) => {
-    await adminRequest("patch", `/users/${id}/block`);
-    load();
+    setBusyId(id);
+    try {
+      await adminRequest("patch", `/users/${id}/block`);
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to change user status");
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const remove = async (id) => {
-    await adminRequest("delete", `/users/${id}`);
-    load();
+  const remove = async (user) => {
+    if (!window.confirm(`Delete @${user.username} and all of this user's content?`)) return;
+    setBusyId(user.id);
+    try {
+      await adminRequest("delete", `/users/${user.id}`);
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to delete user");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
     <section>
       <h2>Users</h2>
+      {error && <p className="error-text">{error}</p>}
       <div className="toolbar">
         <input value={query} placeholder="Search users" onChange={(e) => setQuery(e.target.value)} />
         <button onClick={load}>Search</button>
@@ -74,11 +104,11 @@ export default function Users() {
                 </td>
                 <td>{u.isAuthorized ? "Active" : "Blocked"}</td>
                 <td className="actions">
-                  <button onClick={() => promote(u)} disabled={atMaxStage}>
+                  <button onClick={() => promote(u)} disabled={atMaxStage || busyId === u.id}>
                     {atMaxStage ? "Max Stage" : "Promote"}
                   </button>
-                  <button onClick={() => toggleBlock(u.id)}>{u.isAuthorized ? "Block" : "Unblock"}</button>
-                  <button className="danger" onClick={() => remove(u.id)}>Delete</button>
+                  <button disabled={busyId === u.id} onClick={() => toggleBlock(u.id)}>{u.isAuthorized ? "Block" : "Unblock"}</button>
+                  <button disabled={busyId === u.id} className="danger" onClick={() => remove(u)}>Delete</button>
                 </td>
               </tr>
             );

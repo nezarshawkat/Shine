@@ -1,4 +1,5 @@
 const local = require("../db/local");
+const localDeletion = require("./localDeletionService");
 
 function publicUser(row) {
   if (!row) return null;
@@ -193,8 +194,7 @@ function updatePassword(id, hashedPassword) {
 function deleteUser(id) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
-  db.prepare("DELETE FROM User WHERE id = ?").run(id);
-  db.prepare("UPDATE Post SET deletedAt = ? WHERE authorId = ?").run(local.nowIso(), id);
+  return localDeletion.deleteUser(db, id);
 }
 
 module.exports = {

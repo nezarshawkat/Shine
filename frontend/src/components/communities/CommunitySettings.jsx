@@ -43,7 +43,7 @@ function Toast({ message, type = "success", action, onClose }) {
 }
 
 // --- MAIN COMPONENT ---
-export default function CommunitySettings({ community, initialSection = "General", onClose, onUpdate }) {
+export default function CommunitySettings({ community, membershipRole, initialSection = "General", onClose, onUpdate }) {
   const { userId, token } = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState(initialSection);
   const [loading, setLoading] = useState(false);
@@ -55,8 +55,8 @@ export default function CommunitySettings({ community, initialSection = "General
   };
 
   // Roles & Permissions
-  const myMemberRecord = community?.communityMembers?.find(m => m.userId === userId);
-  const myRole = myMemberRecord?.role; 
+  const myMemberRecord = community?.communityMembers?.find(m => String(m.userId) === String(userId));
+  const myRole = myMemberRecord?.role || membershipRole;
   const isMainAdmin = myRole === "MAIN_ADMIN";
   const canManage = myRole === "MAIN_ADMIN" || myRole === "ADMIN";
 
@@ -133,7 +133,7 @@ export default function CommunitySettings({ community, initialSection = "General
       });
       showToast(`Role updated to ${newRole.replace("_", " ")}`);
       onUpdate();
-    } catch (err) { showToast("Role update failed.", "error"); }
+    } catch (err) { showToast(err?.response?.data?.error || "Role update failed.", "error"); }
   };
 
   const handleMemberAction = async (action, targetUserId) => {
@@ -146,7 +146,7 @@ export default function CommunitySettings({ community, initialSection = "General
         showToast("Member removed from community");
       }
       onUpdate();
-    } catch (err) { showToast("Action failed", "error"); }
+    } catch (err) { showToast(err?.response?.data?.error || "Action failed", "error"); }
   };
 
   const handleRequestAction = async (requestId, action) => {
@@ -176,7 +176,7 @@ export default function CommunitySettings({ community, initialSection = "General
         headers: { Authorization: `Bearer ${token}` }
       });
       window.location.href = "/";
-    } catch (err) { showToast("Error leaving.", "error"); }
+    } catch (err) { showToast(err?.response?.data?.error || "Error leaving.", "error"); }
   };
 
   const handleDeleteCommunity = async () => {
@@ -187,7 +187,7 @@ export default function CommunitySettings({ community, initialSection = "General
         headers: { Authorization: `Bearer ${token}` }
       });
       window.location.href = "/";
-    } catch (err) { showToast("Deletion failed", "error"); }
+    } catch (err) { showToast(err?.response?.data?.error || "Deletion failed", "error"); }
   };
 
   return (
