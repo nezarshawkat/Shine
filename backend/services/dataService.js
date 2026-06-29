@@ -1,5 +1,6 @@
 const local = require("../db/local");
 const neon = require("../db/neon");
+const feedRanking = require("./feedRankingService");
 
 const DEFAULT_REFRESH_MS = 60000;
 const DEFAULT_BOOTSTRAP_LIMIT = 100;
@@ -755,20 +756,39 @@ function scheduleFeedRefresh() {
     });
 }
 
-async function getPosts({ page = 1, pageSize = 10, userId = null } = {}) {
+async function getPosts({
+  page = 1,
+  pageSize = 10,
+  userId = null,
+  excludeIds = [],
+  sessionId = "anonymous",
+  resumePostId = null,
+} = {}) {
   page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
   pageSize = Number.isFinite(Number(pageSize)) && Number(pageSize) > 0 ? Number(pageSize) : 10;
 
   const db = local.getDb();
   if (db) {
-    const rows = selectLocalPosts({ page, pageSize, userId });
-    if (rows.length) {
+    const hasLocalPosts = db.prepare("SELECT 1 FROM Post WHERE deletedAt IS NULL LIMIT 1").get();
+    if (hasLocalPosts) {
+      const rows = feedRanking.getRankedPostRows({
+        page,
+        pageSize,
+        userId,
+        excludeIds,
+        sessionId,
+        resumePostId,
+      });
       scheduleFeedRefresh();
       return rows.map((row) => formatLocalPost(row, userId));
     }
   }
 
   return fetchCloudPosts({ page, pageSize, userId });
+}
+
+function recordFeedEvents(userId, events) {
+  return feedRanking.recordFeedEvents(userId, events);
 }
 
 async function getSinglePost(id, userId = null) {
@@ -1722,6 +1742,7 @@ module.exports = {
   getStatus: local.getStatus,
   getTrends,
   recordView,
+  recordFeedEvents,
   refreshRecentPostsFromNeon,
   sharePost,
   toggleCommentLike,

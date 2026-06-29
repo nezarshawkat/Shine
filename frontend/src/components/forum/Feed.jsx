@@ -12,6 +12,123 @@ import profileDefault from "../../assets/profileDefault.svg";
 import API, { API_BASE_URL, buildMediaUrl } from "../../api";
 
 const FEED_URL = `${API_BASE_URL}/posts`;
+const FEED_RESUME_TTL_MS = 30 * 60 * 1000;
+
+function getFeedSessionId() {
+  const key = "shine:feed-session";
+  const existing = sessionStorage.getItem(key);
+  if (existing) return existing;
+  const id = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  sessionStorage.setItem(key, id);
+  return id;
+}
+
+function readResumePostId(userId) {
+  try {
+    const key = `shine:feed-resume:${userId || "guest"}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved.postId || Date.now() - saved.at > FEED_RESUME_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return saved.postId;
+  } catch {
+    return null;
+  }
+}
+
+function TrackedFeedPost({
+  post,
+  Component,
+  isLast,
+  lastPostRef,
+  onSelectPost,
+  queueFeedEvent,
+  rememberPosition,
+  isMobile,
+}) {
+  const postRef = useRef(null);
+  const visibleSinceRef = useRef(null);
+  const impressionSentRef = useRef(false);
+  const impressionTimerRef = useRef(null);
+
+  const setPostNode = useCallback((node) => {
+    postRef.current = node;
+    if (isLast) lastPostRef(node);
+  }, [isLast, lastPostRef]);
+
+  useEffect(() => {
+    const node = postRef.current;
+    if (!node) return undefined;
+
+    const finishVisibility = () => {
+      clearTimeout(impressionTimerRef.current);
+      if (!visibleSinceRef.current) return;
+      const dwellMs = Date.now() - visibleSinceRef.current;
+      visibleSinceRef.current = null;
+      if (impressionSentRef.current && dwellMs >= 700) {
+        queueFeedEvent({ type: "dwell", postId: post.id, dwellMs });
+        if (dwellMs < 1500) queueFeedEvent({ type: "skip", postId: post.id });
+      }
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+        if (!visibleSinceRef.current) visibleSinceRef.current = Date.now();
+        clearTimeout(impressionTimerRef.current);
+        impressionTimerRef.current = setTimeout(() => {
+          if (!impressionSentRef.current) {
+            impressionSentRef.current = true;
+            queueFeedEvent({ type: "impression", postId: post.id });
+          }
+          rememberPosition(post.id);
+        }, 700);
+      } else {
+        finishVisibility();
+      }
+    }, { threshold: [0, 0.6] });
+
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      finishVisibility();
+    };
+  }, [post.id, queueFeedEvent, rememberPosition]);
+
+  const handleOpen = () => {
+    queueFeedEvent({ type: "open", postId: post.id });
+    rememberPosition(post.id);
+    onSelectPost(post.id);
+  };
+
+  const handleClickCapture = (event) => {
+    const interactive = event.target.closest(
+      "button, a, input, textarea, select, [role='button'], .post-action-icon"
+    );
+    if (!interactive) {
+      queueFeedEvent({ type: "open", postId: post.id });
+      rememberPosition(post.id);
+    }
+  };
+
+  return (
+    <div
+      ref={setPostNode}
+      data-feed-post-id={post.id}
+      onClickCapture={handleClickCapture}
+      style={{
+        width: "100%",
+        maxWidth: "765px",
+        overflow: "hidden",
+        marginBottom: isMobile ? "2px" : "12px",
+      }}
+    >
+      <Component postId={post.id} initialData={post} onClick={handleOpen} />
+    </div>
+  );
+}
 
 export default function Feed({ feed, setFeed, onSelectPost }) {
   const { user, userId, token, refreshUser } = useContext(AuthContext);
@@ -25,6 +142,10 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
   const [userResults, setUserResults] = useState([]);
   const [userSearchLoading, setUserSearchLoading] = useState(false);
   const [followBusyUserId, setFollowBusyUserId] = useState(null);
+  const sessionIdRef = useRef(getFeedSessionId());
+  const resumePostIdRef = useRef(readResumePostId(userId));
+  const loadedIdsRef = useRef(new Set(feed.map((post) => post.id)));
+  const eventQueueRef = useRef([]);
 
   const trimmedQuery = searchQuery.trim();
   const isUserSearch = trimmedQuery.startsWith("@");
@@ -34,6 +155,52 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     () => new Set((user?.following || []).map((f) => f.followingId)),
     [user]
   );
+
+  useEffect(() => {
+    feed.forEach((post) => loadedIdsRef.current.add(post.id));
+  }, [feed]);
+
+  const flushFeedEvents = useCallback(async () => {
+    if (!token || eventQueueRef.current.length === 0) return;
+    const events = eventQueueRef.current.splice(0, 50);
+    try {
+      await fetch(`${API_BASE_URL}/posts/feed/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ events }),
+        keepalive: true,
+      });
+    } catch {
+      eventQueueRef.current = [...events, ...eventQueueRef.current].slice(0, 100);
+    }
+  }, [token]);
+
+  const queueFeedEvent = useCallback((event) => {
+    if (!userId || !token) return;
+    eventQueueRef.current.push({ ...event, sessionId: sessionIdRef.current });
+    if (eventQueueRef.current.length >= 10) flushFeedEvents();
+  }, [flushFeedEvents, token, userId]);
+
+  const rememberPosition = useCallback((postId) => {
+    localStorage.setItem(
+      `shine:feed-resume:${userId || "guest"}`,
+      JSON.stringify({ postId, at: Date.now() })
+    );
+  }, [userId]);
+
+  useEffect(() => {
+    const timer = window.setInterval(flushFeedEvents, 5000);
+    const onPageHide = () => flushFeedEvents();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", onPageHide);
+      flushFeedEvents();
+    };
+  }, [flushFeedEvents]);
 
   // 1. Persist scroll position across renders
   const scrollRef = useRef(0);
@@ -122,7 +289,17 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
       setError(null);
       try {
         const res = await axios.get(FEED_URL, {
-          params: { page, pageSize: 10, userId: userId || undefined },
+          params: {
+            page,
+            pageSize: 10,
+            userId: userId || undefined,
+            sessionId: sessionIdRef.current,
+            exclude: [...loadedIdsRef.current].slice(-500).join(",") || undefined,
+            resumePostId:
+              page === 1 && loadedIdsRef.current.size === 0
+                ? resumePostIdRef.current || undefined
+                : undefined,
+          },
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         const newPosts = res.data;
@@ -136,6 +313,7 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
         if (newPosts.length === 0) {
           setHasMore(false);
         } else {
+          newPosts.forEach((post) => loadedIdsRef.current.add(post.id));
           setFeed((prevPosts) => {
             const existingIds = new Set(prevPosts.map((p) => p.id));
             const uniquePosts = newPosts.filter((p) => !existingIds.has(p.id));
@@ -189,22 +367,17 @@ export default function Feed({ feed, setFeed, onSelectPost }) {
     }
 
     return (
-      <div
-        ref={isLast ? lastPostRef : null}
+      <TrackedFeedPost
         key={post.id || index}
-        style={{
-          width: "100%",
-          maxWidth: "765px",
-          overflow: "hidden",
-          marginBottom: isMobile ? "2px" : "12px",
-        }}
-      >
-        <Component
-          postId={post.id}
-          initialData={post}
-          onClick={() => onSelectPost(post.id)}
-        />
-      </div>
+        post={post}
+        Component={Component}
+        isLast={isLast}
+        lastPostRef={lastPostRef}
+        onSelectPost={onSelectPost}
+        queueFeedEvent={queueFeedEvent}
+        rememberPosition={rememberPosition}
+        isMobile={isMobile}
+      />
     );
   };
 

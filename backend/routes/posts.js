@@ -64,6 +64,15 @@ router.get("/", async (req, res) => {
       page: req.query.page,
       pageSize: req.query.pageSize,
       userId,
+      excludeIds: String(req.query.exclude || "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .slice(0, 500),
+      sessionId: String(req.query.sessionId || "anonymous").slice(0, 120),
+      resumePostId: req.query.resumePostId
+        ? String(req.query.resumePostId).slice(0, 80)
+        : null,
     });
 
     res.json(posts);
@@ -71,6 +80,19 @@ router.get("/", async (req, res) => {
     console.error("Fetch posts error:", err);
     res.status(500).json({ error: "Failed to fetch posts" });
   }
+});
+
+// Feed signals stay in local SQLite and are never queued to Neon. This keeps
+// personalization fast and prevents seeded engagement from training the feed.
+router.post("/feed/events", async (req, res) => {
+  const userId = getUserIdFromToken(req);
+  if (!userId) return res.status(204).end();
+  try {
+    dataService.recordFeedEvents(userId, Array.isArray(req.body.events) ? req.body.events : []);
+  } catch (error) {
+    console.error("Feed event tracking error:", error.message);
+  }
+  return res.status(204).end();
 });
 
 // ================== TRENDS (LOCAL FIRST) ==================

@@ -1,0 +1,13 @@
+SHINE FEED UPDATE
+
+1. Upload this ZIP to the root of the Shine repository in GitHub Codespaces.
+2. Extract it at the repository root, allowing files to be overwritten.
+3. Do not copy a private env.txt into GitHub.
+4. Set AUTO_ACTIVITY_ENABLED=false in the backend environment used by Render.
+5. Run:
+   cd backend
+   npm install
+   npm test
+6. Deploy the backend and frontend normally.
+
+The SQLite FeedInteraction table is created automatically when the backend starts.

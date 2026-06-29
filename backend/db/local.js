@@ -254,6 +254,22 @@ function migrate(database = getDb()) {
       data TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS FeedInteraction (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      postId TEXT NOT NULL,
+      sessionId TEXT NOT NULL,
+      impressedAt TEXT NOT NULL,
+      openedAt TEXT,
+      dwellMs INTEGER NOT NULL DEFAULT 0,
+      skipped INTEGER NOT NULL DEFAULT 0,
+      hidden INTEGER NOT NULL DEFAULT 0,
+      reported INTEGER NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      UNIQUE(userId, postId, sessionId)
+    );
+
     CREATE TABLE IF NOT EXISTS Article (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -348,6 +364,8 @@ function migrate(database = getDb()) {
     CREATE INDEX IF NOT EXISTS idx_share_post ON ShareRecord(postId);
     CREATE INDEX IF NOT EXISTS idx_comment_post ON Comment(postId, parentId, deletedAt, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_post_view_post ON PostView(postId);
+    CREATE INDEX IF NOT EXISTS idx_feed_interaction_user ON FeedInteraction(userId, updatedAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_feed_interaction_post ON FeedInteraction(postId, updatedAt DESC);
     CREATE INDEX IF NOT EXISTS idx_article_created ON Article(deletedAt, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_article_author ON Article(authorId);
     CREATE INDEX IF NOT EXISTS idx_source_article ON Source(articleId);
