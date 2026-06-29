@@ -13,17 +13,22 @@ export default function FriendsPage() {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [privacyError, setPrivacyError] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    // Fetching from the following endpoint as requested
-    API.get(`/users/${username}/following`)
+    setPrivacyError("");
+    API.get(`/users/${username}/friends`)
       .then((res) => {
         setFriends(Array.isArray(res.data) ? res.data : []);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Friends fetching error:", err);
+        if (err.response?.status === 403) {
+          const displayName = err.response.data?.targetName || `@${username}`;
+          setPrivacyError(`You can only view ${displayName}'s friends when you and ${displayName} follow each other.`);
+        }
         setLoading(false);
       });
   }, [username]);
@@ -94,6 +99,8 @@ export default function FriendsPage() {
 
         {loading ? (
           <div className="follow-empty">Loading friends list...</div>
+        ) : privacyError ? (
+          <div className="follow-empty">{privacyError}</div>
         ) : filteredFriends.length === 0 ? (
           <div className="follow-empty">
             {searchQuery ? "No matching friends found" : "No friends yet"}

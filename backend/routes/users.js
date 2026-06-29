@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
 const localUsers = require("../services/localUserService");
+const localCommunities = require("../services/localCommunityService");
 const dataService = require("../services/dataService");
 const { memoryUpload, uploadBufferToSupabase } = require("../lib/supabaseStorage");
 const { deleteUserWithRelations } = require("../controllers/admin/deletionHelpers");
@@ -276,7 +277,7 @@ router.get("/:username", async (req, res) => {
 // ---------------- GET USER COMMUNITIES ----------------
 router.get("/:userId/communities", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
+    if (localOnly) return res.json(localCommunities.listUserCommunities(req.params.userId));
 
     const communities = await prisma.communityMember.findMany({
       where: { userId: req.params.userId },
@@ -443,17 +444,8 @@ router.get("/:userId/posts", async (req, res) => {
 // ---------------- GET LIKED CONTENT ----------------
 router.get("/:userId/liked", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
-
-    const likes = await prisma.like.findMany({
-      where: { userId: req.params.userId },
-      include: {
-        post: { include: { author: true, media: true, sources: true } },
-        article: { include: { author: true, media: true, _count: true } },
-      },
-    });
-    const likedContent = likes.map((l) => l.post || l.article).filter(Boolean);
-    res.json(likedContent);
+    const requesterId = getRequesterId(req) || req.params.userId;
+    res.json(await dataService.getUserLikedPosts(req.params.userId, requesterId));
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch liked content" });
   }
@@ -462,44 +454,8 @@ router.get("/:userId/liked", async (req, res) => {
 // ---------------- GET SAVED CONTENT ----------------
 router.get("/:userId/saved", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
-
-    const saved = await prisma.save.findMany({
-      where: { userId: req.params.userId },
-      include: {
-        post: {
-          include: {
-            author: true,
-            media: true,
-            sources: true,
-            pollOptions: true,
-            _count: { select: { likes: true, comments: true, shares: true, views: true, saves: true } },
-          },
-        },
-        article: {
-          include: {
-            author: true,
-            media: true,
-            _count: { select: { likes: true, saves: true, views: true } },
-          },
-        },
-      },
-    });
-
-    const savedContent = saved
-      .map((s) => {
-        const item = s.post || s.article;
-        if (!item) return null;
-        return {
-          ...item,
-          viewsCount: item._count?.views || 0,
-          likesCount: item._count?.likes || 0,
-          contentType: s.post ? "post" : "article",
-        };
-      })
-      .filter(Boolean);
-
-    res.json(savedContent);
+    const requesterId = getRequesterId(req) || req.params.userId;
+    res.json(await dataService.getUserSavedPosts(req.params.userId, requesterId));
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch saved content" });
   }
@@ -508,7 +464,7 @@ router.get("/:userId/saved", async (req, res) => {
 // ---------------- FOLLOWERS ----------------
 router.get("/:username/followers", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
+    if (localOnly) return res.json(localUsers.listFollowers(req.params.username));
 
     const { username } = req.params;
     const user = await prisma.user.findUnique({
@@ -535,7 +491,7 @@ router.get("/:username/followers", async (req, res) => {
 // ---------------- FOLLOWING ----------------
 router.get("/:username/following", async (req, res) => {
   try {
-    if (localOnly) return res.json([]);
+    if (localOnly) return res.json(localUsers.listFollowing(req.params.username));
 
     const { username } = req.params;
     const user = await prisma.user.findUnique({

@@ -18,4 +18,34 @@ const API = axios.create({
   withCredentials: true,
 });
 
+API.interceptors.request.use((config) => {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+  if (token && !config.headers?.Authorization) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
+
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    const method = String(config?.method || "get").toLowerCase();
+    const canRetry = method === "get" || method === "head";
+    const retryableFailure = !error.response || RETRYABLE_STATUS_CODES.has(error.response.status);
+
+    if (!config || !canRetry || !retryableFailure || (config.__retryCount || 0) >= 4) {
+      return Promise.reject(error);
+    }
+
+    config.__retryCount = (config.__retryCount || 0) + 1;
+    const delayMs = Math.min(1000 * (2 ** (config.__retryCount - 1)), 8000);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    return API.request(config);
+  }
+);
+
 export default API;

@@ -9,6 +9,7 @@ const { enabled, intervalMs, articleIntervalMs, openAiApiKey } = require("./conf
 const { generateJson, generateSourcedJson } = require("./aiClient");
 const { buildPostPrompt, buildArticlePrompt } = require("./promptBuilder");
 const { stripSourceCitations } = require("./contentSanitizer");
+const { findArticleImage } = require("./articleImageService");
 const { simulatePostEngagement, simulateArticleEngagement } = require("./engagementEngine");
 const { partitionUsers, pickPostLength, pickPostType } = require("./userBehavior");
 
@@ -19,6 +20,7 @@ const localOnly =
 
 let postTimer = null;
 let articleTimer = null;
+let scheduledGenerationRunning = false;
 const MAX_ERRORS = 100;
 const state = {
   startedAt: null,
@@ -51,6 +53,19 @@ function pushError(scope, error) {
   state.errors.unshift(entry);
   if (state.errors.length > MAX_ERRORS) state.errors.pop();
   console.error(`[auto-activity:${scope}]`, entry.message);
+}
+
+async function runScheduledGeneration(scope, task) {
+  if (scheduledGenerationRunning) return false;
+  scheduledGenerationRunning = true;
+  try {
+    await task();
+    return true;
+  } catch {
+    return false;
+  } finally {
+    scheduledGenerationRunning = false;
+  }
 }
 
 function uniqueUsers(users) {
@@ -274,10 +289,39 @@ async function createOneArticle() {
       throw new Error("AI article was rejected because it was not about politics or geopolitics");
     }
     if (!sources.length) throw new Error("AI web search did not return a cited source for the article");
+    const articleImage = await findArticleImage({
+      title,
+      imageQuery: String(ai.imageQuery || "").trim(),
+      sources,
+    });
+    if (!articleImage) throw new Error("No relevant article image was available from its sources or Wikimedia");
 
     const article = localOnly
-      ? localContent.createArticle({ title, content, authorId: author.id, sources })
-      : await prisma.article.create({ data: { title, content, authorId: author.id, sources: { create: sources } }, include: { sources: true } });
+      ? localContent.createArticle({
+          title,
+          content,
+          authorId: author.id,
+          sources,
+          uploadedMedia: [articleImage],
+          files: [{ mimetype: articleImage.mimeType, size: 0 }],
+        })
+      : await prisma.article.create({
+          data: {
+            title,
+            content,
+            authorId: author.id,
+            sources: { create: sources },
+            media: {
+              create: [{
+                url: articleImage.url,
+                type: "image",
+                size: 0,
+                uploaderId: author.id,
+              }],
+            },
+          },
+          include: { sources: true, media: true },
+        });
     await simulateArticleEngagement(prisma, article, engagementUsers);
     state.articleRuns += 1;
     state.lastArticleAt = new Date().toISOString();
@@ -296,9 +340,9 @@ function startAutoActivitySystem({ respectEnv = false } = {}) {
     return false;
   }
   state.startedAt = new Date().toISOString();
-  postTimer = setInterval(() => createOnePost().catch(() => {}), intervalMs);
-  articleTimer = setInterval(() => createOneArticle().catch(() => {}), articleIntervalMs);
-  createOnePost().catch(() => {});
+  postTimer = setInterval(() => runScheduledGeneration("post", createOnePost), intervalMs);
+  articleTimer = setInterval(() => runScheduledGeneration("article", createOneArticle), articleIntervalMs);
+  runScheduledGeneration("post", createOnePost);
   return true;
 }
 

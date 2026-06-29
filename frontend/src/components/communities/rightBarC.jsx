@@ -35,8 +35,10 @@ const RightSidebar = ({ showOnly = null }) => {
 
         // 2. Fetch Friends (Following)
         if (user?.username) {
+          const token = localStorage.getItem("token");
           const friendRes = await fetch(
-            `${API_BASE_URL}/users/${user.username}/following`
+            `${API_BASE_URL}/users/${user.username}/friends`,
+            { headers: token ? { Authorization: `Bearer ${token}` } : {} }
           );
           const friendJson = await friendRes.json();
           setFriends(Array.isArray(friendJson) ? friendJson : []);

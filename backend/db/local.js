@@ -130,6 +130,14 @@ function migrate(database = getDb()) {
       UNIQUE(userId, communityId)
     );
 
+    CREATE TABLE IF NOT EXISTS Follows (
+      id TEXT PRIMARY KEY,
+      followerId TEXT NOT NULL,
+      followingId TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      UNIQUE(followerId, followingId)
+    );
+
     CREATE TABLE IF NOT EXISTS Post (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -330,6 +338,8 @@ function migrate(database = getDb()) {
     CREATE INDEX IF NOT EXISTS idx_community_member_user ON CommunityMember(userId);
     CREATE INDEX IF NOT EXISTS idx_community_member_community ON CommunityMember(communityId);
     CREATE INDEX IF NOT EXISTS idx_community_request_community ON CommunityRequest(communityId, status);
+    CREATE INDEX IF NOT EXISTS idx_follows_follower ON Follows(followerId);
+    CREATE INDEX IF NOT EXISTS idx_follows_following ON Follows(followingId);
     CREATE INDEX IF NOT EXISTS idx_media_post ON Media(postId);
     CREATE INDEX IF NOT EXISTS idx_source_post ON Source(postId);
     CREATE INDEX IF NOT EXISTS idx_poll_option_post ON PollOption(postId);
@@ -433,6 +443,16 @@ function markJobFailed(id, error) {
     .run(String(error?.message || error || "Unknown sync error").slice(0, 1000), nowIso(), id);
 }
 
+function markJobRetryable(id, error) {
+  getDb()
+    ?.prepare(
+      `UPDATE SyncQueue
+       SET status = 'failed', lastError = ?, updatedAt = ?
+       WHERE id = ?`
+    )
+    .run(String(error?.message || error || "Network unavailable").slice(0, 1000), nowIso(), id);
+}
+
 function cleanupSyncedJobs(maxAgeHours = 24) {
   const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000).toISOString();
   getDb()
@@ -475,6 +495,7 @@ module.exports = {
   getStatus,
   isReady,
   markJobFailed,
+  markJobRetryable,
   markJobSynced,
   migrate,
   newId,

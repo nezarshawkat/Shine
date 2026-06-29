@@ -3,6 +3,13 @@ const localDeletion = require("./localDeletionService");
 
 function publicUser(row) {
   if (!row) return null;
+  const db = local.getDb();
+  const followers = db
+    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followingId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
+    : [];
+  const following = db
+    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followerId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
+    : [];
   return {
     id: row.id,
     email: row.email,
@@ -18,8 +25,8 @@ function publicUser(row) {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     memberships: [],
-    followers: [],
-    following: [],
+    followers,
+    following,
     blockedUsers: [],
   };
 }
@@ -192,6 +199,49 @@ function updatePassword(id, hashedPassword) {
   db.prepare("UPDATE User SET password = ?, updatedAt = ? WHERE id = ?").run(hashedPassword, local.nowIso(), id);
 }
 
+function followUser(followerId, followingId) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  if (followerId === followingId) return { created: false, reason: "self" };
+  const users = db.prepare("SELECT id FROM User WHERE id IN (?, ?)").all(followerId, followingId);
+  if (users.length !== 2) return { created: false, reason: "not-found" };
+  const result = db.prepare(`
+    INSERT OR IGNORE INTO Follows (id, followerId, followingId, createdAt)
+    VALUES (?, ?, ?, ?)
+  `).run(local.newId(), followerId, followingId, local.nowIso());
+  return { created: Boolean(result.changes), reason: result.changes ? null : "exists" };
+}
+
+function unfollowUser(followerId, followingId) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  return Boolean(db.prepare("DELETE FROM Follows WHERE followerId = ? AND followingId = ?").run(followerId, followingId).changes);
+}
+
+function listFollowers(username) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  return db.prepare(`
+    SELECT u.* FROM Follows f
+    JOIN User u ON u.id = f.followerId
+    JOIN User target ON target.id = f.followingId
+    WHERE lower(target.username) = lower(?)
+    ORDER BY datetime(f.createdAt) DESC
+  `).all(username).map(publicUser);
+}
+
+function listFollowing(username) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  return db.prepare(`
+    SELECT u.* FROM Follows f
+    JOIN User u ON u.id = f.followingId
+    JOIN User source ON source.id = f.followerId
+    WHERE lower(source.username) = lower(?)
+    ORDER BY datetime(f.createdAt) DESC
+  `).all(username).map(publicUser);
+}
+
 function deleteUser(id) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
@@ -205,10 +255,14 @@ module.exports = {
   findByEmailOrUsername,
   findById,
   findByUsername,
+  followUser,
+  listFollowers,
+  listFollowing,
   listUsers,
   publicUser,
   searchUsers,
   updatePassword,
   updateUser,
+  unfollowUser,
   upsertGoogleUser,
 };

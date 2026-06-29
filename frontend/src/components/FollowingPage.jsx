@@ -13,9 +13,11 @@ export default function FollowingPage() {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [privacyError, setPrivacyError] = useState("");
 
   useEffect(() => {
     setLoading(true);
+    setPrivacyError("");
     API.get(`/users/${username}/following`)
       .then((res) => {
         // Ensure we handle the data as an array
@@ -24,6 +26,10 @@ export default function FollowingPage() {
       })
       .catch((err) => {
         console.error("Following fetching error:", err);
+        if (err.response?.status === 403) {
+          const displayName = err.response.data?.targetName || `@${username}`;
+          setPrivacyError(`You can only view who ${displayName} follows when you and ${displayName} follow each other.`);
+        }
         setLoading(false);
       });
   }, [username]);
@@ -94,6 +100,8 @@ export default function FollowingPage() {
 
         {loading ? (
           <div className="follow-empty">Loading following list...</div>
+        ) : privacyError ? (
+          <div className="follow-empty">{privacyError}</div>
         ) : filteredFollowing.length === 0 ? (
           <div className="follow-empty">
             {searchQuery ? "No matching users found" : "Not following anyone yet"}

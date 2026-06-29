@@ -21,13 +21,13 @@ Post type: ${postType}
 Reply target (for critique only): ${targetText || 'none'}
 ${topicInstruction}
 Write natural human text with a varied tone. ${lengthInstruction} ${hashtagInstruction}
-Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."]}`;
+Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."], "sourceEvidence":"For non-poll posts, briefly list the researched facts with web citations here; never put them in text."}`;
 }
 
 function buildArticlePrompt({ user }) {
   return `Search the live web for a timely politics or geopolitics topic for ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}. Ignore unrelated interests in the profile bio.
 Write a natural human opinion article about government policy, elections, diplomacy, international relations, political movements, or conflicts. It must express a clear viewpoint and be grounded in reliable pages found during the search. Every factual claim must be supported by those pages. Do not invent facts or URLs. Do not put citations or source links inside the article because the application displays the cited pages separately.
-Output JSON: {"title":"...", "content":"..."}`;
+Output JSON: {"title":"...", "content":"...", "imageQuery":"A short, concrete search phrase for one documentary photo directly related to the main person, place, event, or institution in this article.", "sourceEvidence":"Briefly list the researched facts with web citations here; never put them in title or content."}`;
 }
 
 function buildCommentsPrompt({ postText, postType, actors, count }) {

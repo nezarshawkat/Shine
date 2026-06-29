@@ -13,11 +13,13 @@ export default function FollowersPage() {
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [privacyError, setPrivacyError] = useState("");
 
   useEffect(() => {
     // Ensure the path matches the backend mount: /api/users/:username/followers
     // Since your API.js likely has /api as baseURL, we use /users/...
     setLoading(true);
+    setPrivacyError("");
     API.get(`/users/${username}/followers`)
       .then((res) => {
         // Ensure we are setting an array even if the response is weird
@@ -26,6 +28,10 @@ export default function FollowersPage() {
       })
       .catch((err) => {
         console.error("Followers fetching error:", err);
+        if (err.response?.status === 403) {
+          const displayName = err.response.data?.targetName || `@${username}`;
+          setPrivacyError(`You can only view ${displayName}'s followers when you and ${displayName} follow each other.`);
+        }
         setLoading(false);
       });
   }, [username]);
@@ -96,6 +102,8 @@ export default function FollowersPage() {
 
         {loading ? (
           <div className="follow-empty">Loading followers...</div>
+        ) : privacyError ? (
+          <div className="follow-empty">{privacyError}</div>
         ) : filteredFollowers.length === 0 ? (
           <div className="follow-empty">
             {searchQuery ? "No matching followers found" : "No followers yet"}

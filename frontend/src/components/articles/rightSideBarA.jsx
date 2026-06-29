@@ -98,7 +98,6 @@ export const TrendList = ({ trends, loading }) => {
             <span>
               <span style={{ fontWeight: "600", color: "#FFC847" }}>#{index + 1}.</span> #{tag.name}
             </span>
-            <span style={{ fontSize: "13px", fontWeight: "500" }}>{tag.formattedCount ?? tag.postCount ?? tag.count ?? "0"}</span>
           </div>
         ))
       )}

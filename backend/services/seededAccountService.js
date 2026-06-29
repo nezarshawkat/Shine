@@ -6,6 +6,24 @@ const localOnly =
   process.env.LOCAL_ONLY_DB === "true" ||
   !process.env.DATABASE_URL;
 
+function seededFollowPairs(userIds) {
+  const pairs = [];
+  for (let index = 0; index < userIds.length; index += 1) {
+    const targetCount = 4 + ((index * 7) % 9);
+    const targets = new Set();
+    let step = 1;
+    while (targets.size < Math.min(targetCount, userIds.length - 1)) {
+      const targetIndex = (index + step * 11 + index * 3) % userIds.length;
+      if (targetIndex !== index) targets.add(targetIndex);
+      step += 1;
+    }
+    for (const targetIndex of targets) {
+      pairs.push({ followerId: userIds[index], followingId: userIds[targetIndex] });
+    }
+  }
+  return pairs;
+}
+
 function seedLocalAccounts() {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
@@ -46,6 +64,18 @@ function seedLocalAccounts() {
     }
   });
   transaction();
+  const seededUsers = SEEDED_PROFILES
+    .map((profile) => db.prepare("SELECT id FROM User WHERE username = ? AND provider = 'seed'").get(profile.username))
+    .filter(Boolean);
+  const insertFollow = db.prepare(`
+    INSERT OR IGNORE INTO Follows (id, followerId, followingId, createdAt)
+    VALUES (?, ?, ?, ?)
+  `);
+  db.transaction(() => {
+    for (const pair of seededFollowPairs(seededUsers.map((user) => user.id))) {
+      insertFollow.run(local.newId(), pair.followerId, pair.followingId, timestamp);
+    }
+  })();
   return SEEDED_PROFILES.length;
 }
 
@@ -72,6 +102,13 @@ async function seedCloudAccounts(prisma) {
       },
     });
   }
+  const users = await prisma.user.findMany({
+    where: { username: { in: SEEDED_PROFILES.map((profile) => profile.username) }, provider: "seed" },
+    select: { id: true, username: true },
+  });
+  const byUsername = new Map(users.map((user) => [user.username, user.id]));
+  const orderedIds = SEEDED_PROFILES.map((profile) => byUsername.get(profile.username)).filter(Boolean);
+  await prisma.follows.createMany({ data: seededFollowPairs(orderedIds), skipDuplicates: true });
   return SEEDED_PROFILES.length;
 }
 

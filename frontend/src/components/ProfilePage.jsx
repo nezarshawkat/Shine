@@ -85,6 +85,7 @@ export default function ProfilePage({
   likedPosts = [],
   savedPosts = [],
   communities: initialCommunities = [],
+  articles: initialArticles = [],
 }) {
   const { user: loggedInUser, logout, token, updateUser: updateAuthUser } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -102,7 +103,7 @@ export default function ProfilePage({
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const [fetchedCommunities, setFetchedCommunities] = useState(initialCommunities);
-  const [fetchedArticles, setFetchedArticles] = useState([]);
+  const [fetchedArticles, setFetchedArticles] = useState(initialArticles);
 
   const getImageUrl = (img) => {
     return buildMediaUrl(img) || profileDefault;
@@ -115,7 +116,7 @@ export default function ProfilePage({
   const [imageFile, setImageFile] = useState(null);
 
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(user?.followers?.length || 0);
+  const [followerCount, setFollowerCount] = useState(user?.followerCount ?? user?.followers?.length ?? 0);
 
   const menuRef = useRef(null);
 
@@ -129,6 +130,14 @@ export default function ProfilePage({
   }, [initialUser]);
 
   useEffect(() => {
+    setFetchedCommunities(initialCommunities);
+  }, [initialCommunities]);
+
+  useEffect(() => {
+    setFetchedArticles(initialArticles);
+  }, [initialArticles]);
+
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -139,7 +148,7 @@ export default function ProfilePage({
     setEditedName(user?.name || "");
     setEditedUsername(user?.username || "");
     setEditedDescription(user?.description || "");
-    setFollowerCount(user?.followers?.length || 0);
+    setFollowerCount(user?.followerCount ?? user?.followers?.length ?? 0);
 
     if (user?.followers && loggedInUserId) {
       const following = user.followers.some(
@@ -347,6 +356,14 @@ export default function ProfilePage({
     });
   };
 
+  const activeTabData = {
+    Posts: posts,
+    Communities: fetchedCommunities,
+    Articles: fetchedArticles,
+    "Liked Posts": likedPosts,
+    Saved: savedPosts,
+  }[activeTab] || [];
+
   return (
     <>
       <Header />
@@ -410,7 +427,7 @@ export default function ProfilePage({
                   {followerCount} followers
                 </button>
                 <button style={{ all: "unset", cursor: "pointer" }} onClick={() => navigate(`/${user.username}/following`)}>
-                  {user.following?.length || 0} following
+                  {user.followingCount ?? user.following?.length ?? 0} following
                 </button>
               </div>
             </div>
@@ -509,7 +526,7 @@ export default function ProfilePage({
             </div>
           ))}
 
-          {getFilteredData(activeTab === "Posts" ? posts : (activeTab === "Communities" ? fetchedCommunities : (activeTab === "Articles" ? fetchedArticles : likedPosts))).length === 0 && (
+          {getFilteredData(activeTabData, activeTab === "Communities" ? "name" : activeTab === "Articles" ? "title" : "content").length === 0 && (
             <div className="empty-state">No {activeTab.toLowerCase()} found</div>
           )}
         </div>

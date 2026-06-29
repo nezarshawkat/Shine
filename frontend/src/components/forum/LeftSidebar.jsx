@@ -178,9 +178,6 @@ const LeftSidebar = ({ onlySearch = false, hideSearch = false, showOnly = null }
                     <span style={{ fontWeight: "500", color: "#FFC847" }}>#{index + 1}. </span>
                     <span style={{ color: "#1C274C", fontWeight: "400" }}>{tag.name?.startsWith("#") ? tag.name : `#${tag.name}`}</span>
                   </span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "500", color: "#1C274C" }}>
-                    {tag.formattedCount ?? tag.postCount ?? tag.count ?? "0"}
-                  </span>
                 </div>
               )) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>No hashtags trending yet.</span>
             ) : <span style={{ color: "#6b7280", fontSize: "0.85rem" }}>Loading...</span>}

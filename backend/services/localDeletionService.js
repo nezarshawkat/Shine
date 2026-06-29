@@ -90,6 +90,7 @@ function deleteUser(db, userId) {
     db.prepare("DELETE FROM EventParticipation WHERE userId = ?").run(userId);
     db.prepare("DELETE FROM CommunityRequest WHERE userId = ?").run(userId);
     db.prepare("DELETE FROM CommunityMember WHERE userId = ?").run(userId);
+    db.prepare("DELETE FROM Follows WHERE followerId = ? OR followingId = ?").run(userId, userId);
     db.prepare("DELETE FROM Notification WHERE userId = ?").run(userId);
     db.prepare("DELETE FROM Message WHERE senderId = ? OR receiverId = ?").run(userId, userId);
     db.prepare("DELETE FROM Media WHERE uploaderId = ?").run(userId);
