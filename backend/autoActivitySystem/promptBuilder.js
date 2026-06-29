@@ -1,18 +1,26 @@
-function buildPostPrompt({ user, postType, targetText, includeHashtags = false }) {
-  const topicInstruction = postType === 'poll'
-    ? 'Create a politics or geopolitics opinion poll. Ask a clear question about government policy, elections, diplomacy, international relations, political movements, or conflicts. Return 2 to 4 distinct, concise poll options. The poll must ask for people\'s judgment rather than present uncertain claims as facts.'
-    : 'Search for a timely politics or geopolitics topic involving government policy, elections, diplomacy, international relations, political movements, or conflicts. Write this profile\'s genuine opinion or argument about it, not a neutral news summary. Ignore unrelated interests in the profile bio. Base every factual claim on reliable pages found during this search. Do not invent facts or URLs. Do not put citations or source links inside the text because the application displays the cited pages separately.';
+function buildPostPrompt({ user, postType, targetText, includeHashtags = false, lengthProfile }) {
+  let topicInstruction;
+  if (postType === 'poll') {
+    topicInstruction = 'Create a politics or geopolitics opinion poll. Ask a clear question about government policy, elections, diplomacy, international relations, political movements, or conflicts. Return 2 to 4 distinct, concise poll options. The poll must ask for people\'s judgment rather than present uncertain claims as facts.';
+  } else if (postType === 'critique') {
+    topicInstruction = 'Critique the specific reply target shown below. Address its central claim, event, people, policy, or conflict directly; do not switch to another political topic. Clearly explain what this profile agrees or disagrees with and why. Search the web only for reliable sources about that same subject. Base every factual claim on those sources. Do not invent facts or URLs, and do not place citations or source links inside the text.';
+  } else {
+    topicInstruction = 'Search for a timely politics or geopolitics topic involving government policy, elections, diplomacy, international relations, political movements, or conflicts. Write this profile\'s genuine opinion or argument about it, not a neutral news summary. Ignore unrelated interests in the profile bio. Base every factual claim on reliable pages found during this search. Do not invent facts or URLs. Do not put citations or source links inside the text because the application displays the cited pages separately.';
+  }
 
   const hashtagInstruction = includeHashtags
     ? 'If it feels natural for this specific post, include one or two relevant #hashtags in the text.'
     : 'Do not include hashtags in this post.';
+  const lengthInstruction = lengthProfile
+    ? `This post must use the ${lengthProfile.label} format: approximately ${lengthProfile.minWords} to ${lengthProfile.maxWords} words.`
+    : 'Keep the length natural for a social media post.';
 
   return `You simulate one realistic social media user.
 User: ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}
 Post type: ${postType}
 Reply target (for critique only): ${targetText || 'none'}
 ${topicInstruction}
-Write natural human text with a varied tone. ${hashtagInstruction}
+Write natural human text with a varied tone. ${lengthInstruction} ${hashtagInstruction}
 Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."]}`;
 }
 

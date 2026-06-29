@@ -75,7 +75,7 @@ async function generateSourcedJson(prompt) {
       messages: [
         {
           role: 'system',
-          content: 'Search the live web before answering. Ground every factual claim in the pages you use. Return valid JSON only, without markdown fences.',
+          content: 'Search the live web before answering. Ground every factual claim in the pages you use. Return valid JSON only, without markdown fences. Never put URLs, markdown links, citation markers, source names, or a Sources/References section inside JSON text, title, or content fields; citations are stored separately from annotations.',
         },
         { role: 'user', content: prompt },
       ],

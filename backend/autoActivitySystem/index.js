@@ -8,8 +8,9 @@ const { moderateCreatedPost } = require("../services/sourceModerationService");
 const { enabled, intervalMs, articleIntervalMs, openAiApiKey } = require("./config");
 const { generateJson, generateSourcedJson } = require("./aiClient");
 const { buildPostPrompt, buildArticlePrompt } = require("./promptBuilder");
+const { stripSourceCitations } = require("./contentSanitizer");
 const { simulatePostEngagement, simulateArticleEngagement } = require("./engagementEngine");
-const { partitionUsers, pickPostType } = require("./userBehavior");
+const { partitionUsers, pickPostLength, pickPostType } = require("./userBehavior");
 
 const localOnly =
   process.env.DATABASE_MODE === "local" ||
@@ -32,6 +33,17 @@ const state = {
 };
 
 const POLITICAL_TOPIC_PATTERN = /\b(politics?|political|government|governance|policy|elections?|parliament|congress|senate|president|prime minister|minister|legislature|constitution|democracy|diplomacy|diplomatic|geopolitics?|international relations|foreign policy|sanctions?|treaty|alliance|nato|united nations|border|conflict|war|peace|ceasefire|military|sovereignty|regime|opposition|bilateral|multilateral)\b/i;
+const KEYWORD_STOP_WORDS = new Set([
+  "about", "after", "again", "against", "because", "before", "being", "could", "from",
+  "have", "into", "more", "most", "other", "over", "should", "their", "there", "these",
+  "they", "this", "those", "through", "under", "very", "what", "when", "where", "which",
+  "while", "with", "would",
+]);
+const RELATION_STOP_WORDS = new Set([
+  ...KEYWORD_STOP_WORDS,
+  "believe", "current", "government", "international", "issue", "opinion", "people",
+  "policy", "political", "politics", "really", "think", "world",
+]);
 
 function pushError(scope, error) {
   const entry = { scope, at: new Date().toISOString(), message: error?.message || String(error) };
@@ -58,8 +70,39 @@ async function anonymousEngagementUsers() {
 function sourceKeywords(sources) {
   return sources
     .flatMap((source) => String(source.name || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/))
-    .filter((word) => word.length >= 4)
-    .slice(0, 8);
+    .filter((word) => word.length >= 4 && !KEYWORD_STOP_WORDS.has(word));
+}
+
+function textKeywords(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length >= 4 && !KEYWORD_STOP_WORDS.has(word));
+}
+
+function keywordTargetCount() {
+  const roll = Math.random();
+  if (roll < 0.35) return 3;
+  if (roll < 0.7) return 4;
+  if (roll < 0.92) return 5;
+  return 6;
+}
+
+function buildPostKeywords(aiKeywords, sources, text) {
+  const candidates = [
+    ...(Array.isArray(aiKeywords) ? aiKeywords : []),
+    ...sourceKeywords(sources),
+    ...textKeywords(text),
+    "politics",
+    "geopolitics",
+    "public policy",
+  ]
+    .map((keyword) => String(keyword || "").trim().replace(/^#+/, "").slice(0, 48))
+    .filter((keyword) => keyword.length >= 3);
+  const unique = [...new Map(candidates.map((keyword) => [keyword.toLowerCase(), keyword])).values()];
+  return unique.slice(0, keywordTargetCount());
 }
 
 function normalizePollOptions(values) {
@@ -74,11 +117,53 @@ function isPoliticsOrGeopolitics(...values) {
   return POLITICAL_TOPIC_PATTERN.test(values.filter(Boolean).join(" "));
 }
 
+function relationTokens(...values) {
+  return new Set(
+    values
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .replace(/https?:\/\/\S+/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length >= 4 && !RELATION_STOP_WORDS.has(word))
+  );
+}
+
+function isCritiqueRelated(target, critiqueText, critiqueKeywords = []) {
+  if (!target?.text || !critiqueText) return false;
+  const targetTokens = relationTokens(target.text, ...(target.keywords || []));
+  const critiqueTokens = relationTokens(critiqueText, ...critiqueKeywords);
+  if (!targetTokens.size || !critiqueTokens.size) return false;
+  const overlap = [...targetTokens].filter((word) => critiqueTokens.has(word));
+  return overlap.length >= Math.min(2, targetTokens.size);
+}
+
+function limitWords(value, maxWords) {
+  const text = String(value || "").trim();
+  const words = [...text.matchAll(/\S+/g)];
+  if (words.length <= maxWords) return text;
+
+  const lastWord = words[maxWords - 1];
+  let limited = text.slice(0, lastWord.index + lastWord[0].length).trimEnd();
+  if (!/[.!?]$/.test(limited) && !/(^|\s)#[^\s#]+$/.test(limited)) {
+    limited = `${limited.replace(/[,;:]$/, "")}.`;
+  }
+  return limited;
+}
+
 async function latestCritiqueTarget() {
   if (localOnly) {
-    return local.getDb().prepare("SELECT id, text FROM Post WHERE deletedAt IS NULL ORDER BY datetime(createdAt) DESC LIMIT 1").get() || null;
+    const rows = local.getDb().prepare("SELECT id, text, keywordsJson FROM Post WHERE deletedAt IS NULL ORDER BY datetime(createdAt) DESC LIMIT 50").all();
+    for (const row of rows) {
+      let keywords = [];
+      try { keywords = JSON.parse(row.keywordsJson || "[]"); } catch { keywords = []; }
+      if (isPoliticsOrGeopolitics(row.text, keywords.join(" "))) return { id: row.id, text: row.text, keywords };
+    }
+    return null;
   }
-  return prisma.post.findFirst({ orderBy: { createdAt: "desc" }, select: { id: true, text: true } });
+  const rows = await prisma.post.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { id: true, text: true, keywords: true } });
+  return rows.find((row) => isPoliticsOrGeopolitics(row.text, (row.keywords || []).join(" "))) || null;
 }
 
 async function createOnePost() {
@@ -90,34 +175,43 @@ async function createOnePost() {
     const { active, working } = partitionUsers(users);
     const actors = uniqueUsers([...active, ...working, ...users]);
     const author = active[Math.floor(Math.random() * active.length)];
-    const postType = pickPostType();
+    let postType = pickPostType();
 
     let targetText = "";
     let parentId = null;
+    let critiqueTarget = null;
     if (postType === "critique") {
-      const target = await latestCritiqueTarget();
-      targetText = target?.text || "";
-      parentId = target?.id || null;
+      critiqueTarget = await latestCritiqueTarget();
+      if (critiqueTarget) {
+        targetText = critiqueTarget.text;
+        parentId = critiqueTarget.id;
+      } else {
+        postType = "opinion";
+      }
     }
 
     const includeHashtags = Math.random() < 0.4;
-    const prompt = buildPostPrompt({ user: author, postType, targetText, includeHashtags });
+    const lengthProfile = pickPostLength(postType);
+    const prompt = buildPostPrompt({ user: author, postType, targetText, includeHashtags, lengthProfile });
     const generated = postType === "poll"
       ? { json: await generateJson(prompt), sources: [] }
       : await generateSourcedJson(prompt);
     const ai = generated.json;
-    const rawText = String(ai.text || "").slice(0, 2000).trim();
+    const rawText = limitWords(stripSourceCitations(String(ai.text || ""), generated.sources), lengthProfile.maxWords);
     const text = includeHashtags
       ? rawText
       : rawText.replace(/(^|\s)#[^\s#]+/g, "$1").replace(/\s{2,}/g, " ").trim();
     const sources = generated.sources;
     const keywords = postType === "poll"
       ? []
-      : [...new Set([...(Array.isArray(ai.keywords) ? ai.keywords : []), ...sourceKeywords(sources)])].slice(0, 12);
+      : buildPostKeywords(ai.keywords, sources, text);
     const pollOptions = postType === "poll" ? normalizePollOptions(ai.pollOptions) : [];
     if (!text) throw new Error("AI returned empty post text");
     if (!isPoliticsOrGeopolitics(text, keywords.join(" "), pollOptions.join(" "), sources.map((source) => source.name).join(" "))) {
       throw new Error("AI output was rejected because it was not about politics or geopolitics");
+    }
+    if (postType === "critique" && !isCritiqueRelated(critiqueTarget, text, keywords)) {
+      throw new Error("AI critique was rejected because it did not address the reply post topic");
     }
     if (postType !== "poll" && !sources.length) throw new Error("AI web search did not return a cited source");
 
@@ -172,9 +266,9 @@ async function createOneArticle() {
     const author = authors[Math.floor(Math.random() * authors.length)];
     const generated = await generateSourcedJson(buildArticlePrompt({ user: author }));
     const ai = generated.json;
-    const title = String(ai.title || "").slice(0, 160).trim();
-    const content = String(ai.content || "").slice(0, 12000).trim();
     const sources = generated.sources;
+    const title = stripSourceCitations(String(ai.title || ""), sources).slice(0, 160).trim();
+    const content = stripSourceCitations(String(ai.content || ""), sources).slice(0, 12000).trim();
     if (!title || !content) throw new Error("AI returned empty article output");
     if (!isPoliticsOrGeopolitics(title, content, sources.map((source) => source.name).join(" "))) {
       throw new Error("AI article was rejected because it was not about politics or geopolitics");
@@ -229,10 +323,12 @@ function getAutoActivityStatus() {
 }
 
 module.exports = {
+  buildPostKeywords,
   clearAutoActivityErrors,
   createOneArticle,
   createOnePost,
   getAutoActivityStatus,
+  isCritiqueRelated,
   startAutoActivitySystem,
   stopAutoActivitySystem,
 };

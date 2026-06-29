@@ -819,9 +819,9 @@ async function getTrends(limit = 10) {
         const tags = new Set(row.text?.match(/#[\p{L}\p{N}_]+/gu) || []);
         for (const tag of tags) {
           const key = tag.slice(1).toLowerCase();
-          const current = hashtagScores.get(key) || { name: key, uses: 0, views: 0, score: 0 };
-          current.uses += 1;
-          current.views += Number(row.viewsCount || 0);
+          const current = hashtagScores.get(key) || { name: key, postCount: 0, totalViews: 0, score: 0 };
+          current.postCount += 1;
+          current.totalViews += Number(row.viewsCount || 0);
           current.score += 1 + engagementWeight + recencyWeight;
           hashtagScores.set(key, current);
         }
@@ -833,15 +833,20 @@ async function getTrends(limit = 10) {
           .slice(0, trendLimit)
           .map(([, value]) => value.label),
         trendingHashtags: [...hashtagScores.values()]
-          .sort((a, b) => b.score - a.score || b.uses - a.uses || a.name.localeCompare(b.name))
+          .sort((a, b) => b.postCount - a.postCount || b.score - a.score || a.name.localeCompare(b.name))
           .slice(0, trendLimit)
           .map((tag) => {
-            const activity = Math.max(tag.uses, tag.views);
+            const count = tag.postCount;
+            const formattedCount = count >= 1000 ? `${(count / 1000).toFixed(1)}K` : `${count}`;
             return {
               name: tag.name,
-              views: activity >= 1000 ? `${(activity / 1000).toFixed(1)}K` : `${activity}`,
-              rawCount: activity,
-              uses: tag.uses,
+              count,
+              postCount: count,
+              formattedCount,
+              totalViews: tag.totalViews,
+              rawCount: count,
+              uses: count,
+              views: formattedCount,
             };
           }),
       };
@@ -871,8 +876,8 @@ async function getTrends(limit = 10) {
 
   const hashtagMap = {};
   trendingPosts.forEach((post) => {
-    const tags = post.text?.match(/#[\p{L}\p{N}_]+/gu);
-    tags?.forEach((tag) => {
+    const tags = new Set(post.text?.match(/#[\p{L}\p{N}_]+/gu) || []);
+    tags.forEach((tag) => {
       const key = tag.slice(1).toLowerCase();
       hashtagMap[key] = (hashtagMap[key] || 0) + 1;
     });
@@ -883,8 +888,12 @@ async function getTrends(limit = 10) {
     trendingHashtags: Object.entries(hashtagMap)
       .map(([name, count]) => ({
         name,
-        views: count >= 1000 ? `${(count / 1000).toFixed(1)}K` : `${count}`,
+        count,
+        postCount: count,
+        formattedCount: count >= 1000 ? `${(count / 1000).toFixed(1)}K` : `${count}`,
         rawCount: count,
+        uses: count,
+        views: count >= 1000 ? `${(count / 1000).toFixed(1)}K` : `${count}`,
       }))
       .sort((a, b) => b.rawCount - a.rawCount)
       .slice(0, trendLimit),

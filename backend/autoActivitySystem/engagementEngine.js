@@ -39,6 +39,29 @@ function parseJson(value, fallback = []) {
   }
 }
 
+function pollOptionWeights(optionCount) {
+  const shape = Math.random();
+  let weights;
+  if (shape < 0.25) {
+    weights = Array.from({ length: optionCount }, () => 0.8 + Math.random() * 0.4);
+  } else if (shape < 0.7) {
+    weights = [3 + Math.random() * 3, ...Array.from({ length: optionCount - 1 }, () => 0.6 + Math.random() * 1.2)];
+  } else {
+    weights = [9 + Math.random() * 7, 1.5 + Math.random() * 2, ...Array.from({ length: Math.max(0, optionCount - 2) }, () => 0.2 + Math.random() * 0.7)];
+  }
+  return shuffle(weights);
+}
+
+function weightedOption(options, weights) {
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  let roll = Math.random() * total;
+  for (let index = 0; index < options.length; index += 1) {
+    roll -= weights[index];
+    if (roll <= 0) return options[index];
+  }
+  return options[options.length - 1];
+}
+
 function buildPollVoteGroups(post, viewers) {
   const options = Array.isArray(post.pollOptions) ? post.pollOptions.filter((option) => option?.id) : [];
   if (options.length < 2 || viewers.length < 3) return [];
@@ -48,13 +71,20 @@ function buildPollVoteGroups(post, viewers) {
   const voterCount = randomNonRoundInt(minimumVoters, maximumVoters);
   const voters = shuffle(viewers).slice(0, voterCount);
   const groups = new Map(options.map((option) => [option.id, { option, users: [] }]));
+  const weights = pollOptionWeights(options.length);
 
   voters.forEach((user, index) => {
-    const option = index < 2 ? options[index] : options[Math.floor(Math.random() * options.length)];
+    const option = index < options.length ? options[index] : weightedOption(options, weights);
     groups.get(option.id).users.push(user);
   });
 
-  return [...groups.values()].filter((group) => group.users.length > 0);
+  const populatedGroups = [...groups.values()].filter((group) => group.users.length > 0);
+  const counts = populatedGroups.map((group) => group.users.length);
+  if (counts.length > 1 && counts.every((count) => count === counts[0]) && populatedGroups[1].users.length > 1) {
+    populatedGroups[0].users.push(populatedGroups[1].users.pop());
+  }
+
+  return populatedGroups;
 }
 
 function engagementTargets(actorCount, commentActorCount = 50) {
