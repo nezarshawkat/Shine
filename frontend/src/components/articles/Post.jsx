@@ -176,7 +176,7 @@ const Post = ({ article: initialArticle, profileUser }) => {
                       onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
                       style={{ background: "none", border: "none", cursor: "pointer", padding: "5px" }}
                     >
-                      <img src={MenuIcon} alt="menu" style={{ width: "20px" }} />
+                      <img className="article-action-icon" src={MenuIcon} alt="menu" style={{ width: "20px" }} />
                     </button>
 
                     {showMenu && (
@@ -207,14 +207,16 @@ const Post = ({ article: initialArticle, profileUser }) => {
             <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <img 
+                    className="article-action-icon"
                     src={isLiked ? heartClickedIcon : heartIcon} 
                     style={{ width: 22, cursor: "pointer" }} 
                     onClick={(e) => handleInteraction(e, 'like', setIsLiked, "Liked")} 
                 />
                 <span style={{ fontWeight: 700, fontSize: "14px", color: "#1C274C" }}>{article._count?.likes || 0}</span>
               </div>
-              <img src={shareIcon} style={{ width: 22, cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} />
+              <img className="article-action-icon" src={shareIcon} style={{ width: 22, cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setShowShare(true); }} />
               <img 
+                className="article-action-icon"
                 src={isSaved ? saveClickedIcon : saveIcon} 
                 style={{ width: 22, cursor: "pointer" }} 
                 onClick={(e) => handleInteraction(e, 'save', setIsSaved, "Saved")} 

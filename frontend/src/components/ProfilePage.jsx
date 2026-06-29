@@ -302,7 +302,7 @@ export default function ProfilePage({
         </button>
       ) : (
         <button className={`follow-btn ${isFollowing ? "following" : ""}`} onClick={handleFollowToggle}>
-          {!isFollowing && <img src={UserPlusIcon} alt="" width={20} />}
+          {!isFollowing && <img className="profile-follow-icon" src={UserPlusIcon} alt="" width={20} />}
           {isFollowing ? "Following" : "Follow"}
         </button>
       )}

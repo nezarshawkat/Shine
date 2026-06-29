@@ -408,6 +408,21 @@ html[data-theme="dark"] :is(.forum-page, .profile-page, .community-page, .post-c
   filter: brightness(0) invert(1) !important;
 }
 
+/* Article action icons are white only in dark mode. */
+html[data-theme="dark"] .article-action-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .profile-follow-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .article-post-card .article-interaction-bar img,
+html[data-theme="dark"] .article-detail-page .article-contributor-card button img,
+html[data-theme="dark"] .profile-page .follow-btn img {
+  filter: brightness(0) invert(1) !important;
+}
+
 /* Forum/community/article dividers */
 html[data-theme="dark"] .forum-trending-card [style*="height: 0.5px"],
 html[data-theme="dark"] .forum-messages-card [style*="height: 0.5px"],
