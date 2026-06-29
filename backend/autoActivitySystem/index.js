@@ -31,6 +31,8 @@ const state = {
   errors: [],
 };
 
+const POLITICAL_TOPIC_PATTERN = /\b(politics?|political|government|governance|policy|elections?|parliament|congress|senate|president|prime minister|minister|legislature|constitution|democracy|diplomacy|diplomatic|geopolitics?|international relations|foreign policy|sanctions?|treaty|alliance|nato|united nations|border|conflict|war|peace|ceasefire|military|sovereignty|regime|opposition|bilateral|multilateral)\b/i;
+
 function pushError(scope, error) {
   const entry = { scope, at: new Date().toISOString(), message: error?.message || String(error) };
   state.lastErrorAt = entry.at;
@@ -60,6 +62,18 @@ function sourceKeywords(sources) {
     .slice(0, 8);
 }
 
+function normalizePollOptions(values) {
+  const options = (Array.isArray(values) ? values : [])
+    .map((option) => String(option?.text || option || "").trim().slice(0, 120))
+    .filter(Boolean);
+  const uniqueOptions = [...new Set(options)].slice(0, 4);
+  return uniqueOptions.length >= 2 ? uniqueOptions : ["Agree", "Disagree", "Not sure"];
+}
+
+function isPoliticsOrGeopolitics(...values) {
+  return POLITICAL_TOPIC_PATTERN.test(values.filter(Boolean).join(" "));
+}
+
 async function latestCritiqueTarget() {
   if (localOnly) {
     return local.getDb().prepare("SELECT id, text FROM Post WHERE deletedAt IS NULL ORDER BY datetime(createdAt) DESC LIMIT 1").get() || null;
@@ -86,15 +100,25 @@ async function createOnePost() {
       parentId = target?.id || null;
     }
 
-    const prompt = buildPostPrompt({ user: author, postType, targetText });
+    const includeHashtags = Math.random() < 0.4;
+    const prompt = buildPostPrompt({ user: author, postType, targetText, includeHashtags });
     const generated = postType === "poll"
       ? { json: await generateJson(prompt), sources: [] }
       : await generateSourcedJson(prompt);
     const ai = generated.json;
-    const text = String(ai.text || "").slice(0, 2000).trim();
+    const rawText = String(ai.text || "").slice(0, 2000).trim();
+    const text = includeHashtags
+      ? rawText
+      : rawText.replace(/(^|\s)#[^\s#]+/g, "$1").replace(/\s{2,}/g, " ").trim();
     const sources = generated.sources;
-    const keywords = [...new Set([...(Array.isArray(ai.keywords) ? ai.keywords : []), ...sourceKeywords(sources)])].slice(0, 12);
+    const keywords = postType === "poll"
+      ? []
+      : [...new Set([...(Array.isArray(ai.keywords) ? ai.keywords : []), ...sourceKeywords(sources)])].slice(0, 12);
+    const pollOptions = postType === "poll" ? normalizePollOptions(ai.pollOptions) : [];
     if (!text) throw new Error("AI returned empty post text");
+    if (!isPoliticsOrGeopolitics(text, keywords.join(" "), pollOptions.join(" "), sources.map((source) => source.name).join(" "))) {
+      throw new Error("AI output was rejected because it was not about politics or geopolitics");
+    }
     if (postType !== "poll" && !sources.length) throw new Error("AI web search did not return a cited source");
 
     let post;
@@ -106,7 +130,7 @@ async function createOnePost() {
         parentId,
         keywords,
         sources,
-        pollOptions: postType === "poll" ? (ai.pollOptions || []).slice(0, 4) : [],
+        pollOptions,
         uploadedMedia: [],
         files: [],
       });
@@ -119,9 +143,9 @@ async function createOnePost() {
           parentId,
           keywords,
           sources: { create: sources },
-          pollOptions: postType === "poll" ? { create: (ai.pollOptions || []).slice(0, 4).map((value) => ({ text: String(value) })) } : undefined,
+          pollOptions: postType === "poll" ? { create: pollOptions.map((text) => ({ text })) } : undefined,
         },
-        include: { sources: true },
+        include: { sources: true, pollOptions: true },
       });
     }
 
@@ -152,6 +176,9 @@ async function createOneArticle() {
     const content = String(ai.content || "").slice(0, 12000).trim();
     const sources = generated.sources;
     if (!title || !content) throw new Error("AI returned empty article output");
+    if (!isPoliticsOrGeopolitics(title, content, sources.map((source) => source.name).join(" "))) {
+      throw new Error("AI article was rejected because it was not about politics or geopolitics");
+    }
     if (!sources.length) throw new Error("AI web search did not return a cited source for the article");
 
     const article = localOnly

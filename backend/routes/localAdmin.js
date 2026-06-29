@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const local = require("../db/local");
 const content = require("../services/localContentService");
 const users = require("../services/localUserService");
+const localDeletion = require("../services/localDeletionService");
 const { verifyLocalAdmin } = require("../services/defaultAdminService");
 const {
   startAutoActivitySystem,
@@ -86,6 +87,13 @@ router.get("/posts", (req, res) => {
     WHERE p.deletedAt IS NULL ORDER BY datetime(p.createdAt) DESC LIMIT ?
   `).all(Number(req.query.pageSize || 100)).map((row) => ({ ...row, author: { id: row.authorId, username: row.authorUsername } }));
   res.json({ data, pagination: { page: 1, pageSize: data.length, total: data.length } });
+});
+
+router.delete("/posts/:id", (req, res) => {
+  if (!localDeletion.deletePost(local.getDb(), req.params.id)) {
+    return res.status(404).json({ error: "Post not found" });
+  }
+  return res.json({ success: true });
 });
 
 router.get("/events", (_req, res) => res.json({ data: content.listEvents() }));

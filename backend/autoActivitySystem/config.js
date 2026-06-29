@@ -1,6 +1,6 @@
 module.exports = {
   enabled: process.env.AUTO_ACTIVITY_ENABLED === "true",
-  intervalMs: Number(process.env.AUTO_ACTIVITY_INTERVAL_MS || 120000),
+  intervalMs: Number(process.env.AUTO_ACTIVITY_INTERVAL_MS || 180000),
   articleIntervalMs: Number(process.env.AUTO_ACTIVITY_ARTICLE_INTERVAL_MS || 3600000),
   anonymousEngagementUsers: Number(process.env.ANONYMOUS_ENGAGEMENT_USERS || 5000),
   openAiApiKey: process.env.OPENAI_API_KEY || "",

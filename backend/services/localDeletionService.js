@@ -1,5 +1,7 @@
 function deletePost(db, postId) {
-  if (!postId) return;
+  if (!postId) return false;
+  const exists = Boolean(db.prepare("SELECT id FROM Post WHERE id = ?").get(postId));
+  if (!exists) return false;
   const commentIds = db.prepare("SELECT id FROM Comment WHERE postId = ?").all(postId).map((row) => row.id);
   const transaction = db.transaction(() => {
     for (const commentId of commentIds) {
@@ -18,6 +20,7 @@ function deletePost(db, postId) {
     db.prepare("DELETE FROM Post WHERE id = ?").run(postId);
   });
   transaction();
+  return true;
 }
 
 function deleteArticle(db, articleId) {

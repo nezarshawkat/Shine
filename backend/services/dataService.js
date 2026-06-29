@@ -891,6 +891,14 @@ async function getTrends(limit = 10) {
   };
 }
 
+function normalizePollOptionsForStorage(values) {
+  const options = (Array.isArray(values) ? values : [])
+    .map((option) => String(option?.text || option || "").trim().slice(0, 120))
+    .filter(Boolean);
+  const uniqueOptions = [...new Set(options)].slice(0, 4);
+  return uniqueOptions.length >= 2 ? uniqueOptions : ["Agree", "Disagree", "Not sure"];
+}
+
 async function createPostInNeon({ text, type, authorId, communityId, parentId, keywords, sources, uploadedMedia, files, pollOptions }) {
   if (localOnly) {
     throw new Error("Local SQLite is not ready. Install better-sqlite3 and set LOCAL_DATABASE_PATH.");
@@ -903,7 +911,7 @@ async function createPostInNeon({ text, type, authorId, communityId, parentId, k
       authorId,
       communityId: communityId && communityId !== "" ? communityId : null,
       parentId: parentId || null,
-      keywords: keywords || [],
+      keywords: type === "poll" ? [] : (keywords || []),
       sources: { create: sources || [] },
       media: {
         create: (uploadedMedia || []).map((asset, index) => ({
@@ -916,7 +924,7 @@ async function createPostInNeon({ text, type, authorId, communityId, parentId, k
       pollOptions:
         type === "poll"
           ? {
-              create: (pollOptions || []).map((option) => ({ text: option.text || option })),
+              create: normalizePollOptionsForStorage(pollOptions).map((text) => ({ text })),
             }
           : undefined,
     },
@@ -960,7 +968,7 @@ async function createPost(input) {
     authorId: input.authorId,
     communityId: input.communityId && input.communityId !== "" ? input.communityId : null,
     parentId: input.parentId || null,
-    keywords: input.keywords || [],
+    keywords: input.type === "poll" ? [] : (input.keywords || []),
     status: "ACTIVE",
     featured: false,
     engagement: 0,
@@ -985,9 +993,9 @@ async function createPost(input) {
   }));
   const pollOptions =
     input.type === "poll"
-      ? (input.pollOptions || []).map((option) => ({
+      ? normalizePollOptionsForStorage(input.pollOptions).map((text) => ({
           id: local.newId(),
-          text: option.text || option,
+          text,
           votes: 0,
           postId: id,
           votedUserIds: [],
@@ -1638,6 +1646,50 @@ async function getUserPosts(userId, requesterId = null) {
   return posts.map((post) => formatCloudPost(post, requesterId || userId));
 }
 
+async function getUserLikedPosts(userId, requesterId = null) {
+  const db = local.getDb();
+  if (db) {
+    const rows = db.prepare(`
+      SELECT p.*
+      FROM LikeRecord l
+      JOIN Post p ON p.id = l.postId
+      WHERE l.userId = ? AND p.deletedAt IS NULL
+      ORDER BY datetime(l.createdAt) DESC
+    `).all(userId);
+    return rows.map((row) => formatLocalPost(row, requesterId || userId));
+  }
+  if (localOnly) return [];
+
+  const likes = await neon.like.findMany({
+    where: { userId, postId: { not: null } },
+    include: { post: { include: postInclude(requesterId || userId) } },
+    orderBy: { createdAt: "desc" },
+  });
+  return likes.map((like) => like.post).filter(Boolean).map((post) => formatCloudPost(post, requesterId || userId));
+}
+
+async function getUserSavedPosts(userId, requesterId = null) {
+  const db = local.getDb();
+  if (db) {
+    const rows = db.prepare(`
+      SELECT p.*
+      FROM SaveRecord s
+      JOIN Post p ON p.id = s.postId
+      WHERE s.userId = ? AND p.deletedAt IS NULL
+      ORDER BY datetime(s.createdAt) DESC
+    `).all(userId);
+    return rows.map((row) => formatLocalPost(row, requesterId || userId));
+  }
+  if (localOnly) return [];
+
+  const saves = await neon.save.findMany({
+    where: { userId, postId: { not: null } },
+    include: { post: { include: postInclude(requesterId || userId) } },
+    orderBy: { createdAt: "desc" },
+  });
+  return saves.map((save) => save.post).filter(Boolean).map((post) => formatCloudPost(post, requesterId || userId));
+}
+
 async function bootstrapLocalCache() {
   if (localOnly || !local.isReady() || process.env.HYBRID_BOOTSTRAP_ON_START === "false") return 0;
   return refreshRecentPostsFromNeon(Number(process.env.HYBRID_BOOTSTRAP_POST_LIMIT || DEFAULT_BOOTSTRAP_LIMIT));
@@ -1651,7 +1703,9 @@ module.exports = {
   deletePost,
   getComments,
   getCommunityPosts,
+  getUserLikedPosts,
   getUserPosts,
+  getUserSavedPosts,
   getLikeStatus,
   getPosts,
   getSaveStatus,

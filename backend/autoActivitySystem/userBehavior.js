@@ -7,8 +7,11 @@ function partitionUsers(users) {
 }
 
 function pickPostType() {
-  const pool = ['opinion','opinion','opinion','critique','critique','analysis','poll'];
-  return pool[Math.floor(Math.random() * pool.length)];
+  const roll = Math.random();
+  if (roll < 0.5) return 'opinion';
+  if (roll < 0.8) return 'critique';
+  if (roll < 0.9) return 'analysis';
+  return 'poll';
 }
 
 module.exports = { partitionUsers, pickPostType };

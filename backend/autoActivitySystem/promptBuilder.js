@@ -1,20 +1,24 @@
-function buildPostPrompt({ user, postType, targetText }) {
+function buildPostPrompt({ user, postType, targetText, includeHashtags = false }) {
   const topicInstruction = postType === 'poll'
-    ? 'Create an opinion-based poll that does not depend on current factual claims.'
-    : 'Search for a timely topic that fits this profile. Base every factual claim on reliable pages found during this search. Do not invent facts or URLs. Do not put citations or source links inside the text because the application displays the cited pages separately.';
+    ? 'Create a politics or geopolitics opinion poll. Ask a clear question about government policy, elections, diplomacy, international relations, political movements, or conflicts. Return 2 to 4 distinct, concise poll options. The poll must ask for people\'s judgment rather than present uncertain claims as facts.'
+    : 'Search for a timely politics or geopolitics topic involving government policy, elections, diplomacy, international relations, political movements, or conflicts. Write this profile\'s genuine opinion or argument about it, not a neutral news summary. Ignore unrelated interests in the profile bio. Base every factual claim on reliable pages found during this search. Do not invent facts or URLs. Do not put citations or source links inside the text because the application displays the cited pages separately.';
+
+  const hashtagInstruction = includeHashtags
+    ? 'If it feels natural for this specific post, include one or two relevant #hashtags in the text.'
+    : 'Do not include hashtags in this post.';
 
   return `You simulate one realistic social media user.
 User: ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}
 Post type: ${postType}
 Reply target (for critique only): ${targetText || 'none'}
 ${topicInstruction}
-Write natural human text with a varied tone and include one or two relevant #hashtags naturally in the post text.
+Write natural human text with a varied tone. ${hashtagInstruction}
 Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."]}`;
 }
 
 function buildArticlePrompt({ user }) {
-  return `Search the live web for a timely topic that fits ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}.
-Write a natural human article grounded in reliable pages found during the search. Every factual claim must be supported by those pages. Do not invent facts or URLs. Do not put citations or source links inside the article because the application displays the cited pages separately.
+  return `Search the live web for a timely politics or geopolitics topic for ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}. Ignore unrelated interests in the profile bio.
+Write a natural human opinion article about government policy, elections, diplomacy, international relations, political movements, or conflicts. It must express a clear viewpoint and be grounded in reliable pages found during the search. Every factual claim must be supported by those pages. Do not invent facts or URLs. Do not put citations or source links inside the article because the application displays the cited pages separately.
 Output JSON: {"title":"...", "content":"..."}`;
 }
 

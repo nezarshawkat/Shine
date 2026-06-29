@@ -31,6 +31,32 @@ function randomNonRoundInt(min, max) {
   return value;
 }
 
+function parseJson(value, fallback = []) {
+  try {
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildPollVoteGroups(post, viewers) {
+  const options = Array.isArray(post.pollOptions) ? post.pollOptions.filter((option) => option?.id) : [];
+  if (options.length < 2 || viewers.length < 3) return [];
+
+  const maximumVoters = Math.min(viewers.length - 1, Math.max(2, Math.floor(viewers.length * 0.65)));
+  const minimumVoters = Math.min(maximumVoters, Math.max(2, Math.floor(viewers.length * 0.12)));
+  const voterCount = randomNonRoundInt(minimumVoters, maximumVoters);
+  const voters = shuffle(viewers).slice(0, voterCount);
+  const groups = new Map(options.map((option) => [option.id, { option, users: [] }]));
+
+  voters.forEach((user, index) => {
+    const option = index < 2 ? options[index] : options[Math.floor(Math.random() * options.length)];
+    groups.get(option.id).users.push(user);
+  });
+
+  return [...groups.values()].filter((group) => group.users.length > 0);
+}
+
 function engagementTargets(actorCount, commentActorCount = 50) {
   const maxViews = Math.min(5000, Math.max(0, actorCount));
   if (maxViews < 50) throw new Error("At least 50 anonymous engagement users are required");
@@ -80,6 +106,7 @@ async function simulateLocalPostEngagement(post, commentActors, engagementActors
   const likers = shuffle(viewers).slice(0, targets.likes);
   const commenters = shuffle(commentActors).slice(0, targets.comments);
   const comments = await generateRelatedComments(post, commenters, targets.comments);
+  const pollVoteGroups = buildPollVoteGroups(post, viewers);
   const now = local.nowIso();
 
   database.transaction(() => {
@@ -95,14 +122,29 @@ async function simulateLocalPostEngagement(post, commentActors, engagementActors
       database.prepare(`INSERT INTO Comment (id, postId, authorId, text, createdAt, updatedAt, likesCount, repliesCount, data) VALUES (?, ?, ?, ?, ?, ?, 0, 0, '{}')`)
         .run(local.newId(), post.id, actor.id, text, now, now);
     }
+    for (const { option, users } of pollVoteGroups) {
+      const row = database.prepare("SELECT votedUserIdsJson FROM PollOption WHERE id = ? AND postId = ?").get(option.id, post.id);
+      if (!row) continue;
+      const votedUserIds = parseJson(row.votedUserIdsJson, []);
+      for (const user of users) {
+        const inserted = database.prepare(`
+          INSERT OR IGNORE INTO PollVote (id, postId, optionId, userId, createdAt)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(local.newId(), post.id, option.id, user.id, now);
+        if (inserted.changes && !votedUserIds.includes(user.id)) votedUserIds.push(user.id);
+      }
+      database.prepare("UPDATE PollOption SET votes = ?, votedUserIdsJson = ? WHERE id = ?")
+        .run(votedUserIds.length, JSON.stringify(votedUserIds), option.id);
+    }
     const counts = database.prepare(`
       SELECT
         (SELECT COUNT(*) FROM LikeRecord WHERE postId = ?) AS likes,
         (SELECT COUNT(*) FROM Comment WHERE postId = ? AND deletedAt IS NULL) AS comments,
-        (SELECT COUNT(*) FROM PostView WHERE postId = ?) AS views
-    `).get(post.id, post.id, post.id);
+        (SELECT COUNT(*) FROM PostView WHERE postId = ?) AS views,
+        (SELECT COUNT(*) FROM PollVote WHERE postId = ?) AS pollVotes
+    `).get(post.id, post.id, post.id, post.id);
     database.prepare("UPDATE Post SET likesCount = ?, commentsCount = ?, viewsCount = ?, engagement = ? WHERE id = ?")
-      .run(counts.likes, counts.comments, counts.views, counts.likes + counts.comments * 2 + counts.views, post.id);
+      .run(counts.likes, counts.comments, counts.views, counts.likes + counts.comments * 2 + counts.views + counts.pollVotes * 2, post.id);
   })();
   return targets;
 }
@@ -113,10 +155,15 @@ async function simulateCloudPostEngagement(prisma, post, commentActors, engageme
   const viewers = shuffled.slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
   const comments = await generateRelatedComments(post, shuffle(commentActors).slice(0, targets.comments), targets.comments);
+  const pollVoteGroups = buildPollVoteGroups(post, viewers);
   await prisma.$transaction([
     prisma.postView.createMany({ data: viewers.map((user) => ({ userId: user.id, postId: post.id })) }),
     prisma.like.createMany({ data: likers.map((user) => ({ userId: user.id, postId: post.id })), skipDuplicates: true }),
     prisma.comment.createMany({ data: comments.map(({ actor, text }) => ({ authorId: actor.id, postId: post.id, text })) }),
+    ...pollVoteGroups.map(({ option, users }) => prisma.pollOption.update({
+      where: { id: option.id },
+      data: { votedUsers: { connect: users.map((user) => ({ id: user.id })) } },
+    })),
   ]);
   return targets;
 }
