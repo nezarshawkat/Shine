@@ -92,11 +92,13 @@ function engagementTargets(actorCount, commentActorCount = 50) {
   if (maxViews < 50) throw new Error("At least 50 anonymous engagement users are required");
   const views = randomNonRoundInt(50, maxViews);
   const likes = randomNonRoundInt(10, Math.min(3500, views));
+  const minimumShares = Math.max(1, Math.floor(views * 0.005));
+  const maximumShares = Math.max(minimumShares, Math.min(300, Math.floor(views * 0.04)));
   return {
     views,
     likes,
     comments: Math.min(randomInt(2, 7), commentActorCount),
-    shares: randomInt(0, 4),
+    shares: randomNonRoundInt(minimumShares, maximumShares),
     saves: randomInt(1, 7),
   };
 }
@@ -134,6 +136,7 @@ async function simulateLocalPostEngagement(post, commentActors, engagementActors
   const shuffled = shuffle(engagementActors);
   const viewers = shuffled.slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
+  const sharers = shuffle(viewers).slice(0, targets.shares);
   const commenters = shuffle(commentActors).slice(0, targets.comments);
   const comments = await generateRelatedComments(post, commenters, targets.comments);
   const pollVoteGroups = buildPollVoteGroups(post, viewers);
@@ -146,6 +149,10 @@ async function simulateLocalPostEngagement(post, commentActors, engagementActors
     }
     for (const user of likers) {
       database.prepare("INSERT OR IGNORE INTO LikeRecord (id, userId, postId, createdAt, data) VALUES (?, ?, ?, ?, '{}')")
+        .run(local.newId(), user.id, post.id, now);
+    }
+    for (const user of sharers) {
+      database.prepare("INSERT INTO ShareRecord (id, userId, postId, createdAt, data) VALUES (?, ?, ?, ?, '{}')")
         .run(local.newId(), user.id, post.id, now);
     }
     for (const { actor, text } of comments) {
@@ -170,11 +177,12 @@ async function simulateLocalPostEngagement(post, commentActors, engagementActors
       SELECT
         (SELECT COUNT(*) FROM LikeRecord WHERE postId = ?) AS likes,
         (SELECT COUNT(*) FROM Comment WHERE postId = ? AND deletedAt IS NULL) AS comments,
+        (SELECT COUNT(*) FROM ShareRecord WHERE postId = ?) AS shares,
         (SELECT COUNT(*) FROM PostView WHERE postId = ?) AS views,
         (SELECT COUNT(*) FROM PollVote WHERE postId = ?) AS pollVotes
-    `).get(post.id, post.id, post.id, post.id);
-    database.prepare("UPDATE Post SET likesCount = ?, commentsCount = ?, viewsCount = ?, engagement = ? WHERE id = ?")
-      .run(counts.likes, counts.comments, counts.views, counts.likes + counts.comments * 2 + counts.views + counts.pollVotes * 2, post.id);
+    `).get(post.id, post.id, post.id, post.id, post.id);
+    database.prepare("UPDATE Post SET likesCount = ?, commentsCount = ?, sharesCount = ?, viewsCount = ?, engagement = ? WHERE id = ?")
+      .run(counts.likes, counts.comments, counts.shares, counts.views, counts.likes + counts.comments * 2 + counts.shares * 3 + counts.views + counts.pollVotes * 2, post.id);
   })();
   return targets;
 }
@@ -184,11 +192,13 @@ async function simulateCloudPostEngagement(prisma, post, commentActors, engageme
   const shuffled = shuffle(engagementActors);
   const viewers = shuffled.slice(0, targets.views);
   const likers = shuffle(viewers).slice(0, targets.likes);
+  const sharers = shuffle(viewers).slice(0, targets.shares);
   const comments = await generateRelatedComments(post, shuffle(commentActors).slice(0, targets.comments), targets.comments);
   const pollVoteGroups = buildPollVoteGroups(post, viewers);
   await prisma.$transaction([
     prisma.postView.createMany({ data: viewers.map((user) => ({ userId: user.id, postId: post.id })) }),
     prisma.like.createMany({ data: likers.map((user) => ({ userId: user.id, postId: post.id })), skipDuplicates: true }),
+    prisma.share.createMany({ data: sharers.map((user) => ({ userId: user.id, postId: post.id })) }),
     prisma.comment.createMany({ data: comments.map(({ actor, text }) => ({ authorId: actor.id, postId: post.id, text })) }),
     ...pollVoteGroups.map(({ option, users }) => prisma.pollOption.update({
       where: { id: option.id },

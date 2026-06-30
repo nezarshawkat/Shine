@@ -6,6 +6,7 @@ const {
   rerankCandidates,
   scoreCandidate,
 } = require("../services/feedRankingService");
+const { engagementTargets } = require("../autoActivitySystem/engagementEngine");
 
 const emptyMetrics = {
   likes: 0,
@@ -110,4 +111,12 @@ test("all unseen posts are placed before previously engaged posts", () => {
   ];
   const ranked = rankUnseenFirst(candidates, new Set(["engaged-high"]), "engaged-high");
   assert.deepEqual(ranked.map((item) => item.post.id), ["unseen-mid", "unseen-low", "engaged-high"]);
+});
+
+test("AI engagement always includes shares proportional to available views", () => {
+  for (let iteration = 0; iteration < 100; iteration += 1) {
+    const targets = engagementTargets(5000, 50);
+    assert.ok(targets.shares >= 1);
+    assert.ok(targets.shares <= targets.views);
+  }
 });

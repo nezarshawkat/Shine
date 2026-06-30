@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import Header from "./Header";
 import axios from "axios";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Share2 } from "lucide-react";
+import SharePopup from "./posts/SharePopup.jsx";
 import "../styles/events.css";
 import { API_BASE_URL, buildMediaUrl } from "../api";
 
@@ -13,6 +14,7 @@ export default function Events() {
   const [textColor, setTextColor] = useState("dark-text");
   const [isPlaying, setIsPlaying] = useState(true);
   const [toast, setToast] = useState(null);
+  const [showShare, setShowShare] = useState(false);
   const intervalRef = useRef(null);
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -30,6 +32,12 @@ export default function Events() {
           ? res.data 
           : [];
         setEvents(data);
+        const sharedEventId = new URLSearchParams(window.location.search).get("event");
+        const sharedIndex = data.findIndex((event) => event.id === sharedEventId);
+        if (sharedIndex >= 0) {
+          setActiveIndex(sharedIndex);
+          setIsPlaying(false);
+        }
       })
       .catch((err) => {
         console.error("Error fetching events:", err);
@@ -225,13 +233,34 @@ export default function Events() {
           </span>
 
           <div className="event-actions">
-            <button className="btn-primary" onClick={handleParticipate}>
-              {activeEvent.actionType === "LINK" ? "Contact" : "Participate"}
-            </button>
+            <div className="event-action-buttons">
+              <button
+                type="button"
+                className="event-share-button"
+                onClick={() => setShowShare(true)}
+                aria-label={`Share ${activeEvent.title}`}
+                title="Share event"
+              >
+                <Share2 size={20} aria-hidden="true" />
+              </button>
+              <button className="btn-primary" onClick={handleParticipate}>
+                {activeEvent.actionType === "LINK" ? "Contact" : "Participate"}
+              </button>
+            </div>
             <span className="contact-text">Contact for info.</span>
           </div>
         </div>
       </div>
+      {showShare && activeEvent && (
+        <SharePopup
+          id={activeEvent.id}
+          type="event"
+          title={activeEvent.title}
+          description={activeEvent.description}
+          image={mediaUrl}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }

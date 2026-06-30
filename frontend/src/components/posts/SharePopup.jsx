@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
 import { BACKEND_URL } from "../../api";
+
+const SHARE_PREVIEW_VERSION = "3";
 
 /**
  * @param {string} id - The ID of the content
- * @param {string} type - One of 'post', 'community', 'article', or 'profile'
+ * @param {string} type - One of 'post', 'community', 'article', 'profile', or 'event'
  * @param {function} onClose - Function to close the popup
  */
 export default function SharePopup({ id, type = "article", title = "", description = "", image = "", onClose }) {
   const shareType = (type || "article").toLowerCase();
-  const previewOrigin = BACKEND_URL || window.location.origin;
-  const shareUrl = `${previewOrigin}/share/${shareType}/${id}`;
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const previewOrigin = isLocalHost
+    ? BACKEND_URL || window.location.origin
+    : (import.meta.env.VITE_PUBLIC_SITE_URL || "https://sshine.org").replace(/\/$/, "");
+  const shareUrl = `${previewOrigin}/share/${shareType}/${id}?v=${SHARE_PREVIEW_VERSION}`;
   const [showToast, setShowToast] = useState(false);
   const isDarkMode = document.documentElement.getAttribute("data-theme") === "dark";
   const readableType = shareType.charAt(0).toUpperCase() + shareType.slice(1);
@@ -29,6 +35,19 @@ export default function SharePopup({ id, type = "article", title = "", descripti
       setTimeout(() => setShowToast(false), 2000);
     } catch (err) {
       console.error("Failed to copy!", err);
+    }
+  };
+
+  const nativeShare = async () => {
+    if (!navigator.share) return copyLink();
+    try {
+      await navigator.share({
+        title: title || `Shine ${readableType}`,
+        text: description || `Open this ${shareType} on Shine`,
+        url: shareUrl,
+      });
+    } catch (error) {
+      if (error?.name !== "AbortError") console.error("Native share failed", error);
     }
   };
 
@@ -161,7 +180,7 @@ export default function SharePopup({ id, type = "article", title = "", descripti
             marginBottom: 28,
           }}
         >
-          {iconBox("#FEF3C7", "</>", "Embed", copyLink)}
+          {iconBox("#FEF3C7", <Share2 size={22} />, "Share", nativeShare)}
 
           {iconBox("#E8F0FE", "f", "Facebook", () =>
             window.open(
@@ -180,6 +199,13 @@ export default function SharePopup({ id, type = "article", title = "", descripti
           {iconBox("#E0F2FE", "in", "LinkedIn", () =>
             window.open(
               `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+              "_blank"
+            )
+          )}
+
+          {iconBox("#DCFCE7", "WA", "WhatsApp", () =>
+            window.open(
+              `https://wa.me/?text=${encodeURIComponent(`${title || `Shine ${readableType}`} ${shareUrl}`)}`,
               "_blank"
             )
           )}

@@ -5,7 +5,15 @@ const localContent = require("../services/localContentService");
 const { ensureSeededAccounts, getLocalSeededAccounts } = require("../services/seededAccountService");
 const { getAnonymousEngagementAccounts, targetCount } = require("../services/anonymousEngagementService");
 const { moderateCreatedPost } = require("../services/sourceModerationService");
-const { enabled, intervalMs, articleIntervalMs, communityPostRate, openAiApiKey } = require("./config");
+const {
+  enabled,
+  intervalMs,
+  articleIntervalMs,
+  postsPerDay,
+  articlesPerDay,
+  communityPostRate,
+  openAiApiKey,
+} = require("./config");
 const { generateJson, generateSourcedJson } = require("./aiClient");
 const { buildPostPrompt, buildArticlePrompt } = require("./promptBuilder");
 const { stripSourceCitations } = require("./contentSanitizer");
@@ -20,7 +28,7 @@ const localOnly =
 
 let postTimer = null;
 let articleTimer = null;
-let scheduledGenerationRunning = false;
+let generationQueue = Promise.resolve();
 const MAX_ERRORS = 100;
 const state = {
   startedAt: null,
@@ -55,21 +63,61 @@ function pushError(scope, error) {
   console.error(`[auto-activity:${scope}]`, entry.message);
 }
 
-async function runScheduledGeneration(scope, task) {
-  if (scheduledGenerationRunning) return false;
-  scheduledGenerationRunning = true;
-  try {
-    await task();
-    return true;
-  } catch {
-    return false;
-  } finally {
-    scheduledGenerationRunning = false;
-  }
+function runScheduledGeneration(scope, task) {
+  const scheduled = generationQueue.then(async () => {
+    try {
+      await task();
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  generationQueue = scheduled.catch(() => false);
+  return scheduled;
 }
 
 function uniqueUsers(users) {
   return [...new Map(users.map((user) => [user.id, user])).values()];
+}
+
+function localDayBounds() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+async function generatedToday(contentType) {
+  const { start, end } = localDayBounds();
+  if (localOnly) {
+    const table = contentType === "article" ? "Article" : "Post";
+    return Number(local.getDb().prepare(`
+      SELECT COUNT(*) AS count
+      FROM ${table} content
+      JOIN User author ON author.id = content.authorId
+      WHERE author.provider = 'seed'
+        AND datetime(content.createdAt) >= datetime(?)
+        AND datetime(content.createdAt) < datetime(?)
+        AND content.deletedAt IS NULL
+    `).get(start.toISOString(), end.toISOString()).count || 0);
+  }
+  const model = contentType === "article" ? prisma.article : prisma.post;
+  return model.count({
+    where: {
+      author: { provider: "seed" },
+      createdAt: { gte: start, lt: end },
+    },
+  });
+}
+
+async function assertDailyCapacity(contentType) {
+  const limit = contentType === "article" ? articlesPerDay : postsPerDay;
+  if (await generatedToday(contentType) >= limit) {
+    const error = new Error(`Daily AI ${contentType} limit reached (${limit})`);
+    error.statusCode = 429;
+    throw error;
+  }
 }
 
 async function seededUsers() {
@@ -194,6 +242,7 @@ async function optionalShineCommunityId() {
 }
 
 async function createOnePost() {
+  await assertDailyCapacity("post");
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
@@ -287,6 +336,7 @@ async function createOnePost() {
 }
 
 async function createOneArticle() {
+  await assertDailyCapacity("article");
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
@@ -357,7 +407,8 @@ function startAutoActivitySystem({ respectEnv = false } = {}) {
   state.startedAt = new Date().toISOString();
   postTimer = setInterval(() => runScheduledGeneration("post", createOnePost), intervalMs);
   articleTimer = setInterval(() => runScheduledGeneration("article", createOneArticle), articleIntervalMs);
-  runScheduledGeneration("post", createOnePost);
+  runScheduledGeneration("post", createOnePost)
+    .finally(() => runScheduledGeneration("article", createOneArticle));
   return true;
 }
 
@@ -375,7 +426,16 @@ function clearAutoActivityErrors() {
 
 function getAutoActivityStatus() {
   return {
-    config: { enabled, intervalMs, articleIntervalMs, ready: Boolean(openAiApiKey), sourceProvider: "OpenAI web search", anonymousEngagementUsers: targetCount },
+    config: {
+      enabled,
+      intervalMs,
+      articleIntervalMs,
+      postsPerDay,
+      articlesPerDay,
+      ready: Boolean(openAiApiKey),
+      sourceProvider: "OpenAI web search",
+      anonymousEngagementUsers: targetCount,
+    },
     running: Boolean(postTimer || articleTimer),
     state,
   };

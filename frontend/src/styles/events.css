@@ -116,6 +116,30 @@
   gap: 8px;
 }
 
+.event-action-buttons {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.event-share-button {
+  width: 48px;
+  flex: 0 0 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.event-share-button:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .btn-primary {
   padding: 12px 50px;
   font-size: 23px;
@@ -269,6 +293,14 @@
   .event-actions {
     width: 100%;
     order: 1;
+  }
+
+  .event-action-buttons {
+    width: 100%;
+  }
+
+  .event-action-buttons .btn-primary {
+    flex: 1;
   }
 
   .btn-primary {

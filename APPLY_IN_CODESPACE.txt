@@ -1,24 +1,36 @@
-SHINE CUMULATIVE UPDATE
+SHINE CUMULATIVE UPDATE - SHARE PREVIEW V3
 
 1. Upload this ZIP to the root of the Shine repository in GitHub Codespaces.
-2. Extract it at the repository root and allow all included files to overwrite.
-3. Do not upload the private local env.txt file to GitHub.
-4. In Render environment variables, set:
-   AUTO_ACTIVITY_ENABLED=true
-   AUTO_ACTIVITY_COMMUNITY_POST_RATE=0.25
-5. Run:
+2. Extract it at the repository root and allow every file to overwrite.
+3. Run:
    cd backend
    npm install
    npm test
-6. Commit the extracted files, then deploy the frontend and backend normally.
+4. Commit and push all extracted files.
+5. Redeploy both Render and Vercel. Redeploying only one is not enough because
+   share URL creation is frontend code and preview metadata is backend code.
 
-Included behavior:
-- personalized keyword-based feed with unseen posts first
-- local SQLite feed interaction tracking
-- Shine community maintained at 2,234 members, including all 50 seeded profiles
-- about 25% of future AI posts assigned to Shine
-- community destinations restored in every post-create page through user memberships
-- white, clearly outlined community-card keywords in dark mode
+RENDER ENVIRONMENT
+AUTO_ACTIVITY_ENABLED=true
+AUTO_ACTIVITY_POSTS_PER_DAY=20
+AUTO_ACTIVITY_ARTICLES_PER_DAY=2
+AUTO_ACTIVITY_INTERVAL_MS=4320000
+AUTO_ACTIVITY_ARTICLE_INTERVAL_MS=43200000
+AUTO_ACTIVITY_COMMUNITY_POST_RATE=0.25
+FRONTEND_URL=https://sshine.org
+PUBLIC_BACKEND_URL=https://api.sshine.org
 
-The private local SQLite data itself is not included in source control. Membership
-seeding runs automatically when the backend starts.
+VERCEL ENVIRONMENT
+VITE_BACKEND_URL=https://api.sshine.org
+VITE_PUBLIC_SITE_URL=https://sshine.org
+
+SHARE PREVIEW FIX
+- copied links use https://sshine.org/share/... instead of api.sshine.org
+- links include ?v=3 to bypass old social-preview caches
+- crawlers receive static metadata without redirect tags
+- browsers redirect to the real Shine content
+- complete Open Graph, Twitter Card, image, canonical, and JSON-LD metadata
+- supports posts, polls, articles, communities, profiles, and events
+
+Do not upload env.txt or shine-local.db. They contain private data. Existing
+SQLite data changes remain stored on the Windows device.
