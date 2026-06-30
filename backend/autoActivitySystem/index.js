@@ -5,7 +5,7 @@ const localContent = require("../services/localContentService");
 const { ensureSeededAccounts, getLocalSeededAccounts } = require("../services/seededAccountService");
 const { getAnonymousEngagementAccounts, targetCount } = require("../services/anonymousEngagementService");
 const { moderateCreatedPost } = require("../services/sourceModerationService");
-const { enabled, intervalMs, articleIntervalMs, openAiApiKey } = require("./config");
+const { enabled, intervalMs, articleIntervalMs, communityPostRate, openAiApiKey } = require("./config");
 const { generateJson, generateSourcedJson } = require("./aiClient");
 const { buildPostPrompt, buildArticlePrompt } = require("./promptBuilder");
 const { stripSourceCitations } = require("./contentSanitizer");
@@ -181,6 +181,18 @@ async function latestCritiqueTarget() {
   return rows.find((row) => isPoliticsOrGeopolitics(row.text, (row.keywords || []).join(" "))) || null;
 }
 
+async function optionalShineCommunityId() {
+  if (Math.random() >= communityPostRate) return null;
+  if (localOnly) {
+    return local.getDb().prepare("SELECT id FROM Community WHERE lower(name) = 'shine' LIMIT 1").get()?.id || null;
+  }
+  const community = await prisma.community.findFirst({
+    where: { name: { equals: "Shine", mode: "insensitive" } },
+    select: { id: true },
+  });
+  return community?.id || null;
+}
+
 async function createOnePost() {
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
@@ -229,6 +241,7 @@ async function createOnePost() {
       throw new Error("AI critique was rejected because it did not address the reply post topic");
     }
     if (postType !== "poll" && !sources.length) throw new Error("AI web search did not return a cited source");
+    const communityId = await optionalShineCommunityId();
 
     let post;
     if (localOnly) {
@@ -236,6 +249,7 @@ async function createOnePost() {
         text,
         type: postType,
         authorId: author.id,
+        communityId,
         parentId,
         keywords,
         sources,
@@ -249,6 +263,7 @@ async function createOnePost() {
           text,
           type: postType,
           authorId: author.id,
+          communityId,
           parentId,
           keywords,
           sources: { create: sources },

@@ -1,15 +1,8 @@
 const local = require("../db/local");
 const localDeletion = require("./localDeletionService");
 
-function publicUser(row) {
+function basicPublicUser(row) {
   if (!row) return null;
-  const db = local.getDb();
-  const followers = db
-    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followingId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
-    : [];
-  const following = db
-    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followerId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
-    : [];
   return {
     id: row.id,
     email: row.email,
@@ -24,9 +17,66 @@ function publicUser(row) {
     roleLevel: row.roleLevel || "Starter",
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    memberships: [],
+  };
+}
+
+function publicCommunity(row) {
+  if (!row) return null;
+  return {
+    id: row.communityId || row.id,
+    name: row.communityName || row.name,
+    interests: (() => {
+      try { return JSON.parse(row.interestsJson || "[]"); } catch { return []; }
+    })(),
+    slogan: row.slogan,
+    discription: row.discription,
+    icon: row.icon,
+    banner: row.banner,
+    status: row.communityStatus || row.status,
+    featured: Boolean(row.featured),
+    engagement: Number(row.engagement || 0),
+    creatorId: row.creatorId,
+  };
+}
+
+function publicUser(row) {
+  if (!row) return null;
+  const db = local.getDb();
+  const followers = db
+    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followingId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
+    : [];
+  const following = db
+    ? db.prepare("SELECT id, followerId, followingId, createdAt FROM Follows WHERE followerId = ? ORDER BY datetime(createdAt) DESC").all(row.id)
+    : [];
+  const membershipRows = db
+    ? db.prepare(`
+        SELECT cm.id AS membershipId, cm.userId, cm.communityId, cm.role, cm.joinedAt,
+          c.name AS communityName, c.interestsJson, c.slogan, c.discription, c.icon,
+          c.banner, c.status AS communityStatus, c.featured, c.engagement, c.creatorId
+        FROM CommunityMember cm
+        JOIN Community c ON c.id = cm.communityId
+        WHERE cm.userId = ?
+        ORDER BY datetime(cm.joinedAt) DESC
+      `).all(row.id)
+    : [];
+  const ownedCommunities = db
+    ? db.prepare("SELECT * FROM Community WHERE creatorId = ? ORDER BY lower(name)").all(row.id).map(publicCommunity)
+    : [];
+  return {
+    ...basicPublicUser(row),
+    memberships: membershipRows.map((membership) => ({
+      id: membership.membershipId,
+      userId: membership.userId,
+      communityId: membership.communityId,
+      role: membership.role,
+      joinedAt: membership.joinedAt,
+      community: publicCommunity(membership),
+    })),
+    ownedCommunities,
     followers,
     following,
+    followerCount: followers.length,
+    followingCount: following.length,
     blockedUsers: [],
   };
 }
@@ -147,7 +197,7 @@ function searchUsers(query, requesterId = null) {
        LIMIT 5`
     )
     .all({ requesterId: requesterId || "", query: `%${query}%` });
-  return rows.map(publicUser);
+  return rows.map(basicPublicUser);
 }
 
 function listUsers(limit = 500) {
@@ -156,7 +206,7 @@ function listUsers(limit = 500) {
   return db
     .prepare("SELECT * FROM User WHERE provider != 'engagement' ORDER BY datetime(createdAt) DESC LIMIT ?")
     .all(limit)
-    .map(publicUser);
+    .map(basicPublicUser);
 }
 
 function updateUser(id, data) {
@@ -218,6 +268,19 @@ function unfollowUser(followerId, followingId) {
   return Boolean(db.prepare("DELETE FROM Follows WHERE followerId = ? AND followingId = ?").run(followerId, followingId).changes);
 }
 
+function isFollowing(followerId, followingId) {
+  if (!followerId || !followingId) return false;
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  return Boolean(db.prepare("SELECT 1 FROM Follows WHERE followerId = ? AND followingId = ?").get(followerId, followingId));
+}
+
+function canViewConnections(requesterId, targetId) {
+  if (!requesterId || !targetId) return false;
+  if (requesterId === targetId) return true;
+  return isFollowing(requesterId, targetId) && isFollowing(targetId, requesterId);
+}
+
 function listFollowers(username) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
@@ -227,7 +290,7 @@ function listFollowers(username) {
     JOIN User target ON target.id = f.followingId
     WHERE lower(target.username) = lower(?)
     ORDER BY datetime(f.createdAt) DESC
-  `).all(username).map(publicUser);
+  `).all(username).map(basicPublicUser);
 }
 
 function listFollowing(username) {
@@ -239,7 +302,24 @@ function listFollowing(username) {
     JOIN User source ON source.id = f.followerId
     WHERE lower(source.username) = lower(?)
     ORDER BY datetime(f.createdAt) DESC
-  `).all(username).map(publicUser);
+  `).all(username).map(basicPublicUser);
+}
+
+function listFriends(username) {
+  const db = local.getDb();
+  if (!db) throw new Error("Local SQLite is not ready.");
+  return db.prepare(`
+    SELECT friend.*
+    FROM User source
+    JOIN Follows outgoing ON outgoing.followerId = source.id
+    JOIN Follows incoming
+      ON incoming.followerId = outgoing.followingId
+     AND incoming.followingId = outgoing.followerId
+    JOIN User friend ON friend.id = outgoing.followingId
+    WHERE lower(source.username) = lower(?)
+      AND friend.provider != 'engagement'
+    ORDER BY friend.name ASC, friend.username ASC
+  `).all(username).map(basicPublicUser);
 }
 
 function deleteUser(id) {
@@ -249,6 +329,8 @@ function deleteUser(id) {
 }
 
 module.exports = {
+  basicPublicUser,
+  canViewConnections,
   createUser,
   deleteUser,
   findByEmail,
@@ -256,7 +338,9 @@ module.exports = {
   findById,
   findByUsername,
   followUser,
+  isFollowing,
   listFollowers,
+  listFriends,
   listFollowing,
   listUsers,
   publicUser,

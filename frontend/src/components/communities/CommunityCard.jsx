@@ -49,9 +49,9 @@ export default function CommunityCard({ community, feedWidth = BASE_W, onintrest
   const cardBg = isDarkMode ? "#1d1d1d" : "#fff";
   const primaryText = isDarkMode ? "#fff" : "#1C274C";
   const secondaryText = isDarkMode ? "rgba(255,255,255,0.76)" : "#4A5568";
-  const keywordBg = isDarkMode ? "rgba(172,242,246,0.15)" : "#F0F4F8";
-  const keywordBorder = isDarkMode ? "rgba(172,242,246,0.55)" : "#D1D9E0";
-  const keywordText = isDarkMode ? "#acf2f6" : "#1C274C";
+  const keywordBg = isDarkMode ? "rgba(255,255,255,0.08)" : "#F0F4F8";
+  const keywordBorder = isDarkMode ? "rgba(255,255,255,0.78)" : "#D1D9E0";
+  const keywordText = isDarkMode ? "#fff" : "#1C274C";
 
   useEffect(() => {
     const fitName = () => {
