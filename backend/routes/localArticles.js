@@ -2,6 +2,8 @@ const express = require("express");
 const { memoryUpload, uploadFilesToSupabase } = require("../lib/supabaseStorage");
 const content = require("../services/localContentService");
 const { validateSources } = require("../services/sourceModerationService");
+const auth = require("../middleware/auth");
+const local = require("../db/local");
 
 const router = express.Router();
 
@@ -42,7 +44,62 @@ router.post("/", memoryUpload.array("media"), async (req, res) => {
   }
 });
 
-router.post("/apply", (_req, res) => res.status(501).json({ error: "Article applications are managed by the local administrator." }));
+router.post("/apply", auth, (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const introduction = String(req.body?.introduction || "").trim();
+    const workSample = String(req.body?.workSample || "").trim();
+    const socialLink = String(req.body?.socialLink || "").trim();
+    if (!introduction || !workSample || !socialLink) {
+      return res.status(400).json({ error: "introduction, workSample, and socialLink are required" });
+    }
+
+    const db = local.getDb();
+    const now = local.nowIso();
+    const existing = db.prepare("SELECT id, createdAt FROM ArticleApplication WHERE userId = ?").get(userId);
+    const application = {
+      id: existing?.id || local.newId(),
+      userId,
+      introduction,
+      workSample,
+      socialLink,
+      status: "PENDING",
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+      data: JSON.stringify({ introduction, workSample, socialLink }),
+    };
+    db.transaction(() => {
+      db.prepare(`
+        INSERT INTO ArticleApplication (
+          id, userId, introduction, workSample, socialLink, status,
+          reviewedBy, reviewedAt, createdAt, updatedAt, data
+        ) VALUES (
+          @id, @userId, @introduction, @workSample, @socialLink, @status,
+          @reviewedBy, @reviewedAt, @createdAt, @updatedAt, @data
+        )
+        ON CONFLICT(userId) DO UPDATE SET
+          introduction = excluded.introduction,
+          workSample = excluded.workSample,
+          socialLink = excluded.socialLink,
+          status = 'PENDING',
+          reviewedBy = NULL,
+          reviewedAt = NULL,
+          updatedAt = excluded.updatedAt,
+          data = excluded.data
+      `).run(application);
+      db.prepare("UPDATE User SET isAuthorized = 0, updatedAt = ? WHERE id = ?").run(now, userId);
+    })();
+
+    res.status(201).json({ data: application });
+  } catch (error) {
+    console.error("LOCAL ARTICLE APPLY ERROR:", error);
+    res.status(500).json({ error: "Failed to submit application" });
+  }
+});
 
 router.get("/user/:userId", (req, res) => {
   try { res.json(content.listArticles({ authorId: req.params.userId, limit: 100 }).articles); }

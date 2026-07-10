@@ -141,7 +141,39 @@ const GENERATED_PROFILES = [
   ...generatedGroup('me', 150),
 ];
 
-const SEEDED_PROFILES = [...BASE_PROFILES, ...GENERATED_PROFILES].slice(0, 250);
+const RAW_SEEDED_PROFILES = [...BASE_PROFILES, ...GENERATED_PROFILES].slice(0, 250);
+const ANON_PERSONAS = [
+  "civic_observer",
+  "policy_reader",
+  "atlas_voice",
+  "public_square",
+  "quiet_voter",
+  "source_checker",
+  "city_listener",
+  "global_notes",
+  "open_forum",
+  "daily_context",
+];
+
+function anonymousProfile(profile, index) {
+  const number = String(index + 1).padStart(3, "0");
+  const persona = ANON_PERSONAS[index % ANON_PERSONAS.length];
+  return {
+    ...profile,
+    previousUsername: profile.username,
+    name: `${persona.replace(/_/g, " ")} ${number}`,
+    username: `${persona}_${number}`,
+    description: [
+      "Following the conversation and adding context when useful.",
+      "Here for sourced discussion, civic questions, and calmer debate.",
+      "Reading, learning, and occasionally posting a careful take.",
+      "Interested in public affairs, policy, and how people see the same issue differently.",
+      "Mostly listening, sometimes joining when the topic matters.",
+    ][index % 5],
+  };
+}
+
+const SEEDED_PROFILES = RAW_SEEDED_PROFILES.map(anonymousProfile);
 const SEEDED_PROFILE_IMAGES = Object.fromEntries(SEEDED_PROFILES.map((profile) => [profile.username, profile.image]));
 const SEEDED_PROFILE_BY_USERNAME = Object.fromEntries(SEEDED_PROFILES.map((profile) => [profile.username, profile]));
 const GUEST_PROFILE_IMAGE = '/uploads/profileDefault.svg';

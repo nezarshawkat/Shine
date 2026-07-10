@@ -284,6 +284,34 @@ function migrate(database = getDb()) {
       data TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS ArticleApplication (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL UNIQUE,
+      introduction TEXT NOT NULL,
+      workSample TEXT NOT NULL,
+      socialLink TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      reviewedBy TEXT,
+      reviewedAt TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      data TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS OrganicEngagementState (
+      id TEXT PRIMARY KEY,
+      entityType TEXT NOT NULL,
+      entityId TEXT NOT NULL,
+      tier TEXT NOT NULL,
+      targetViews INTEGER NOT NULL,
+      targetLikes INTEGER NOT NULL,
+      targetComments INTEGER NOT NULL,
+      targetShares INTEGER NOT NULL DEFAULT 0,
+      startedAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      UNIQUE(entityType, entityId)
+    );
+
     CREATE TABLE IF NOT EXISTS Event (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -374,6 +402,8 @@ function migrate(database = getDb()) {
     CREATE INDEX IF NOT EXISTS idx_feed_interaction_post ON FeedInteraction(postId, updatedAt DESC);
     CREATE INDEX IF NOT EXISTS idx_article_created ON Article(deletedAt, createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_article_author ON Article(authorId);
+    CREATE INDEX IF NOT EXISTS idx_article_application_user ON ArticleApplication(userId, status);
+    CREATE INDEX IF NOT EXISTS idx_organic_engagement_entity ON OrganicEngagementState(entityType, entityId);
     CREATE INDEX IF NOT EXISTS idx_source_article ON Source(articleId);
     CREATE INDEX IF NOT EXISTS idx_event_date ON Event(status, date);
     CREATE INDEX IF NOT EXISTS idx_event_participation_user ON EventParticipation(userId);

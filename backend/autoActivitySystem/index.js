@@ -17,7 +17,6 @@ const { generateJson, generateSourcedJson } = require("./aiClient");
 const { buildPostPrompt, buildArticlePrompt } = require("./promptBuilder");
 const { stripSourceCitations } = require("./contentSanitizer");
 const { findArticleImage } = require("./articleImageService");
-const { simulatePostEngagement, simulateArticleEngagement } = require("./engagementEngine");
 const { partitionUsers, pickPostLength, pickPostType } = require("./userBehavior");
 
 const localOnly =
@@ -287,7 +286,14 @@ function limitWords(value, maxWords) {
 
 async function latestCritiqueTarget() {
   if (localOnly) {
-    const rows = local.getDb().prepare("SELECT id, text, keywordsJson FROM Post WHERE deletedAt IS NULL ORDER BY datetime(createdAt) DESC LIMIT 50").all();
+    const rows = local.getDb().prepare(`
+      SELECT id, text, keywordsJson
+      FROM Post
+      WHERE deletedAt IS NULL
+        AND type IN ('opinion', 'analysis', 'critique')
+      ORDER BY datetime(createdAt) DESC
+      LIMIT 50
+    `).all();
     for (const row of rows) {
       let keywords = [];
       try { keywords = JSON.parse(row.keywordsJson || "[]"); } catch { keywords = []; }
@@ -295,7 +301,12 @@ async function latestCritiqueTarget() {
     }
     return null;
   }
-  const rows = await prisma.post.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { id: true, text: true, keywords: true } });
+  const rows = await prisma.post.findMany({
+    where: { type: { in: ["opinion", "analysis", "critique"] } },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: { id: true, text: true, keywords: true },
+  });
   return rows.find((row) => isPoliticsOrGeopolitics(row.text, (row.keywords || []).join(" "))) || null;
 }
 
@@ -331,7 +342,6 @@ async function createOnePost() {
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
-    const engagementUsers = await anonymousEngagementUsers();
     if (!users.length) throw new Error("No seeded AI users found");
     const { active, working } = partitionUsers(users);
     const actors = uniqueUsers([...active, ...working, ...users]);
@@ -409,7 +419,6 @@ async function createOnePost() {
 
     const moderation = await moderateCreatedPost({ post, authorId: author.id, dataService, prisma: localOnly ? null : prisma });
     if (!moderation.valid) throw new Error(moderation.reasons.join(" "));
-    await simulatePostEngagement(prisma, post, actors, engagementUsers);
     state.postRuns += 1;
     state.lastPostAt = new Date().toISOString();
     return post;
@@ -425,7 +434,6 @@ async function createOneArticle() {
   try {
     if (!openAiApiKey) throw new Error("OPENAI_API_KEY is missing");
     const users = await seededUsers();
-    const engagementUsers = await anonymousEngagementUsers();
     const authors = users.filter((user) => Boolean(user.isAuthorized));
     if (!authors.length) throw new Error("No authorized seeded AI users found");
     const author = authors[Math.floor(Math.random() * authors.length)];
@@ -472,7 +480,6 @@ async function createOneArticle() {
           },
           include: { sources: true, media: true },
         });
-    await simulateArticleEngagement(prisma, article, engagementUsers);
     state.articleRuns += 1;
     state.lastArticleAt = new Date().toISOString();
     return article;

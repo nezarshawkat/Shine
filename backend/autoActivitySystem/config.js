@@ -1,7 +1,7 @@
 module.exports = {
   enabled: process.env.AUTO_ACTIVITY_ENABLED === "true",
   postsPerDay: Math.max(1, Number(process.env.AUTO_ACTIVITY_POSTS_PER_DAY || 20)),
-  articlesPerWeek: Math.max(1, Number(process.env.AUTO_ACTIVITY_ARTICLES_PER_WEEK || 2)),
+  articlesPerWeek: Math.max(1, Number(process.env.AUTO_ACTIVITY_ARTICLES_PER_WEEK || 4)),
   intervalMs: Number(process.env.AUTO_ACTIVITY_INTERVAL_MS || 4320000),
   articleIntervalMs: Number(process.env.AUTO_ACTIVITY_ARTICLE_INTERVAL_MS || 302400000),
   communityPostRate: Math.max(0, Math.min(0.4, Number(process.env.AUTO_ACTIVITY_COMMUNITY_POST_RATE || 0.25))),

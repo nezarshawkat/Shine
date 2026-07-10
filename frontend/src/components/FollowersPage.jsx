@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api.js";
 import profileDefault from "../assets/profileDefault.svg";
 import Header from "./Header.jsx";
+import { AuthContext } from "./AuthProvider.jsx";
 import "../styles/FollowPages.css";
 import "../styles/ProfilePage.css";
 
 export default function FollowersPage() {
   const { username } = useParams();
   const navigate = useNavigate();
+  const { token } = useContext(AuthContext);
 
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,9 @@ export default function FollowersPage() {
     // Since your API.js likely has /api as baseURL, we use /users/...
     setLoading(true);
     setPrivacyError("");
-    API.get(`/users/${username}/followers`)
+    API.get(`/users/${username}/followers`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => {
         // Ensure we are setting an array even if the response is weird
         setFollowers(Array.isArray(res.data) ? res.data : []);
@@ -34,7 +38,7 @@ export default function FollowersPage() {
         }
         setLoading(false);
       });
-  }, [username]);
+  }, [username, token]);
 
   /* SEARCH FILTER */
   const filteredFollowers = followers.filter((user) => {

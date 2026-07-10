@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api.js";
 import profileDefault from "../assets/profileDefault.svg";
 import Header from "./Header.jsx";
+import { AuthContext } from "./AuthProvider.jsx";
 import "../styles/FollowPages.css"; 
 import "../styles/ProfilePage.css";
 
 export default function FollowingPage() {
   const { username } = useParams();
   const navigate = useNavigate();
+  const { token } = useContext(AuthContext);
 
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,9 @@ export default function FollowingPage() {
   useEffect(() => {
     setLoading(true);
     setPrivacyError("");
-    API.get(`/users/${username}/following`)
+    API.get(`/users/${username}/following`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => {
         // Ensure we handle the data as an array
         setFollowing(Array.isArray(res.data) ? res.data : []);
@@ -32,7 +36,7 @@ export default function FollowingPage() {
         }
         setLoading(false);
       });
-  }, [username]);
+  }, [username, token]);
 
   /* SEARCH FILTER */
   const filteredFollowing = following.filter((user) => {

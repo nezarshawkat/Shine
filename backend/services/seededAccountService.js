@@ -293,6 +293,123 @@ const COMMENT_SNIPPETS = [
   "People are going to feel this in normal daily life first.",
 ];
 
+const WELCOME_POST_TEXT = "Welcome to Shine";
+const WELCOME_POST_TARGETS = {
+  views: 249,
+  likes: 211,
+  comments: 28,
+  shares: 73,
+};
+const WELCOME_COMMENTS = [
+  "This is a strong start. I like that the focus is on different points of view.",
+  "Happy to see a space built around real discussion instead of just quick reactions.",
+  "The idea feels needed right now. People want somewhere calmer to talk.",
+  "Excited to see how the conversations here develop over time.",
+  "This feels welcoming without trying too hard. Good first impression.",
+  "A place for ideas and disagreement with context would be genuinely useful.",
+  "The tone here is exactly what most discussion platforms are missing.",
+  "Looking forward to seeing more people bring thoughtful posts here.",
+  "This is the kind of community message that makes people want to join in.",
+  "I hope Shine keeps this balance between openness and better conversation.",
+  "The discover different points of view part is what makes this interesting.",
+  "Good to be here early. Curious to watch the community grow.",
+  "This already feels more intentional than most new social spaces.",
+  "A clean beginning. Now the important part is keeping the discussions useful.",
+  "I like that it invites people to start their own discussions too.",
+  "This feels like a good home for longer, smarter conversations.",
+  "The welcome message sets the right expectation for the whole app.",
+  "Hope this becomes a place where people can disagree without making it personal.",
+  "Simple message, but it explains the point of Shine clearly.",
+  "Glad to see a platform trying to make conversation feel human again.",
+];
+
+function findLocalWelcomePost(db) {
+  return db.prepare(`
+    SELECT id
+    FROM Post
+    WHERE deletedAt IS NULL
+      AND text LIKE ?
+    ORDER BY datetime(createdAt) ASC
+    LIMIT 1
+  `).get(`%${WELCOME_POST_TEXT}%`);
+}
+
+function normalizeLocalWelcomePostEngagement(db, seedIds) {
+  if (!seedIds.length) return false;
+  const post = findLocalWelcomePost(db);
+  if (!post) return false;
+  const now = Date.now();
+
+  db.transaction(() => {
+    db.exec("DROP TABLE IF EXISTS temp.WelcomeSeedIds");
+    db.exec("CREATE TEMP TABLE WelcomeSeedIds (id TEXT PRIMARY KEY)");
+    const insertSeed = db.prepare("INSERT OR IGNORE INTO WelcomeSeedIds (id) VALUES (?)");
+    seedIds.forEach((userId) => insertSeed.run(userId));
+
+    db.prepare("DELETE FROM LikeRecord WHERE postId = ? AND userId IN (SELECT id FROM WelcomeSeedIds)").run(post.id);
+    db.prepare("DELETE FROM ShareRecord WHERE postId = ? AND userId IN (SELECT id FROM WelcomeSeedIds)").run(post.id);
+    db.prepare("DELETE FROM PostView WHERE postId = ? AND userId IN (SELECT id FROM WelcomeSeedIds)").run(post.id);
+    db.prepare("DELETE FROM Comment WHERE postId = ? AND authorId IN (SELECT id FROM WelcomeSeedIds)").run(post.id);
+
+    const remaining = db.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM LikeRecord WHERE postId = ?) AS likes,
+        (SELECT COUNT(*) FROM Comment WHERE postId = ? AND deletedAt IS NULL) AS comments,
+        (SELECT COUNT(*) FROM ShareRecord WHERE postId = ?) AS shares,
+        (SELECT COUNT(*) FROM PostView WHERE postId = ?) AS views
+    `).get(post.id, post.id, post.id, post.id);
+
+    const viewInsert = db.prepare("INSERT INTO PostView (id, userId, postId, viewedAt, data) VALUES (?, ?, ?, ?, '{}')");
+    for (let index = 0; index < Math.max(0, WELCOME_POST_TARGETS.views - remaining.views); index += 1) {
+      viewInsert.run(
+        local.newId(),
+        seedIds[(index * 17) % seedIds.length],
+        post.id,
+        new Date(now - index * 4500).toISOString()
+      );
+    }
+
+    const likeInsert = db.prepare("INSERT OR IGNORE INTO LikeRecord (id, userId, postId, createdAt, data) VALUES (?, ?, ?, ?, '{}')");
+    for (let index = 0; index < Math.max(0, WELCOME_POST_TARGETS.likes - remaining.likes); index += 1) {
+      likeInsert.run(local.newId(), seedIds[(index * 11) % seedIds.length], post.id, local.nowIso());
+    }
+
+    const shareInsert = db.prepare("INSERT INTO ShareRecord (id, userId, postId, createdAt, data) VALUES (?, ?, ?, ?, '{}')");
+    for (let index = 0; index < Math.max(0, WELCOME_POST_TARGETS.shares - remaining.shares); index += 1) {
+      shareInsert.run(local.newId(), seedIds[(index * 23) % seedIds.length], post.id, local.nowIso());
+    }
+
+    const commentInsert = db.prepare(`
+      INSERT INTO Comment (id, postId, authorId, text, createdAt, updatedAt, likesCount, repliesCount, data)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 0, '{}')
+    `);
+    for (let index = 0; index < Math.max(0, WELCOME_POST_TARGETS.comments - remaining.comments); index += 1) {
+      const createdAt = new Date(now - (index + 1) * 3600000).toISOString();
+      commentInsert.run(
+        local.newId(),
+        post.id,
+        seedIds[(index * 19 + 7) % seedIds.length],
+        WELCOME_COMMENTS[index % WELCOME_COMMENTS.length],
+        createdAt,
+        createdAt
+      );
+    }
+
+    const counts = db.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM LikeRecord WHERE postId = ?) AS likes,
+        (SELECT COUNT(*) FROM Comment WHERE postId = ? AND deletedAt IS NULL) AS comments,
+        (SELECT COUNT(*) FROM ShareRecord WHERE postId = ?) AS shares,
+        (SELECT COUNT(*) FROM PostView WHERE postId = ?) AS views
+    `).get(post.id, post.id, post.id, post.id);
+    db.prepare("UPDATE Post SET likesCount = ?, commentsCount = ?, sharesCount = ?, viewsCount = ?, engagement = ? WHERE id = ?")
+      .run(counts.likes, counts.comments, counts.shares, counts.views, counts.likes + counts.comments * 2 + counts.shares * 3 + counts.views, post.id);
+    db.exec("DROP TABLE IF EXISTS temp.WelcomeSeedIds");
+  })();
+
+  return true;
+}
+
 function normalizeLocalSeedEngagement(db, seedIds) {
   if (!seedIds.length) return 0;
   const posts = db.prepare(`
@@ -521,6 +638,86 @@ async function normalizeCloudSeedEngagement(prisma, seedIds) {
   return posts.length;
 }
 
+async function normalizeCloudWelcomePostEngagement(prisma, seedIds) {
+  if (!seedIds.length) return false;
+  const post = await prisma.post.findFirst({
+    where: {
+      text: { contains: WELCOME_POST_TEXT, mode: "insensitive" },
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (!post) return false;
+
+  await prisma.$transaction([
+    prisma.like.deleteMany({ where: { postId: post.id, user: { provider: "seed" } } }),
+    prisma.share.deleteMany({ where: { postId: post.id, user: { provider: "seed" } } }),
+    prisma.postView.deleteMany({ where: { postId: post.id, user: { provider: "seed" } } }),
+    prisma.comment.deleteMany({ where: { postId: post.id, author: { provider: "seed" } } }),
+  ]);
+
+  const [remainingLikes, remainingComments, remainingShares, remainingViews] = await Promise.all([
+    prisma.like.count({ where: { postId: post.id } }),
+    prisma.comment.count({ where: { postId: post.id } }),
+    prisma.share.count({ where: { postId: post.id } }),
+    prisma.postView.count({ where: { postId: post.id } }),
+  ]);
+  const now = Date.now();
+  const viewCount = Math.max(0, WELCOME_POST_TARGETS.views - remainingViews);
+  const likeCount = Math.max(0, WELCOME_POST_TARGETS.likes - remainingLikes);
+  const shareCount = Math.max(0, WELCOME_POST_TARGETS.shares - remainingShares);
+  const commentCount = Math.max(0, WELCOME_POST_TARGETS.comments - remainingComments);
+
+  for (let start = 0; start < viewCount; start += 1000) {
+    const batchSize = Math.min(1000, viewCount - start);
+    await prisma.postView.createMany({
+      data: Array.from({ length: batchSize }, (_value, offset) => {
+        const index = start + offset;
+        return {
+          userId: seedIds[(index * 17) % seedIds.length],
+          postId: post.id,
+          viewedAt: new Date(now - index * 4500),
+        };
+      }),
+    });
+  }
+
+  await prisma.like.createMany({
+    data: Array.from({ length: likeCount }, (_value, index) => ({
+      userId: seedIds[(index * 11) % seedIds.length],
+      postId: post.id,
+    })),
+    skipDuplicates: true,
+  });
+  await prisma.share.createMany({
+    data: Array.from({ length: shareCount }, (_value, index) => ({
+      userId: seedIds[(index * 23) % seedIds.length],
+      postId: post.id,
+    })),
+  });
+  await prisma.comment.createMany({
+    data: Array.from({ length: commentCount }, (_value, index) => ({
+      authorId: seedIds[(index * 19 + 7) % seedIds.length],
+      postId: post.id,
+      text: WELCOME_COMMENTS[index % WELCOME_COMMENTS.length],
+      createdAt: new Date(now - (index + 1) * 3600000),
+      updatedAt: new Date(now - (index + 1) * 3600000),
+    })),
+  });
+
+  const [likes, comments, shares, views] = await Promise.all([
+    prisma.like.count({ where: { postId: post.id } }),
+    prisma.comment.count({ where: { postId: post.id } }),
+    prisma.share.count({ where: { postId: post.id } }),
+    prisma.postView.count({ where: { postId: post.id } }),
+  ]);
+  await prisma.post.update({
+    where: { id: post.id },
+    data: { engagement: likes + comments * 2 + shares * 3 + views },
+  });
+  return true;
+}
+
 async function normalizeCloudArticleDates(prisma) {
   const articles = await prisma.article.findMany({
     where: { author: { provider: "seed" } },
@@ -556,6 +753,7 @@ function seedLocalAccounts() {
     )
     ON CONFLICT(id) DO UPDATE SET
       email = excluded.email,
+      username = excluded.username,
       name = excluded.name,
       provider = 'seed',
       image = excluded.image,
@@ -566,8 +764,12 @@ function seedLocalAccounts() {
   `);
 
   const transaction = db.transaction(() => {
-    for (const profile of SEEDED_PROFILES) {
-      const existing = db.prepare("SELECT id, createdAt FROM User WHERE username = ?").get(profile.username);
+    const existingSeedRows = db.prepare("SELECT id, username, createdAt FROM User WHERE provider = 'seed' ORDER BY datetime(createdAt) ASC, username ASC").all();
+    for (const [index, profile] of SEEDED_PROFILES.entries()) {
+      const existing =
+        db.prepare("SELECT id, createdAt FROM User WHERE username = ?").get(profile.username) ||
+        (profile.previousUsername ? db.prepare("SELECT id, createdAt FROM User WHERE username = ?").get(profile.previousUsername) : null) ||
+        existingSeedRows[index];
       upsert.run({
         id: existing?.id || local.newId(),
         email: `${profile.username}@mock.shine.local`,
@@ -617,33 +819,49 @@ function seedLocalAccounts() {
   ensureLocalShineCommunityMembers(db, seededUsers.map((user) => user.id), timestamp);
   ensureLocalCommunities(db, seededUsers.map((user) => user.id), timestamp);
   normalizeLocalSeedEngagement(db, seededUsers.map((user) => user.id));
+  normalizeLocalWelcomePostEngagement(db, seededUsers.map((user) => user.id));
   normalizeLocalArticleDates(db);
   return SEEDED_PROFILES.length;
 }
 
 async function seedCloudAccounts(prisma) {
   await cleanupCloudEngagementAccounts(prisma);
-  for (const profile of SEEDED_PROFILES) {
-    await prisma.user.upsert({
-      where: { username: profile.username },
-      update: {
-        name: profile.name,
-        description: profile.description,
-        email: `${profile.username}@mock.shine.local`,
-        provider: "seed",
-        isAuthorized: true,
-        image: profile.image,
-      },
-      create: {
-        name: profile.name,
-        username: profile.username,
-        description: profile.description,
-        email: `${profile.username}@mock.shine.local`,
-        provider: "seed",
-        image: profile.image,
-        isAuthorized: true,
-      },
-    });
+  const existingSeedRows = await prisma.user.findMany({
+    where: { provider: "seed" },
+    orderBy: [{ createdAt: "asc" }, { username: "asc" }],
+    select: { id: true, username: true },
+  });
+  for (const [index, profile] of SEEDED_PROFILES.entries()) {
+    const existing =
+      (await prisma.user.findUnique({ where: { username: profile.username }, select: { id: true } })) ||
+      (profile.previousUsername ? await prisma.user.findUnique({ where: { username: profile.previousUsername }, select: { id: true } }) : null) ||
+      existingSeedRows[index];
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          username: profile.username,
+          name: profile.name,
+          description: profile.description,
+          email: `${profile.username}@mock.shine.local`,
+          provider: "seed",
+          isAuthorized: true,
+          image: profile.image,
+        },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          name: profile.name,
+          username: profile.username,
+          description: profile.description,
+          email: `${profile.username}@mock.shine.local`,
+          provider: "seed",
+          image: profile.image,
+          isAuthorized: true,
+        },
+      });
+    }
   }
   const users = await prisma.user.findMany({
     where: { username: { in: SEEDED_PROFILES.map((profile) => profile.username) }, provider: "seed" },
@@ -701,6 +919,7 @@ async function seedCloudAccounts(prisma) {
     });
   }
   await normalizeCloudSeedEngagement(prisma, orderedIds);
+  await normalizeCloudWelcomePostEngagement(prisma, orderedIds);
   await normalizeCloudArticleDates(prisma);
   return SEEDED_PROFILES.length;
 }

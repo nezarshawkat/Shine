@@ -27,6 +27,20 @@ const getRequesterId = (req) => {
   }
 };
 
+async function canViewCloudConnections(requesterId, targetId) {
+  if (!requesterId || !targetId) return false;
+  if (requesterId === targetId) return true;
+  const relations = await prisma.follows.count({
+    where: {
+      OR: [
+        { followerId: requesterId, followingId: targetId },
+        { followerId: targetId, followingId: requesterId },
+      ],
+    },
+  });
+  return relations === 2;
+}
+
 // ---------------- TEST ROUTE ----------------
 router.get("/test", (req, res) => {
   res.send("Users route is working!");
@@ -229,6 +243,16 @@ router.get("/:username", async (req, res) => {
     if (localOnly) {
       const user = localUsers.findByUsername(req.params.username);
       if (!user) return res.status(404).json({ error: "User not found" });
+      const canViewConnections = localUsers.canViewConnections(requesterId, user.id);
+      const requesterFollows = localUsers.isFollowing(requesterId, user.id);
+      user.canViewConnections = canViewConnections;
+      user.isFollowing = requesterFollows;
+      if (!canViewConnections) {
+        user.followers = requesterFollows
+          ? [{ followerId: requesterId, followingId: user.id }]
+          : [];
+        user.following = [];
+      }
       return res.json(user);
     }
 
@@ -265,6 +289,16 @@ router.get("/:username", async (req, res) => {
     }
     
     const { password, blockedUsers, ...userWithoutPassword } = user;
+    userWithoutPassword.followerCount = user.followers.length;
+    userWithoutPassword.followingCount = user.following.length;
+    userWithoutPassword.isFollowing = Boolean(requesterId && user.followers.some((entry) => entry.followerId === requesterId));
+    userWithoutPassword.canViewConnections = await canViewCloudConnections(requesterId, user.id);
+    if (!userWithoutPassword.canViewConnections) {
+      userWithoutPassword.followers = userWithoutPassword.isFollowing
+        ? [{ followerId: requesterId, followingId: user.id }]
+        : [];
+      userWithoutPassword.following = [];
+    }
     userWithoutPassword.blockedUsers = (blockedUsers || []).map((entry) => entry.blocked).filter(Boolean);
     res.json(userWithoutPassword);
   } catch (err) {
@@ -462,13 +496,78 @@ router.get("/:userId/saved", async (req, res) => {
 });
 
 // ---------------- FOLLOWERS ----------------
+router.get("/:username/friends", async (req, res) => {
+  try {
+    const requesterId = getRequesterId(req);
+    if (localOnly) {
+      const target = localUsers.findByUsername(req.params.username);
+      if (!target) return res.status(404).json({ error: "User not found" });
+      if (!localUsers.canViewConnections(requesterId, target.id)) {
+        return res.status(403).json({
+          error: "Only mutual friends can view this friends list",
+          targetName: target.name || `@${target.username}`,
+        });
+      }
+      return res.json(localUsers.listFriends(req.params.username));
+    }
+
+    const target = await prisma.user.findUnique({
+      where: { username: req.params.username },
+      select: { id: true, name: true, username: true },
+    });
+    if (!target) return res.status(404).json({ error: "User not found" });
+    if (!(await canViewCloudConnections(requesterId, target.id))) {
+      return res.status(403).json({
+        error: "Only mutual friends can view this friends list",
+        targetName: target.name || `@${target.username}`,
+      });
+    }
+    const outgoing = await prisma.follows.findMany({
+      where: { followerId: target.id, following: { provider: { not: "engagement" } } },
+      include: { following: true },
+    });
+    const candidateIds = outgoing.map((relation) => relation.followingId);
+    const reverse = candidateIds.length
+      ? await prisma.follows.findMany({
+          where: { followerId: { in: candidateIds }, followingId: target.id },
+          select: { followerId: true },
+        })
+      : [];
+    const mutualIds = new Set(reverse.map((relation) => relation.followerId));
+    return res.json(outgoing.map((relation) => relation.following).filter((friend) => mutualIds.has(friend.id)));
+  } catch (err) {
+    console.error("Failed to fetch friends:", err);
+    return res.status(500).json({ error: "Failed to fetch friends" });
+  }
+});
+
+// ---------------- FOLLOWERS ----------------
 router.get("/:username/followers", async (req, res) => {
   try {
-    if (localOnly) return res.json(localUsers.listFollowers(req.params.username));
+    const requesterId = getRequesterId(req);
+    if (localOnly) {
+      const target = localUsers.findByUsername(req.params.username);
+      if (!target) return res.status(404).json({ error: "User not found" });
+      if (!localUsers.canViewConnections(requesterId, target.id)) {
+        return res.status(403).json({
+          error: "Only mutual friends can view this follower list",
+          targetName: target.name || `@${target.username}`,
+        });
+      }
+      return res.json(localUsers.listFollowers(req.params.username));
+    }
 
     const { username } = req.params;
+    const target = await prisma.user.findUnique({ where: { username }, select: { id: true, name: true, username: true } });
+    if (!target) return res.status(404).json({ error: "User not found" });
+    if (!(await canViewCloudConnections(requesterId, target.id))) {
+      return res.status(403).json({
+        error: "Only mutual friends can view this follower list",
+        targetName: target.name || `@${target.username}`,
+      });
+    }
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { id: target.id },
       include: {
         followers: {
           include: {
@@ -491,11 +590,30 @@ router.get("/:username/followers", async (req, res) => {
 // ---------------- FOLLOWING ----------------
 router.get("/:username/following", async (req, res) => {
   try {
-    if (localOnly) return res.json(localUsers.listFollowing(req.params.username));
+    const requesterId = getRequesterId(req);
+    if (localOnly) {
+      const target = localUsers.findByUsername(req.params.username);
+      if (!target) return res.status(404).json({ error: "User not found" });
+      if (!localUsers.canViewConnections(requesterId, target.id)) {
+        return res.status(403).json({
+          error: "Only mutual friends can view this following list",
+          targetName: target.name || `@${target.username}`,
+        });
+      }
+      return res.json(localUsers.listFollowing(req.params.username));
+    }
 
     const { username } = req.params;
+    const target = await prisma.user.findUnique({ where: { username }, select: { id: true, name: true, username: true } });
+    if (!target) return res.status(404).json({ error: "User not found" });
+    if (!(await canViewCloudConnections(requesterId, target.id))) {
+      return res.status(403).json({
+        error: "Only mutual friends can view this following list",
+        targetName: target.name || `@${target.username}`,
+      });
+    }
     const user = await prisma.user.findUnique({
-      where: { username },
+      where: { id: target.id },
       include: {
         following: {
           include: {
