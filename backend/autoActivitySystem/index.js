@@ -3,14 +3,13 @@ const local = require("../db/local");
 const dataService = require("../services/dataService");
 const localContent = require("../services/localContentService");
 const { ensureSeededAccounts, getLocalSeededAccounts } = require("../services/seededAccountService");
-const { getAnonymousEngagementAccounts, targetCount } = require("../services/anonymousEngagementService");
 const { moderateCreatedPost } = require("../services/sourceModerationService");
 const {
   enabled,
   intervalMs,
   articleIntervalMs,
   postsPerDay,
-  articlesPerDay,
+  articlesPerWeek,
   communityPostRate,
   openAiApiKey,
 } = require("./config");
@@ -29,9 +28,12 @@ const localOnly =
 let postTimer = null;
 let articleTimer = null;
 let generationQueue = Promise.resolve();
+let persistedStateLoaded = false;
 const MAX_ERRORS = 100;
 const state = {
   startedAt: null,
+  adminStopped: false,
+  adminStateLoadedAt: null,
   lastPostAt: null,
   lastArticleAt: null,
   postRuns: 0,
@@ -61,6 +63,46 @@ function pushError(scope, error) {
   state.errors.unshift(entry);
   if (state.errors.length > MAX_ERRORS) state.errors.pop();
   console.error(`[auto-activity:${scope}]`, entry.message);
+}
+
+async function loadAutoActivityAdminState() {
+  if (persistedStateLoaded) return state.adminStopped;
+  try {
+    if (localOnly) {
+      state.adminStopped = local.getMeta("autoActivity:adminStopped") === "true";
+    } else {
+      const row = await prisma.analyticsCache.findUnique({ where: { cacheKey: "auto_activity_admin_state" } });
+      state.adminStopped = Boolean(row?.payload?.adminStopped);
+    }
+  } catch (error) {
+    pushError("state", error);
+  }
+  persistedStateLoaded = true;
+  state.adminStateLoadedAt = new Date().toISOString();
+  return state.adminStopped;
+}
+
+async function persistAutoActivityAdminState(adminStopped) {
+  state.adminStopped = Boolean(adminStopped);
+  persistedStateLoaded = true;
+  state.adminStateLoadedAt = new Date().toISOString();
+  if (localOnly) {
+    local.setMeta("autoActivity:adminStopped", state.adminStopped ? "true" : "false");
+    return;
+  }
+  await prisma.analyticsCache.upsert({
+    where: { cacheKey: "auto_activity_admin_state" },
+    update: {
+      payload: { adminStopped: state.adminStopped },
+      generatedAt: new Date(),
+      expiresAt: new Date("2999-12-31T00:00:00.000Z"),
+    },
+    create: {
+      cacheKey: "auto_activity_admin_state",
+      payload: { adminStopped: state.adminStopped },
+      expiresAt: new Date("2999-12-31T00:00:00.000Z"),
+    },
+  });
 }
 
 function runScheduledGeneration(scope, task) {
@@ -111,10 +153,38 @@ async function generatedToday(contentType) {
   });
 }
 
+async function generatedThisWeek(contentType) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  if (localOnly) {
+    const table = contentType === "article" ? "Article" : "Post";
+    return Number(local.getDb().prepare(`
+      SELECT COUNT(*) AS count
+      FROM ${table} content
+      JOIN User author ON author.id = content.authorId
+      WHERE author.provider = 'seed'
+        AND datetime(content.createdAt) >= datetime(?)
+        AND datetime(content.createdAt) < datetime(?)
+        AND content.deletedAt IS NULL
+    `).get(start.toISOString(), end.toISOString()).count || 0);
+  }
+  const model = contentType === "article" ? prisma.article : prisma.post;
+  return model.count({
+    where: {
+      author: { provider: "seed" },
+      createdAt: { gte: start, lt: end },
+    },
+  });
+}
+
 async function assertDailyCapacity(contentType) {
-  const limit = contentType === "article" ? articlesPerDay : postsPerDay;
-  if (await generatedToday(contentType) >= limit) {
-    const error = new Error(`Daily AI ${contentType} limit reached (${limit})`);
+  const limit = contentType === "article" ? articlesPerWeek : postsPerDay;
+  const current = contentType === "article" ? await generatedThisWeek(contentType) : await generatedToday(contentType);
+  if (current >= limit) {
+    const error = new Error(`${contentType === "article" ? "Weekly" : "Daily"} AI ${contentType} limit reached (${limit})`);
     error.statusCode = 429;
     throw error;
   }
@@ -123,11 +193,11 @@ async function assertDailyCapacity(contentType) {
 async function seededUsers() {
   await ensureSeededAccounts(localOnly ? null : prisma);
   if (localOnly) return getLocalSeededAccounts();
-  return prisma.user.findMany({ where: { provider: "seed" }, take: 50 });
+  return prisma.user.findMany({ where: { provider: "seed" }, orderBy: { createdAt: "asc" }, take: 250 });
 }
 
 async function anonymousEngagementUsers() {
-  return getAnonymousEngagementAccounts(localOnly ? null : prisma);
+  return seededUsers();
 }
 
 function sourceKeywords(sources) {
@@ -229,16 +299,31 @@ async function latestCritiqueTarget() {
   return rows.find((row) => isPoliticsOrGeopolitics(row.text, (row.keywords || []).join(" "))) || null;
 }
 
-async function optionalShineCommunityId() {
+async function optionalCommunityId() {
   if (Math.random() >= communityPostRate) return null;
   if (localOnly) {
-    return local.getDb().prepare("SELECT id FROM Community WHERE lower(name) = 'shine' LIMIT 1").get()?.id || null;
+    const rows = local.getDb().prepare(`
+      SELECT id
+      FROM Community
+      WHERE status = 'PUBLIC'
+        AND (lower(name) = 'shine' OR json_extract(COALESCE(data, '{}'), '$.seededCommunity') = 1)
+      ORDER BY CASE WHEN lower(name) = 'shine' THEN 0 ELSE 1 END, name
+    `).all();
+    if (!rows.length) return null;
+    return rows[Math.floor(Math.random() * rows.length)].id;
   }
-  const community = await prisma.community.findFirst({
-    where: { name: { equals: "Shine", mode: "insensitive" } },
+  const communities = await prisma.community.findMany({
+    where: {
+      status: "PUBLIC",
+      OR: [
+        { name: { equals: "Shine", mode: "insensitive" } },
+        { id: { startsWith: "seed-community-" } },
+      ],
+    },
     select: { id: true },
   });
-  return community?.id || null;
+  if (!communities.length) return null;
+  return communities[Math.floor(Math.random() * communities.length)].id;
 }
 
 async function createOnePost() {
@@ -290,7 +375,7 @@ async function createOnePost() {
       throw new Error("AI critique was rejected because it did not address the reply post topic");
     }
     if (postType !== "poll" && !sources.length) throw new Error("AI web search did not return a cited source");
-    const communityId = await optionalShineCommunityId();
+    const communityId = await optionalCommunityId();
 
     let post;
     if (localOnly) {
@@ -398,8 +483,10 @@ async function createOneArticle() {
   }
 }
 
-function startAutoActivitySystem({ respectEnv = false } = {}) {
-  if ((respectEnv && !enabled) || postTimer || articleTimer) return false;
+async function startAutoActivitySystem({ respectEnv = false, clearAdminStop = false } = {}) {
+  await loadAutoActivityAdminState();
+  if (clearAdminStop) await persistAutoActivityAdminState(false);
+  if (state.adminStopped || (respectEnv && !enabled) || postTimer || articleTimer) return false;
   if (!openAiApiKey) {
     pushError("start", new Error("OPENAI_API_KEY is missing"));
     return false;
@@ -412,11 +499,12 @@ function startAutoActivitySystem({ respectEnv = false } = {}) {
   return true;
 }
 
-function stopAutoActivitySystem() {
+async function stopAutoActivitySystem({ persist = false } = {}) {
   if (postTimer) clearInterval(postTimer);
   if (articleTimer) clearInterval(articleTimer);
   postTimer = null;
   articleTimer = null;
+  if (persist) await persistAutoActivityAdminState(true);
 }
 
 function clearAutoActivityErrors() {
@@ -431,10 +519,10 @@ function getAutoActivityStatus() {
       intervalMs,
       articleIntervalMs,
       postsPerDay,
-      articlesPerDay,
+      articlesPerWeek,
       ready: Boolean(openAiApiKey),
       sourceProvider: "OpenAI web search",
-      anonymousEngagementUsers: targetCount,
+      engagementPool: "250 seeded accounts",
     },
     running: Boolean(postTimer || articleTimer),
     state,
@@ -448,6 +536,7 @@ module.exports = {
   createOnePost,
   getAutoActivityStatus,
   isCritiqueRelated,
+  loadAutoActivityAdminState,
   startAutoActivitySystem,
   stopAutoActivitySystem,
 };

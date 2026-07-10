@@ -11,13 +11,13 @@ function getAutoActivityOverview(req, res) {
   res.json({ success: true, data: getAutoActivityStatus() });
 }
 
-function startAutoActivity(req, res) {
-  startAutoActivitySystem();
+async function startAutoActivity(req, res) {
+  await startAutoActivitySystem({ clearAdminStop: true });
   res.json({ success: true, data: getAutoActivityStatus() });
 }
 
-function stopAutoActivity(req, res) {
-  stopAutoActivitySystem();
+async function stopAutoActivity(req, res) {
+  await stopAutoActivitySystem({ persist: true });
   res.json({ success: true, data: getAutoActivityStatus() });
 }
 

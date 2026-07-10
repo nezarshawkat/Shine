@@ -115,8 +115,8 @@ router.delete("/events/:id", (req, res) => {
 });
 
 router.get("/auto-activity", (_req, res) => res.json({ success: true, data: getAutoActivityStatus() }));
-router.post("/auto-activity/start", (_req, res) => { startAutoActivitySystem(); res.json({ success: true, data: getAutoActivityStatus() }); });
-router.post("/auto-activity/stop", (_req, res) => { stopAutoActivitySystem(); res.json({ success: true, data: getAutoActivityStatus() }); });
+router.post("/auto-activity/start", async (_req, res) => { await startAutoActivitySystem({ clearAdminStop: true }); res.json({ success: true, data: getAutoActivityStatus() }); });
+router.post("/auto-activity/stop", async (_req, res) => { await stopAutoActivitySystem({ persist: true }); res.json({ success: true, data: getAutoActivityStatus() }); });
 router.post("/auto-activity/reset-errors", (_req, res) => { clearAutoActivityErrors(); res.json({ success: true, data: getAutoActivityStatus() }); });
 router.post("/auto-activity/trigger-post", async (_req, res) => {
   try { const post = await createOnePost(); res.json({ success: true, data: { id: post.id, createdAt: post.createdAt } }); }

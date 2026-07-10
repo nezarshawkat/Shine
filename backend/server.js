@@ -7,13 +7,12 @@ const redis = require("redis");
 const prisma = require("./prisma.js");
 const { OAuth2Client } = require("google-auth-library");
 const { startDigestScheduler } = require("./services/notificationDigestService");
-const { startAutoActivitySystem } = require("./autoActivitySystem");
+const { loadAutoActivityAdminState, startAutoActivitySystem } = require("./autoActivitySystem");
 const dataService = require("./services/dataService");
 const { startSyncEngine } = require("./sync/syncEngine");
 const localUsers = require("./services/localUserService");
 const { LOCAL_UPLOAD_ROOT } = require("./lib/supabaseStorage");
 const { ensureSeededAccounts } = require("./services/seededAccountService");
-const { ensureAnonymousEngagementAccounts } = require("./services/anonymousEngagementService");
 const { ensureDefaultAdmin } = require("./services/defaultAdminService");
 
 const { pingRouter, startping } = require("./ping");
@@ -72,10 +71,18 @@ let redisClient = null;
 if (process.env.ENABLE_REDIS_CACHE === "true") {
   (async () => {
     try {
-      redisClient = redis.createClient({ url: process.env.REDIS_URL });
+      redisClient = redis.createClient({
+        url: process.env.REDIS_URL,
+        socket: {
+          reconnectStrategy: (retries) => Math.min(1000 * (2 ** Math.min(retries, 5)), 30000),
+        },
+      });
+      redisClient.on("error", (err) => console.error("Redis connection error:", err.message));
+      redisClient.on("reconnecting", () => console.log("Redis reconnecting..."));
+      redisClient.on("ready", () => console.log("Redis connection ready"));
+      app.set("redisClient", redisClient);
       await redisClient.connect();
       console.log("✅ Redis connected");
-      app.set("redisClient", redisClient);
     } catch (err) {
       console.error("❌ Redis failed:", err);
     }
@@ -202,10 +209,8 @@ app.post("/api/auth/google", async (req, res) => {
 // ================= 10. START SERVER =================
 if (localOnly) {
   console.log("Starting Shine in local-only SQLite mode.");
-  startAutoActivitySystem({ respectEnv: true });
 } else {
   startDigestScheduler();
-  startAutoActivitySystem({ respectEnv: true });
   dataService
     .bootstrapLocalCache()
     .then((count) => {
@@ -214,11 +219,16 @@ if (localOnly) {
     .catch((error) => console.error("Hybrid local cache bootstrap failed:", error.message));
   startSyncEngine();
 }
-Promise.all([
-  ensureSeededAccounts(localOnly ? null : prisma),
-  ensureAnonymousEngagementAccounts(localOnly ? null : prisma),
-  ensureDefaultAdmin(localOnly ? null : prisma),
-]).then(([seededCount, anonymousCount]) => {
-  console.log(`Seeded account pool ready (${seededCount} profiles, ${anonymousCount} anonymous engagement users).`);
-}).catch((error) => console.error("Startup seed failed:", error.message));
+(async () => {
+  try {
+    const adminPromise = ensureDefaultAdmin(localOnly ? null : prisma);
+    const seededCount = await ensureSeededAccounts(localOnly ? null : prisma);
+    await adminPromise;
+    await loadAutoActivityAdminState();
+    await startAutoActivitySystem({ respectEnv: true });
+    console.log(`Seeded account pool ready (${seededCount} visible profiles).`);
+  } catch (error) {
+    console.error("Startup seed failed:", error.message);
+  }
+})();
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

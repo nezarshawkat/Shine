@@ -1,3 +1,4 @@
+require('dotenv').config();
 const prisma = require('./prisma');
 const { SEEDED_PROFILES } = require('./seed_profile_images');
 const { deleteUserWithRelations } = require('./controllers/admin/deletionHelpers');

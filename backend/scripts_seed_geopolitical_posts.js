@@ -1,3 +1,4 @@
+require('dotenv').config();
 const prisma = require('./prisma');
 const { SEEDED_PROFILES, SEEDED_PROFILE_BY_USERNAME, GUEST_PROFILE_IMAGE } = require('./seed_profile_images');
 const { deleteUserWithRelations } = require('./controllers/admin/deletionHelpers');
@@ -96,9 +97,9 @@ function naturalizeNumber(value) {
 }
 
 function engagementFor(post) {
-  const views = naturalizeNumber(4200 + post.v + ((post.n * 271) % 3900));
-  const likes = naturalizeNumber(680 + (post.l || Math.floor(post.v * 0.23)) + ((post.n * 113) % 1300));
-  const shares = naturalizeNumber(120 + post.s + ((post.n * 47) % 620));
+  const views = naturalizeNumber(52 + ((post.n * 37) % 298));
+  const likes = Math.min(245, naturalizeNumber(11 + ((post.n * 23) % Math.max(12, Math.floor(views * 0.62)))));
+  const shares = naturalizeNumber(1 + ((post.n * 7) % Math.max(2, Math.floor(views * 0.08))));
   return { views, likes, shares };
 }
 
@@ -207,20 +208,13 @@ async function addCommunityMemberships(communityId, users) {
   });
 }
 
-async function createFollowGraph(users, guests) {
+async function createFollowGraph(users) {
   const follows = [];
   users.forEach((user, index) => {
-    const followingCount = index < 20 ? 23 + (index % 11) : index < 40 ? 5 + (index % 12) : 2 + (index % 4);
+    const followingCount = 35 + ((index * 11) % 44);
     for (let step = 1; step <= followingCount; step += 1) {
       const target = users[(index + step * 3) % users.length];
       if (target.id !== user.id) follows.push({ followerId: user.id, followingId: target.id });
-    }
-  });
-
-  users.slice(0, 20).forEach((user, index) => {
-    const guestFollowers = 18 + (index % 17);
-    for (let i = 0; i < guestFollowers; i += 1) {
-      follows.push({ followerId: guests[(index * 41 + i) % guests.length].id, followingId: user.id });
     }
   });
 
@@ -321,14 +315,7 @@ async function main() {
   const shineCommunity = await getShineCommunity(seedUsers[0].id);
   await addCommunityMemberships(shineCommunity.id, seedUsers);
 
-  const maxEngagement = getMaxEngagement();
-  const guests = [];
-  for (let i = 1; i <= maxEngagement; i += 1) {
-    const username = `guest_engagement_${String(i).padStart(5, '0')}`;
-    guests.push(await upsertUser(username, `Guest ${String(i).padStart(5, '0')}`, { guest: true }));
-  }
-
-  await createFollowGraph(seedUsers, guests);
+  await createFollowGraph(seedUsers);
 
   const users = Object.fromEntries((await prisma.user.findMany({ where: { username: { in: [...allNames.keys()] } } })).map(u => [u.username, u]));
   const createdPosts = {};
@@ -355,13 +342,14 @@ async function main() {
     pollOptionsByPost[post.n] = await prisma.pollOption.findMany({ where: { postId: created.id }, select: { id: true, votes: true } });
 
     await prisma.postView.createMany({
-      data: Array.from({ length: engagement.views }, (_, i) => ({ userId: guests[i].id, postId: created.id, viewedAt: new Date(dateFor(post, 1 + i)) })),
+      data: Array.from({ length: engagement.views }, (_, i) => ({ userId: seedUsers[(post.n * 17 + i) % seedUsers.length].id, postId: created.id, viewedAt: new Date(dateFor(post, 1 + i)) })),
     });
     await prisma.like.createMany({
-      data: Array.from({ length: engagement.likes }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
+      data: Array.from({ length: engagement.likes }, (_, i) => ({ userId: seedUsers[(post.n * 19 + i) % seedUsers.length].id, postId: created.id })),
+      skipDuplicates: true,
     });
     await prisma.share.createMany({
-      data: Array.from({ length: engagement.shares }, (_, i) => ({ userId: guests[i].id, postId: created.id })),
+      data: Array.from({ length: engagement.shares }, (_, i) => ({ userId: seedUsers[(post.n * 23 + i) % seedUsers.length].id, postId: created.id })),
     });
 
     const comments = post.m.map(([, text], index) => [commentAuthorUsername(post, index), text]);
@@ -374,7 +362,7 @@ async function main() {
     });
   }
 
-  await createAnonymousPollVotes(pollOptionsByPost, guests);
+  await createAnonymousPollVotes(pollOptionsByPost, seedUsers);
   await createUserLikesAndSaves(seedUsers, createdPosts);
 
   console.log(`Seeded ${posts.length} posts by ${AUTHOR_USERNAMES.length} profiles in the ${shineCommunity.name} community with realistic follows, likes, saves, poll options, and natural-looking engagement numbers.`);

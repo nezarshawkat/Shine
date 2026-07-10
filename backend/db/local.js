@@ -360,10 +360,16 @@ function migrate(database = getDb()) {
     CREATE INDEX IF NOT EXISTS idx_source_post ON Source(postId);
     CREATE INDEX IF NOT EXISTS idx_poll_option_post ON PollOption(postId);
     CREATE INDEX IF NOT EXISTS idx_like_post_user ON LikeRecord(postId, userId);
+    CREATE INDEX IF NOT EXISTS idx_like_user ON LikeRecord(userId);
     CREATE INDEX IF NOT EXISTS idx_save_post_user ON SaveRecord(postId, userId);
+    CREATE INDEX IF NOT EXISTS idx_save_user ON SaveRecord(userId);
     CREATE INDEX IF NOT EXISTS idx_share_post ON ShareRecord(postId);
+    CREATE INDEX IF NOT EXISTS idx_share_user ON ShareRecord(userId);
     CREATE INDEX IF NOT EXISTS idx_comment_post ON Comment(postId, parentId, deletedAt, createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_comment_author ON Comment(authorId);
     CREATE INDEX IF NOT EXISTS idx_post_view_post ON PostView(postId);
+    CREATE INDEX IF NOT EXISTS idx_post_view_user ON PostView(userId);
+    CREATE INDEX IF NOT EXISTS idx_poll_vote_user ON PollVote(userId);
     CREATE INDEX IF NOT EXISTS idx_feed_interaction_user ON FeedInteraction(userId, updatedAt DESC);
     CREATE INDEX IF NOT EXISTS idx_feed_interaction_post ON FeedInteraction(postId, updatedAt DESC);
     CREATE INDEX IF NOT EXISTS idx_article_created ON Article(deletedAt, createdAt DESC);
