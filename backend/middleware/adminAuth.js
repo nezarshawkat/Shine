@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../prisma");
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 
 async function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -13,7 +14,7 @@ async function adminAuth(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded.scope !== "admin") {
       return res.status(403).json({ error: "Admin scope required" });
     }

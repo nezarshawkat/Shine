@@ -82,7 +82,12 @@ async function loadAutoActivityAdminState() {
 }
 
 async function persistAutoActivityAdminState(adminStopped) {
-  state.adminStopped = Boolean(adminStopped);
+  const nextAdminStopped = Boolean(adminStopped);
+  if (persistedStateLoaded && state.adminStopped === nextAdminStopped) {
+    state.adminStateLoadedAt = state.adminStateLoadedAt || new Date().toISOString();
+    return;
+  }
+  state.adminStopped = nextAdminStopped;
   persistedStateLoaded = true;
   state.adminStateLoadedAt = new Date().toISOString();
   if (localOnly) {
@@ -492,7 +497,7 @@ async function createOneArticle() {
 
 async function startAutoActivitySystem({ respectEnv = false, clearAdminStop = false } = {}) {
   await loadAutoActivityAdminState();
-  if (clearAdminStop) await persistAutoActivityAdminState(false);
+  if (clearAdminStop && state.adminStopped) await persistAutoActivityAdminState(false);
   if (state.adminStopped || (respectEnv && !enabled) || postTimer || articleTimer) return false;
   if (!openAiApiKey) {
     pushError("start", new Error("OPENAI_API_KEY is missing"));

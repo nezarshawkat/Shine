@@ -13,6 +13,7 @@ const COMMENT_MAX_PER_POST_PER_RUN = Math.max(0, Number(process.env.ORGANIC_ENGA
 const COMMENT_AI_ENABLED = process.env.ORGANIC_ENGAGEMENT_COMMENT_AI_ENABLED !== "false";
 
 let timer = null;
+let initialTimer = null;
 let running = false;
 let persistedStateLoaded = false;
 
@@ -56,7 +57,12 @@ async function loadOrganicEngagementAdminState() {
 }
 
 async function persistOrganicEngagementAdminState(adminStopped) {
-  serviceState.adminStopped = Boolean(adminStopped);
+  const nextAdminStopped = Boolean(adminStopped);
+  if (persistedStateLoaded && serviceState.adminStopped === nextAdminStopped) {
+    serviceState.adminStateLoadedAt = serviceState.adminStateLoadedAt || new Date().toISOString();
+    return;
+  }
+  serviceState.adminStopped = nextAdminStopped;
   persistedStateLoaded = true;
   serviceState.adminStateLoadedAt = new Date().toISOString();
   if (localOnly) {
@@ -462,13 +468,14 @@ async function runOrganicEngagementOnce() {
 
 async function startOrganicEngagementService({ respectEnv = false, clearAdminStop = false } = {}) {
   await loadOrganicEngagementAdminState();
-  if (clearAdminStop) await persistOrganicEngagementAdminState(false);
+  if (clearAdminStop && serviceState.adminStopped) await persistOrganicEngagementAdminState(false);
   if (timer || serviceState.adminStopped || (respectEnv && process.env.ORGANIC_ENGAGEMENT_ENABLED === "false")) return false;
   serviceState.startedAt = new Date().toISOString();
   timer = setInterval(() => {
     runOrganicEngagementOnce().catch((error) => console.error("Organic engagement failed:", error.message));
   }, DEFAULT_INTERVAL_MS);
-  setTimeout(() => {
+  initialTimer = setTimeout(() => {
+    initialTimer = null;
     runOrganicEngagementOnce().catch((error) => console.error("Organic engagement failed:", error.message));
   }, Number(process.env.ORGANIC_ENGAGEMENT_INITIAL_DELAY_MS || 300000));
   return true;
@@ -476,7 +483,9 @@ async function startOrganicEngagementService({ respectEnv = false, clearAdminSto
 
 async function stopOrganicEngagementService({ persist = false } = {}) {
   if (timer) clearInterval(timer);
+  if (initialTimer) clearTimeout(initialTimer);
   timer = null;
+  initialTimer = null;
   if (persist) await persistOrganicEngagementAdminState(true);
   return true;
 }

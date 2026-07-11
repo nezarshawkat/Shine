@@ -122,8 +122,22 @@ router.delete("/events/:id", (req, res) => {
 });
 
 router.get("/auto-activity", (_req, res) => res.json({ success: true, data: getAutoActivityStatus() }));
-router.post("/auto-activity/start", async (_req, res) => { await startAutoActivitySystem({ clearAdminStop: true }); res.json({ success: true, data: getAutoActivityStatus() }); });
-router.post("/auto-activity/stop", async (_req, res) => { await stopAutoActivitySystem({ persist: true }); res.json({ success: true, data: getAutoActivityStatus() }); });
+router.post("/auto-activity/start", async (_req, res) => {
+  try {
+    const started = await startAutoActivitySystem({ clearAdminStop: true });
+    res.json({ success: true, started, data: getAutoActivityStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to start auto activity: ${error.message}` });
+  }
+});
+router.post("/auto-activity/stop", async (_req, res) => {
+  try {
+    await stopAutoActivitySystem({ persist: true });
+    res.json({ success: true, data: getAutoActivityStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to stop auto activity: ${error.message}` });
+  }
+});
 router.post("/auto-activity/reset-errors", (_req, res) => { clearAutoActivityErrors(); res.json({ success: true, data: getAutoActivityStatus() }); });
 router.post("/auto-activity/trigger-post", async (_req, res) => {
   try { const post = await createOnePost(); res.json({ success: true, data: { id: post.id, createdAt: post.createdAt } }); }
@@ -135,8 +149,22 @@ router.post("/auto-activity/trigger-article", async (_req, res) => {
 });
 
 router.get("/engagement", (_req, res) => res.json({ success: true, data: getOrganicEngagementStatus() }));
-router.post("/engagement/start", async (_req, res) => { await startOrganicEngagementService({ clearAdminStop: true }); res.json({ success: true, data: getOrganicEngagementStatus() }); });
-router.post("/engagement/stop", async (_req, res) => { await stopOrganicEngagementService({ persist: true }); res.json({ success: true, data: getOrganicEngagementStatus() }); });
+router.post("/engagement/start", async (_req, res) => {
+  try {
+    const started = await startOrganicEngagementService({ clearAdminStop: true });
+    res.json({ success: true, started, data: getOrganicEngagementStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to start engagement: ${error.message}` });
+  }
+});
+router.post("/engagement/stop", async (_req, res) => {
+  try {
+    await stopOrganicEngagementService({ persist: true });
+    res.json({ success: true, data: getOrganicEngagementStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to stop engagement: ${error.message}` });
+  }
+});
 router.post("/engagement/reset-errors", (_req, res) => { clearOrganicEngagementErrors(); res.json({ success: true, data: getOrganicEngagementStatus() }); });
 router.post("/engagement/run-once", async (_req, res) => {
   try {

@@ -110,7 +110,7 @@ router.post("/signup", async (req, res) => {
       },
     });
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
     res.status(201).json({ user, token });
   } catch (err) {
     console.error("Signup error:", err);
@@ -152,7 +152,7 @@ router.post("/login", async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
 
     const { password: _, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword, token });

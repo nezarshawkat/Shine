@@ -10,7 +10,7 @@ import "../styles/ProfilePage.css";
 export default function FollowersPage() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
 
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,8 +22,9 @@ export default function FollowersPage() {
     // Since your API.js likely has /api as baseURL, we use /users/...
     setLoading(true);
     setPrivacyError("");
+    const authToken = token || localStorage.getItem("token");
     API.get(`/users/${username}/followers`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
     })
       .then((res) => {
         // Ensure we are setting an array even if the response is weird
@@ -32,13 +33,16 @@ export default function FollowersPage() {
       })
       .catch((err) => {
         console.error("Followers fetching error:", err);
-        if (err.response?.status === 403) {
+        const isOwnProfile = user?.username?.toLowerCase() === username?.toLowerCase();
+        if (err.response?.status === 403 && isOwnProfile) {
+          setPrivacyError("Please log in again to refresh your session, then your own followers will open normally.");
+        } else if (err.response?.status === 403) {
           const displayName = err.response.data?.targetName || `@${username}`;
           setPrivacyError(`You can only view ${displayName}'s followers when you and ${displayName} follow each other.`);
         }
         setLoading(false);
       });
-  }, [username, token]);
+  }, [username, token, user?.username]);
 
   /* SEARCH FILTER */
   const filteredFollowers = followers.filter((user) => {

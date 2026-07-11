@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const prisma = require("../../prisma");
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 
 async function adminLogin(req, res) {
   try {
@@ -25,7 +26,7 @@ async function adminLogin(req, res) {
 
     const token = jwt.sign(
       { adminId: admin.id, scope: "admin", role: admin.role },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: "12h" }
     );
 

@@ -10,7 +10,7 @@ import "../styles/ProfilePage.css";
 export default function FollowingPage() {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
 
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +20,9 @@ export default function FollowingPage() {
   useEffect(() => {
     setLoading(true);
     setPrivacyError("");
+    const authToken = token || localStorage.getItem("token");
     API.get(`/users/${username}/following`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
     })
       .then((res) => {
         // Ensure we handle the data as an array
@@ -30,13 +31,16 @@ export default function FollowingPage() {
       })
       .catch((err) => {
         console.error("Following fetching error:", err);
-        if (err.response?.status === 403) {
+        const isOwnProfile = user?.username?.toLowerCase() === username?.toLowerCase();
+        if (err.response?.status === 403 && isOwnProfile) {
+          setPrivacyError("Please log in again to refresh your session, then your own following list will open normally.");
+        } else if (err.response?.status === 403) {
           const displayName = err.response.data?.targetName || `@${username}`;
           setPrivacyError(`You can only view who ${displayName} follows when you and ${displayName} follow each other.`);
         }
         setLoading(false);
       });
-  }, [username, token]);
+  }, [username, token, user?.username]);
 
   /* SEARCH FILTER */
   const filteredFollowing = following.filter((user) => {

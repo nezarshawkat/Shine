@@ -9,6 +9,7 @@ const localUsers = require("../services/localUserService");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const DEFAULT_PROFILE_IMAGE = null;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 const localOnly =
   process.env.DATABASE_MODE === "local" ||
   process.env.LOCAL_ONLY_DB === "true" ||
@@ -53,7 +54,7 @@ router.post("/signup", async (req, res) => {
         image: DEFAULT_PROFILE_IMAGE,
       });
 
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || "shine-super-secret-key", { expiresIn: "7d" });
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       return res.status(201).json({ user, token });
     }
 
@@ -84,7 +85,7 @@ router.post("/signup", async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id }, 
-      process.env.JWT_SECRET, 
+      JWT_SECRET, 
       { expiresIn: "7d" }
     );
 
@@ -122,7 +123,7 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Invalid credentials" });
       }
 
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || "shine-super-secret-key", { expiresIn: "7d" });
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       const { password: _, ...userWithoutPassword } = user;
       return res.json({ user: userWithoutPassword, token });
     }
@@ -156,7 +157,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id }, 
-      process.env.JWT_SECRET, 
+      JWT_SECRET, 
       { expiresIn: "7d" }
     );
 
@@ -189,7 +190,7 @@ router.post("/google", async (req, res) => {
 
     if (localOnly) {
       const user = localUsers.upsertGoogleUser({ email, name, googleId, image });
-      const jwtToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || "shine-super-secret-key", { expiresIn: "7d" });
+      const jwtToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       return res.json({ success: true, user, token: jwtToken });
     }
 
@@ -217,7 +218,7 @@ router.post("/google", async (req, res) => {
 
     const jwtToken = jwt.sign(
       { userId: user.id }, 
-      process.env.JWT_SECRET, 
+      JWT_SECRET, 
       { expiresIn: "7d" }
     );
 

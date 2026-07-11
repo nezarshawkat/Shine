@@ -11,13 +11,21 @@ function getEngagementOverview(_req, res) {
 }
 
 async function startEngagement(_req, res) {
-  await startOrganicEngagementService({ clearAdminStop: true });
-  res.json({ success: true, data: getOrganicEngagementStatus() });
+  try {
+    const started = await startOrganicEngagementService({ clearAdminStop: true });
+    res.json({ success: true, started, data: getOrganicEngagementStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to start engagement: ${error.message}` });
+  }
 }
 
 async function stopEngagement(_req, res) {
-  await stopOrganicEngagementService({ persist: true });
-  res.json({ success: true, data: getOrganicEngagementStatus() });
+  try {
+    await stopOrganicEngagementService({ persist: true });
+    res.json({ success: true, data: getOrganicEngagementStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to stop engagement: ${error.message}` });
+  }
 }
 
 async function triggerEngagementRun(_req, res) {

@@ -12,13 +12,21 @@ function getAutoActivityOverview(req, res) {
 }
 
 async function startAutoActivity(req, res) {
-  await startAutoActivitySystem({ clearAdminStop: true });
-  res.json({ success: true, data: getAutoActivityStatus() });
+  try {
+    const started = await startAutoActivitySystem({ clearAdminStop: true });
+    res.json({ success: true, started, data: getAutoActivityStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to start auto activity: ${error.message}` });
+  }
 }
 
 async function stopAutoActivity(req, res) {
-  await stopAutoActivitySystem({ persist: true });
-  res.json({ success: true, data: getAutoActivityStatus() });
+  try {
+    await stopAutoActivitySystem({ persist: true });
+    res.json({ success: true, data: getAutoActivityStatus() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: `Failed to stop auto activity: ${error.message}` });
+  }
 }
 
 async function triggerAutoPost(req, res) {
