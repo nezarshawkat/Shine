@@ -305,12 +305,6 @@ export default function ProfilePage({
     }
   };
 
-  const runMenuAction = (event, action) => {
-    event.preventDefault();
-    event.stopPropagation();
-    action();
-  };
-
   const handleShareProfile = () => {
     setShareOpen(true);
     setMenuOpen(false);
@@ -357,8 +351,7 @@ export default function ProfilePage({
           aria-label="Profile actions"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          onPointerDown={(event) => {
-            event.preventDefault();
+          onClick={(event) => {
             event.stopPropagation();
             setMenuOpen((open) => !open);
           }}
@@ -366,18 +359,18 @@ export default function ProfilePage({
           <EllipsisVertical size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
         {menuOpen && (
-          <div className="profile-menu-popup" role="menu">
-            <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleShareProfile)}>Share Profile</button>
+          <div className="profile-menu-popup" role="menu" onPointerDown={(event) => event.stopPropagation()}>
+            <button type="button" role="menuitem" onClick={handleShareProfile}>Share Profile</button>
             {isCurrentUser ? (
               <>
-                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleOpenSettings)}>Settings</button>
-                <button type="button" role="menuitem" className="logout-item" onPointerDown={(event) => runMenuAction(event, handleLogout)}>Logout</button>
+                <button type="button" role="menuitem" onClick={handleOpenSettings}>Settings</button>
+                <button type="button" role="menuitem" className="logout-item" onClick={handleLogout}>Logout</button>
               </>
             ) : (
               <>
-                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleMessageUser)}>Message</button>
-                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleBlockUser)}>Block User</button>
-                <button type="button" role="menuitem" className="report-item" onPointerDown={(event) => runMenuAction(event, () => { setShowReportModal(true); setMenuOpen(false); })}>Report Profile</button>
+                <button type="button" role="menuitem" onClick={handleMessageUser}>Message</button>
+                <button type="button" role="menuitem" onClick={handleBlockUser}>Block User</button>
+                <button type="button" role="menuitem" className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }}>Report Profile</button>
               </>
             )}
           </div>
@@ -426,7 +419,11 @@ export default function ProfilePage({
         <ProfileSettings 
           user={user} 
           onClose={() => setShowSettings(false)} 
-          logout={logout}
+          logout={() => {
+            setShowSettings(false);
+            logout();
+            navigate("/forum", { replace: true });
+          }}
           onUserUpdate={(updatedUser) => {
             setUser(updatedUser);
             if (String(loggedInUserId) === String(updatedUser?.id)) {
