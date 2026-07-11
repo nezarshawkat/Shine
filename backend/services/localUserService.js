@@ -160,15 +160,15 @@ function createUser({ name, email, username, password, googleId = null, provider
   return publicUser(user);
 }
 
-function upsertGoogleUser({ email, name, googleId, image }) {
+function upsertGoogleUser({ email, name, googleId }) {
   const db = local.getDb();
   if (!db) throw new Error("Local SQLite is not ready.");
 
   const existing = findByEmail(email);
   if (existing) {
     const updatedAt = local.nowIso();
-    db.prepare("UPDATE User SET name = ?, googleId = ?, image = COALESCE(?, image), provider = 'google', updatedAt = ? WHERE id = ?")
-      .run(name, googleId, image || null, updatedAt, existing.id);
+    db.prepare("UPDATE User SET name = ?, googleId = ?, provider = 'google', updatedAt = ? WHERE id = ?")
+      .run(name, googleId, updatedAt, existing.id);
     return publicUser(db.prepare("SELECT * FROM User WHERE id = ?").get(existing.id));
   }
 
@@ -179,7 +179,7 @@ function upsertGoogleUser({ email, name, googleId, image }) {
     password: null,
     googleId,
     provider: "google",
-    image,
+    image: null,
   });
 }
 

@@ -184,7 +184,6 @@ app.post("/api/auth/google", async (req, res) => {
         email,
         name,
         googleId,
-        image: payload.picture,
       });
       return res.json({ success: true, user });
     }

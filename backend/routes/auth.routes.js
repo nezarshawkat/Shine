@@ -186,10 +186,10 @@ router.post("/google", async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    const { email, name, sub: googleId, picture: image } = payload;
+    const { email, name, sub: googleId } = payload;
 
     if (localOnly) {
-      const user = localUsers.upsertGoogleUser({ email, name, googleId, image });
+      const user = localUsers.upsertGoogleUser({ email, name, googleId });
       const jwtToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       return res.json({ success: true, user, token: jwtToken });
     }
@@ -208,7 +208,6 @@ router.post("/google", async (req, res) => {
           name,
           googleId,
           username: generatedUsername,
-          image,
           provider: "google",
           description: ""
         },

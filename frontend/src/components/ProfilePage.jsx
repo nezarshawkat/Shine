@@ -156,10 +156,10 @@ export default function ProfilePage({
       if (event.key === "Escape") setMenuOpen(false);
     };
 
-    document.addEventListener("pointerdown", handleOutsideClick);
+    document.addEventListener("click", handleOutsideClick);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("pointerdown", handleOutsideClick);
+      document.removeEventListener("click", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [menuOpen]);
@@ -359,7 +359,7 @@ export default function ProfilePage({
           <EllipsisVertical size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
         {menuOpen && (
-          <div className="profile-menu-popup" role="menu" onPointerDown={(event) => event.stopPropagation()}>
+          <div className="profile-menu-popup" role="menu">
             <button type="button" role="menuitem" onClick={handleShareProfile}>Share Profile</button>
             {isCurrentUser ? (
               <>
