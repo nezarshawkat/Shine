@@ -321,6 +321,12 @@ export default function ProfilePage({
     navigate("/", { replace: true });
   };
 
+  const handleMenuItem = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+
   const renderPostByType = (post, index) => {
     const componentMap = { opinion: OpinionPost, analysis: AnalysisPost, critique: CritiquePost, poll: PollPost };
     const Component = componentMap[post.type] || OpinionPost;
@@ -365,17 +371,17 @@ export default function ProfilePage({
             onClick={(event) => event.stopPropagation()}
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button type="button" role="menuitem" onClick={handleShareProfile}>Share Profile</button>
+            <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleShareProfile)}>Share Profile</button>
             {isCurrentUser ? (
               <>
-                <button type="button" role="menuitem" onClick={handleOpenSettings}>Settings</button>
-                <button type="button" role="menuitem" className="logout-item" onClick={handleLogout}>Logout</button>
+                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleOpenSettings)}>Settings</button>
+                <button type="button" role="menuitem" className="logout-item" onMouseDown={(event) => handleMenuItem(event, handleLogout)}>Logout</button>
               </>
             ) : (
               <>
-                <button type="button" role="menuitem" onClick={handleMessageUser}>Message</button>
-                <button type="button" role="menuitem" onClick={handleBlockUser}>Block User</button>
-                <button type="button" role="menuitem" className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }}>Report Profile</button>
+                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleMessageUser)}>Message</button>
+                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleBlockUser)}>Block User</button>
+                <button type="button" role="menuitem" className="report-item" onMouseDown={(event) => handleMenuItem(event, () => { setShowReportModal(true); setMenuOpen(false); })}>Report Profile</button>
               </>
             )}
           </div>

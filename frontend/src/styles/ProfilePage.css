@@ -327,6 +327,19 @@
   color: #ff4d4d;
 }
 
+html[data-theme="dark"] .profile-page .menu-btn {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .profile-menu-popup button {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .profile-menu-popup .report-item,
+html[data-theme="dark"] .profile-menu-popup .logout-item {
+  color: #ff6b6b !important;
+}
+
 /* --------------------------------------------------
    MOBILE ONLY PROFILE STYLES (768px and below)
 -------------------------------------------------- */
