@@ -18,6 +18,7 @@ import profileDefault from "../assets/profileDefault.svg";
 import { AuthContext } from "./AuthProvider.jsx";
 import SharePopup from "./posts/SharePopup.jsx";
 import ProfileSettings from "./ProfileSettings.jsx";
+import { EllipsisVertical } from "lucide-react";
 
 const ROLE_LEVEL_CLASS = {
   Starter: "role-starter",
@@ -142,6 +143,26 @@ export default function ProfilePage({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     setImagePreview(getImageUrl(user?.image));
@@ -284,6 +305,28 @@ export default function ProfilePage({
     }
   };
 
+  const runMenuAction = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+
+  const handleShareProfile = () => {
+    setShareOpen(true);
+    setMenuOpen(false);
+  };
+
+  const handleOpenSettings = () => {
+    setShowSettings(true);
+    setMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    logout();
+    navigate("/", { replace: true });
+  };
+
   const renderPostByType = (post, index) => {
     const componentMap = { opinion: OpinionPost, analysis: AnalysisPost, critique: CritiquePost, poll: PollPost };
     const Component = componentMap[post.type] || OpinionPost;
@@ -307,23 +350,34 @@ export default function ProfilePage({
         </button>
       )}
 
-      <div className="menu-container-relative">
-        <button className="menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
-          <span className="icon">⋮</span>
+      <div className={`menu-container-relative ${menuOpen ? "is-open" : ""}`} ref={menuRef}>
+        <button
+          type="button"
+          className="menu-btn"
+          aria-label="Profile actions"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMenuOpen((open) => !open);
+          }}
+        >
+          <EllipsisVertical size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
         {menuOpen && (
-          <div className="profile-menu-popup">
-            <div onClick={() => { setShareOpen(true); setMenuOpen(false); }}>Share Profile</div>
+          <div className="profile-menu-popup" role="menu">
+            <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleShareProfile)}>Share Profile</button>
             {isCurrentUser ? (
               <>
-                <div onClick={() => { setShowSettings(true); setMenuOpen(false); }}>Settings</div>
-                <div className="logout-item" onClick={() => { logout(); navigate("/"); }}>Logout</div>
+                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleOpenSettings)}>Settings</button>
+                <button type="button" role="menuitem" className="logout-item" onPointerDown={(event) => runMenuAction(event, handleLogout)}>Logout</button>
               </>
             ) : (
               <>
-                <div onClick={handleMessageUser}>Message</div>
-                <div onClick={handleBlockUser}>Block User</div>
-                <div className="report-item" onClick={() => { setShowReportModal(true); setMenuOpen(false); }} style={{ color: "#FF4D4D" }}>Report Profile</div>
+                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleMessageUser)}>Message</button>
+                <button type="button" role="menuitem" onPointerDown={(event) => runMenuAction(event, handleBlockUser)}>Block User</button>
+                <button type="button" role="menuitem" className="report-item" onPointerDown={(event) => runMenuAction(event, () => { setShowReportModal(true); setMenuOpen(false); })}>Report Profile</button>
               </>
             )}
           </div>
@@ -460,7 +514,7 @@ export default function ProfilePage({
               ))}
             </div>
 
-            <div className="tabs-right" ref={menuRef}>
+            <div className="tabs-right">
               {!isMobile && (
                 showSearch ? (
                   <div className="profile-search-container">
