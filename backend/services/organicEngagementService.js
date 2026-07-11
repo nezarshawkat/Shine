@@ -1,5 +1,6 @@
 const prisma = require("../prisma");
 const local = require("../db/local");
+const { generateJson } = require("../autoActivitySystem/aiClient");
 
 const localOnly =
   process.env.DATABASE_MODE === "local" ||
@@ -8,22 +9,74 @@ const localOnly =
 
 const DEFAULT_INTERVAL_MS = Number(process.env.ORGANIC_ENGAGEMENT_INTERVAL_MS || 600000);
 const BATCH_LIMIT = Number(process.env.ORGANIC_ENGAGEMENT_BATCH_LIMIT || 30);
+const COMMENT_MAX_PER_POST_PER_RUN = Math.max(0, Number(process.env.ORGANIC_ENGAGEMENT_COMMENT_MAX_PER_POST_PER_RUN || 2));
+const COMMENT_AI_ENABLED = process.env.ORGANIC_ENGAGEMENT_COMMENT_AI_ENABLED !== "false";
 
 let timer = null;
 let running = false;
+let persistedStateLoaded = false;
 
-const COMMENT_TEMPLATES = [
-  "This is a fair point, especially when you look at the wider context.",
-  "I can see why people are reacting to this. The details matter here.",
-  "This feels like the kind of post that needs more discussion, not just quick likes.",
-  "The angle is interesting. I would like to see more people weigh in.",
-  "Good point. The practical effects are probably what people will notice first.",
-  "I do not fully agree, but the question is worth asking.",
-  "This is one of those topics where the comments may be as useful as the post.",
-  "The framing makes sense, but there is probably another side to it too.",
-  "This connects with a lot of conversations happening elsewhere right now.",
-  "Short version: this deserves more attention than it is getting.",
-];
+const serviceState = {
+  adminStopped: false,
+  adminStateLoadedAt: null,
+  startedAt: null,
+  lastRunAt: null,
+  lastResult: null,
+  runCount: 0,
+  failureCount: 0,
+  lastErrorAt: null,
+  errors: [],
+};
+
+const MAX_ERRORS = 50;
+
+function pushServiceError(error) {
+  const entry = { at: new Date().toISOString(), message: error?.message || String(error) };
+  serviceState.lastErrorAt = entry.at;
+  serviceState.errors.unshift(entry);
+  if (serviceState.errors.length > MAX_ERRORS) serviceState.errors.pop();
+  console.error("[organic-engagement]", entry.message);
+}
+
+async function loadOrganicEngagementAdminState() {
+  if (persistedStateLoaded) return serviceState.adminStopped;
+  try {
+    if (localOnly) {
+      serviceState.adminStopped = local.getMeta("organicEngagement:adminStopped") === "true";
+    } else {
+      const row = await prisma.analyticsCache.findUnique({ where: { cacheKey: "organic_engagement_admin_state" } });
+      serviceState.adminStopped = Boolean(row?.payload?.adminStopped);
+    }
+  } catch (error) {
+    pushServiceError(error);
+  }
+  persistedStateLoaded = true;
+  serviceState.adminStateLoadedAt = new Date().toISOString();
+  return serviceState.adminStopped;
+}
+
+async function persistOrganicEngagementAdminState(adminStopped) {
+  serviceState.adminStopped = Boolean(adminStopped);
+  persistedStateLoaded = true;
+  serviceState.adminStateLoadedAt = new Date().toISOString();
+  if (localOnly) {
+    local.setMeta("organicEngagement:adminStopped", serviceState.adminStopped ? "true" : "false");
+    return;
+  }
+  await prisma.analyticsCache.upsert({
+    where: { cacheKey: "organic_engagement_admin_state" },
+    update: {
+      payload: { adminStopped: serviceState.adminStopped },
+      generatedAt: new Date(),
+      expiresAt: new Date("2999-12-31T00:00:00.000Z"),
+    },
+    create: {
+      cacheKey: "organic_engagement_admin_state",
+      payload: { adminStopped: serviceState.adminStopped },
+      expiresAt: new Date("2999-12-31T00:00:00.000Z"),
+    },
+  });
+}
 
 function hashValue(value) {
   const text = String(value || "");
@@ -51,9 +104,9 @@ function targetsFor(entityId, entityType) {
     if (tier === "strong") return { tier, views: range(95, 185, 3), likes: range(32, 96, 4), comments: 0, shares: 0 };
     return { tier, views: range(18, 104, 5), likes: range(3, 38, 6), comments: 0, shares: 0 };
   }
-  if (tier === "viral") return { tier, views: range(190, 249, 7), likes: range(92, 211, 8), comments: range(12, 32, 9), shares: range(30, 88, 10) };
-  if (tier === "strong") return { tier, views: range(105, 204, 11), likes: range(38, 124, 12), comments: range(5, 18, 13), shares: range(8, 42, 14) };
-  return { tier, views: range(16, 122, 15), likes: range(2, 52, 16), comments: range(0, 8, 17), shares: range(0, 18, 18) };
+  if (tier === "viral") return { tier, views: range(190, 249, 7), likes: range(92, 211, 8), comments: range(4, 10, 9), shares: range(30, 88, 10) };
+  if (tier === "strong") return { tier, views: range(105, 204, 11), likes: range(38, 124, 12), comments: range(2, 5, 13), shares: range(8, 42, 14) };
+  return { tier, views: range(16, 122, 15), likes: range(2, 52, 16), comments: range(0, 2, 17), shares: range(0, 18, 18) };
 }
 
 function lifecycleProgress(createdAt, tier) {
@@ -99,6 +152,93 @@ function selectActors(actors, count, entityId, salt = 0) {
   const start = hashValue(`${entityId}:${salt}`) % actors.length;
   const step = 17 + (salt % 11);
   return Array.from({ length: Math.min(count, actors.length) }, (_value, index) => actors[(start + index * step) % actors.length]);
+}
+
+function extractTopicWords(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9#\s]/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length >= 4 && !COMMENT_STOP_WORDS.has(word.replace(/^#/, "")))
+    .slice(0, 8);
+}
+
+const COMMENT_STOP_WORDS = new Set([
+  "about", "after", "again", "also", "because", "before", "being", "could", "from",
+  "have", "into", "more", "most", "other", "over", "should", "their", "there", "these",
+  "they", "this", "those", "through", "under", "very", "what", "when", "where", "which",
+  "while", "with", "would", "people", "politics", "political", "government", "policy",
+  "world", "think", "really",
+]);
+
+function fallbackCommentForPost(post, index) {
+  const words = extractTopicWords(`${post.text || ""} ${post.keywordsJson || ""}`);
+  const topic = (words[(hashValue(post.id) + index) % Math.max(words.length, 1)] || "this issue").replace(/^#/, "");
+  const templates = [
+    `The point about ${topic} is what makes this worth discussing.`,
+    `I can see why ${topic} is getting attention here.`,
+    `The ${topic} angle probably needs more context before people settle on one view.`,
+    `This is interesting, especially if you look at how ${topic} affects regular people.`,
+    `I do not fully agree, but the concern around ${topic} is real.`,
+    `The practical side of ${topic} is what I would want to hear more about.`,
+    `This framing of ${topic} makes sense, even if there is another side too.`,
+  ];
+  return templates[(hashValue(`${post.id}:comment:${index}`)) % templates.length];
+}
+
+function normalizeAiComment(comment) {
+  return String(comment || "")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/[#@][a-z0-9_]+/gi, "")
+    .replace(/\b(as an ai|source:|according to|citation|in conclusion)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^["'“”]+|["'“”]+$/g, "");
+}
+
+async function generateAiCommentsForPost(post, count) {
+  const wanted = Math.min(Math.max(0, count), COMMENT_MAX_PER_POST_PER_RUN);
+  if (!wanted || !COMMENT_AI_ENABLED) return [];
+  if (!process.env.OPENAI_API_KEY) return [];
+  const topicWords = extractTopicWords(`${post.text || ""} ${post.keywordsJson || ""}`).slice(0, 5).join(", ");
+  const prompt = `
+Return JSON only: {"comments":["..."]}.
+Write exactly ${wanted} short, natural social-media comments that reply to this exact post.
+Rules:
+- Each comment must be directly related to the post.
+- Sound like different real people casually reacting in a political discussion.
+- Mention a concrete idea from the post or a clear implication of it.
+- Mix agreement, doubt, nuance, and follow-up questions when appropriate.
+- 8 to 24 words each.
+- No generic filler like "interesting point" unless it includes a specific reason.
+- No hashtags, no URLs, no citations, no emojis, no formal article tone.
+- Do not mention that you are AI.
+
+Post type: ${post.type || "opinion"}
+Topic hints: ${topicWords || "politics and geopolitics"}
+Post text:
+${String(post.text || "").slice(0, 1200)}
+`;
+  try {
+    const result = await generateJson(prompt);
+    const comments = Array.isArray(result.comments) ? result.comments : [];
+    const seen = new Set();
+    return comments
+      .map(normalizeAiComment)
+      .filter((comment) => comment.length >= 12 && comment.length <= 180)
+      .filter((comment) => !/^(interesting|good point|true|agreed)\.?$/i.test(comment))
+      .filter((comment) => {
+        const key = comment.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, wanted);
+  } catch (error) {
+    pushServiceError(error);
+    return [];
+  }
 }
 
 function localCurrentPostCounts(db, postId) {
@@ -147,7 +287,7 @@ function upsertLocalState(db, entityType, entityId) {
   return state;
 }
 
-function applyLocalPostEngagement(db, post) {
+async function applyLocalPostEngagement(db, post) {
   const state = upsertLocalState(db, "post", post.id);
   const targets = {
     tier: state.tier,
@@ -161,6 +301,8 @@ function applyLocalPostEngagement(db, post) {
   const actors = uniqueUsers(localSeedActorsForPost(db, post));
   if (!actors.length) return;
   const now = local.nowIso();
+  const commentsToAdd = Math.min(Math.max(0, desired.comments - current.comments), COMMENT_MAX_PER_POST_PER_RUN);
+  const aiComments = await generateAiCommentsForPost(post, commentsToAdd);
 
   db.transaction(() => {
     selectActors(actors, Math.max(0, desired.views - current.views), post.id, 1).forEach((user, index) => {
@@ -175,9 +317,9 @@ function applyLocalPostEngagement(db, post) {
       db.prepare("INSERT INTO ShareRecord (id, userId, postId, createdAt, data) VALUES (?, ?, ?, ?, '{}')")
         .run(local.newId(), user.id, post.id, now);
     });
-    selectActors(actors, Math.max(0, desired.comments - current.comments), post.id, 4).forEach((user, index) => {
+    selectActors(actors, aiComments.length, post.id, 4).forEach((user, index) => {
       db.prepare(`INSERT INTO Comment (id, postId, authorId, text, createdAt, updatedAt, likesCount, repliesCount, data) VALUES (?, ?, ?, ?, ?, ?, 0, 0, '{}')`)
-        .run(local.newId(), post.id, user.id, COMMENT_TEMPLATES[(hashValue(post.id) + index) % COMMENT_TEMPLATES.length], now, now);
+        .run(local.newId(), post.id, user.id, aiComments[index] || fallbackCommentForPost(post, index), now, now);
     });
     const counts = localCurrentPostCounts(db, post.id);
     db.prepare("UPDATE Post SET viewsCount = ?, likesCount = ?, commentsCount = ?, sharesCount = ?, engagement = ? WHERE id = ?")
@@ -213,25 +355,29 @@ function applyLocalArticleEngagement(db, article) {
   })();
 }
 
-function runLocalOrganicEngagementOnce() {
+async function runLocalOrganicEngagementOnce() {
   const db = local.getDb();
   if (!db) return { posts: 0, articles: 0 };
   const posts = db.prepare(`
-    SELECT p.*, c.status AS communityStatus
+    SELECT p.*, c.status AS communityStatus, s.updatedAt AS engagementUpdatedAt
     FROM Post p
     LEFT JOIN Community c ON c.id = p.communityId
+    LEFT JOIN OrganicEngagementState s ON s.entityType = 'post' AND s.entityId = p.id
     WHERE p.deletedAt IS NULL
-    ORDER BY datetime(p.createdAt) DESC
+    ORDER BY datetime(COALESCE(s.updatedAt, '1970-01-01T00:00:00.000Z')) ASC, datetime(p.createdAt) DESC
     LIMIT ?
   `).all(BATCH_LIMIT);
   const articles = db.prepare(`
-    SELECT *
-    FROM Article
-    WHERE deletedAt IS NULL
-    ORDER BY datetime(createdAt) DESC
+    SELECT a.*, s.updatedAt AS engagementUpdatedAt
+    FROM Article a
+    LEFT JOIN OrganicEngagementState s ON s.entityType = 'article' AND s.entityId = a.id
+    WHERE a.deletedAt IS NULL
+    ORDER BY datetime(COALESCE(s.updatedAt, '1970-01-01T00:00:00.000Z')) ASC, datetime(a.createdAt) DESC
     LIMIT ?
   `).all(Math.max(5, Math.floor(BATCH_LIMIT / 2)));
-  posts.forEach((post) => applyLocalPostEngagement(db, post));
+  for (const post of posts) {
+    await applyLocalPostEngagement(db, post);
+  }
   articles.forEach((article) => applyLocalArticleEngagement(db, article));
   return { posts: posts.length, articles: articles.length };
 }
@@ -262,11 +408,13 @@ async function runCloudOrganicEngagementOnce() {
       prisma.comment.count({ where: { postId: post.id } }),
       prisma.share.count({ where: { postId: post.id } }),
     ]);
+    const commentsToAdd = Math.min(Math.max(0, desired.comments - comments), COMMENT_MAX_PER_POST_PER_RUN);
+    const aiComments = await generateAiCommentsForPost(post, commentsToAdd);
     await prisma.$transaction([
       prisma.postView.createMany({ data: selectActors(actors, Math.max(0, desired.views - views), post.id, 1).map((user, index) => ({ userId: user.id, postId: post.id, viewedAt: new Date(Date.now() - index * 17000) })) }),
       prisma.like.createMany({ data: selectActors(actors, Math.max(0, desired.likes - likes), post.id, 2).map((user) => ({ userId: user.id, postId: post.id })), skipDuplicates: true }),
       prisma.share.createMany({ data: selectActors(actors, Math.max(0, desired.shares - shares), post.id, 3).map((user) => ({ userId: user.id, postId: post.id })) }),
-      prisma.comment.createMany({ data: selectActors(actors, Math.max(0, desired.comments - comments), post.id, 4).map((user, index) => ({ authorId: user.id, postId: post.id, text: COMMENT_TEMPLATES[(hashValue(post.id) + index) % COMMENT_TEMPLATES.length] })) }),
+      prisma.comment.createMany({ data: selectActors(actors, aiComments.length, post.id, 4).map((user, index) => ({ authorId: user.id, postId: post.id, text: aiComments[index] || fallbackCommentForPost(post, index) })) }),
     ]);
     const [nextViews, nextLikes, nextComments, nextShares] = await Promise.all([
       prisma.postView.count({ where: { postId: post.id } }),
@@ -293,17 +441,30 @@ async function runCloudOrganicEngagementOnce() {
 }
 
 async function runOrganicEngagementOnce() {
-  if (running) return { skipped: true };
+  await loadOrganicEngagementAdminState();
+  if (serviceState.adminStopped) return { skipped: true, reason: "admin-stopped" };
+  if (running) return { skipped: true, reason: "already-running" };
   running = true;
   try {
-    return localOnly ? runLocalOrganicEngagementOnce() : await runCloudOrganicEngagementOnce();
+    const result = localOnly ? runLocalOrganicEngagementOnce() : await runCloudOrganicEngagementOnce();
+    serviceState.runCount += 1;
+    serviceState.lastRunAt = new Date().toISOString();
+    serviceState.lastResult = result;
+    return result;
+  } catch (error) {
+    serviceState.failureCount += 1;
+    pushServiceError(error);
+    throw error;
   } finally {
     running = false;
   }
 }
 
-function startOrganicEngagementService() {
-  if (timer || process.env.ORGANIC_ENGAGEMENT_ENABLED === "false") return false;
+async function startOrganicEngagementService({ respectEnv = false, clearAdminStop = false } = {}) {
+  await loadOrganicEngagementAdminState();
+  if (clearAdminStop) await persistOrganicEngagementAdminState(false);
+  if (timer || serviceState.adminStopped || (respectEnv && process.env.ORGANIC_ENGAGEMENT_ENABLED === "false")) return false;
+  serviceState.startedAt = new Date().toISOString();
   timer = setInterval(() => {
     runOrganicEngagementOnce().catch((error) => console.error("Organic engagement failed:", error.message));
   }, DEFAULT_INTERVAL_MS);
@@ -313,12 +474,41 @@ function startOrganicEngagementService() {
   return true;
 }
 
-function stopOrganicEngagementService() {
+async function stopOrganicEngagementService({ persist = false } = {}) {
   if (timer) clearInterval(timer);
   timer = null;
+  if (persist) await persistOrganicEngagementAdminState(true);
+  return true;
+}
+
+function clearOrganicEngagementErrors() {
+  serviceState.errors = [];
+  serviceState.lastErrorAt = null;
+}
+
+function getOrganicEngagementStatus() {
+  return {
+    running: Boolean(timer),
+    busy: running,
+    config: {
+      enabled: process.env.ORGANIC_ENGAGEMENT_ENABLED !== "false",
+      intervalMs: DEFAULT_INTERVAL_MS,
+      initialDelayMs: Number(process.env.ORGANIC_ENGAGEMENT_INITIAL_DELAY_MS || 300000),
+      batchLimit: BATCH_LIMIT,
+      commentMaxPerPostPerRun: COMMENT_MAX_PER_POST_PER_RUN,
+      commentAiEnabled: COMMENT_AI_ENABLED,
+      engagementPool: "250 seeded accounts",
+      mode: localOnly ? "local" : "cloud",
+      commentsProvider: "OpenAI JSON comments only",
+    },
+    state: serviceState,
+  };
 }
 
 module.exports = {
+  clearOrganicEngagementErrors,
+  getOrganicEngagementStatus,
+  loadOrganicEngagementAdminState,
   runOrganicEngagementOnce,
   startOrganicEngagementService,
   stopOrganicEngagementService,

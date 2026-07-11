@@ -13,6 +13,13 @@ const {
   createOneArticle,
   clearAutoActivityErrors,
 } = require("../autoActivitySystem");
+const {
+  clearOrganicEngagementErrors,
+  getOrganicEngagementStatus,
+  runOrganicEngagementOnce,
+  startOrganicEngagementService,
+  stopOrganicEngagementService,
+} = require("../services/organicEngagementService");
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
@@ -125,6 +132,90 @@ router.post("/auto-activity/trigger-post", async (_req, res) => {
 router.post("/auto-activity/trigger-article", async (_req, res) => {
   try { const article = await createOneArticle(); res.json({ success: true, data: { id: article.id, createdAt: article.createdAt } }); }
   catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+router.get("/engagement", (_req, res) => res.json({ success: true, data: getOrganicEngagementStatus() }));
+router.post("/engagement/start", async (_req, res) => { await startOrganicEngagementService({ clearAdminStop: true }); res.json({ success: true, data: getOrganicEngagementStatus() }); });
+router.post("/engagement/stop", async (_req, res) => { await stopOrganicEngagementService({ persist: true }); res.json({ success: true, data: getOrganicEngagementStatus() }); });
+router.post("/engagement/reset-errors", (_req, res) => { clearOrganicEngagementErrors(); res.json({ success: true, data: getOrganicEngagementStatus() }); });
+router.post("/engagement/run-once", async (_req, res) => {
+  try {
+    const result = await runOrganicEngagementOnce();
+    res.json({ success: true, data: { status: getOrganicEngagementStatus(), result } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get("/article-applications", (req, res) => {
+  const status = String(req.query.status || "PENDING").toUpperCase();
+  const database = local.getDb();
+  const rows = database.prepare(`
+    SELECT app.*, u.name AS userName, u.username AS username, u.email AS email, u.isAuthorized AS isAuthorized
+    FROM ArticleApplication app
+    LEFT JOIN User u ON u.id = app.userId
+    WHERE app.status = ?
+    ORDER BY datetime(app.createdAt) DESC
+  `).all(status);
+  const data = rows.map((row) => ({
+    id: row.id,
+    userId: row.userId,
+    introduction: row.introduction,
+    workSample: row.workSample,
+    socialLink: row.socialLink,
+    status: row.status,
+    reviewedBy: row.reviewedBy,
+    reviewedAt: row.reviewedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    user: {
+      id: row.userId,
+      name: row.userName,
+      username: row.username,
+      email: row.email,
+      isAuthorized: Boolean(row.isAuthorized),
+    },
+  }));
+  res.json({ data, pagination: { page: 1, pageSize: data.length, total: data.length } });
+});
+
+router.patch("/article-applications/:id", (req, res) => {
+  const action = String(req.body?.action || "").toLowerCase();
+  if (!["accept", "decline"].includes(action)) {
+    return res.status(400).json({ error: "action must be either accept or decline" });
+  }
+  const database = local.getDb();
+  const application = database.prepare("SELECT * FROM ArticleApplication WHERE id = ?").get(req.params.id);
+  if (!application) return res.status(404).json({ error: "Application not found" });
+  const status = action === "accept" ? "ACCEPTED" : "DECLINED";
+  const now = local.nowIso();
+  database.transaction(() => {
+    database.prepare(`
+      UPDATE ArticleApplication
+      SET status = ?, reviewedBy = ?, reviewedAt = ?, updatedAt = ?
+      WHERE id = ?
+    `).run(status, req.admin.adminId || req.admin.id || null, now, now, req.params.id);
+    database.prepare("UPDATE User SET isAuthorized = ?, updatedAt = ? WHERE id = ?")
+      .run(action === "accept" ? 1 : 0, now, application.userId);
+  })();
+  const updated = database.prepare(`
+    SELECT app.*, u.name AS userName, u.username AS username, u.email AS email, u.isAuthorized AS isAuthorized
+    FROM ArticleApplication app
+    LEFT JOIN User u ON u.id = app.userId
+    WHERE app.id = ?
+  `).get(req.params.id);
+  return res.json({
+    data: {
+      ...updated,
+      user: {
+        id: updated.userId,
+        name: updated.userName,
+        username: updated.username,
+        email: updated.email,
+        isAuthorized: Boolean(updated.isAuthorized),
+      },
+    },
+  });
 });
 
 module.exports = router;

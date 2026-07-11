@@ -15,6 +15,7 @@ const tabs = [
   ["system-messages", "System Messages"],
   ["email-system", "Email System"],
   ["auto-activity", "Auto Activity"],
+  ["engagement", "Engagement"],
 ];
 
 export default function AdminLayout() {

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "shine-super-secret-key";
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -10,8 +11,11 @@ function authMiddleware(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.userId };
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = { id: decoded.userId || decoded.id };
+    if (!req.user.id) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid token" });

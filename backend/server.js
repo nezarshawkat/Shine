@@ -9,7 +9,7 @@ const { OAuth2Client } = require("google-auth-library");
 const { startDigestScheduler } = require("./services/notificationDigestService");
 const { loadAutoActivityAdminState, startAutoActivitySystem } = require("./autoActivitySystem");
 const dataService = require("./services/dataService");
-const { startOrganicEngagementService } = require("./services/organicEngagementService");
+const { loadOrganicEngagementAdminState, startOrganicEngagementService } = require("./services/organicEngagementService");
 const { startSyncEngine } = require("./sync/syncEngine");
 const localUsers = require("./services/localUserService");
 const { LOCAL_UPLOAD_ROOT } = require("./lib/supabaseStorage");
@@ -227,7 +227,8 @@ if (localOnly) {
     await adminPromise;
     await loadAutoActivityAdminState();
     await startAutoActivitySystem({ respectEnv: true });
-    startOrganicEngagementService();
+    await loadOrganicEngagementAdminState();
+    await startOrganicEngagementService({ respectEnv: true });
     console.log(`Seeded account pool ready (${seededCount} visible profiles).`);
   } catch (error) {
     console.error("Startup seed failed:", error.message);
