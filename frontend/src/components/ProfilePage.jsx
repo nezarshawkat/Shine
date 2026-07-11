@@ -147,19 +147,12 @@ export default function ProfilePage({
   useEffect(() => {
     if (!menuOpen) return undefined;
 
-    const handleOutsideClick = (event) => {
-      if (!event.target.closest?.(".menu-container-relative")) {
-        setMenuOpen(false);
-      }
-    };
     const handleEscape = (event) => {
       if (event.key === "Escape") setMenuOpen(false);
     };
 
-    document.addEventListener("click", handleOutsideClick);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("click", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [menuOpen]);
@@ -322,7 +315,6 @@ export default function ProfilePage({
   };
 
   const handleMenuItem = (event, action) => {
-    event.preventDefault();
     event.stopPropagation();
     action();
   };
@@ -369,19 +361,18 @@ export default function ProfilePage({
             className="profile-menu-popup"
             role="menu"
             onClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
           >
-            <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleShareProfile)}>Share Profile</button>
+            <button type="button" role="menuitem" onClick={(event) => handleMenuItem(event, handleShareProfile)}>Share Profile</button>
             {isCurrentUser ? (
               <>
-                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleOpenSettings)}>Settings</button>
-                <button type="button" role="menuitem" className="logout-item" onMouseDown={(event) => handleMenuItem(event, handleLogout)}>Logout</button>
+                <button type="button" role="menuitem" onClick={(event) => handleMenuItem(event, handleOpenSettings)}>Settings</button>
+                <button type="button" role="menuitem" className="logout-item" onClick={(event) => handleMenuItem(event, handleLogout)}>Logout</button>
               </>
             ) : (
               <>
-                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleMessageUser)}>Message</button>
-                <button type="button" role="menuitem" onMouseDown={(event) => handleMenuItem(event, handleBlockUser)}>Block User</button>
-                <button type="button" role="menuitem" className="report-item" onMouseDown={(event) => handleMenuItem(event, () => { setShowReportModal(true); setMenuOpen(false); })}>Report Profile</button>
+                <button type="button" role="menuitem" onClick={(event) => handleMenuItem(event, handleMessageUser)}>Message</button>
+                <button type="button" role="menuitem" onClick={(event) => handleMenuItem(event, handleBlockUser)}>Block User</button>
+                <button type="button" role="menuitem" className="report-item" onClick={(event) => handleMenuItem(event, () => { setShowReportModal(true); setMenuOpen(false); })}>Report Profile</button>
               </>
             )}
           </div>
