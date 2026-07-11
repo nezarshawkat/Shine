@@ -148,7 +148,7 @@ export default function ProfilePage({
     if (!menuOpen) return undefined;
 
     const handleOutsideClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (!event.target.closest?.(".menu-container-relative")) {
         setMenuOpen(false);
       }
     };
@@ -359,7 +359,12 @@ export default function ProfilePage({
           <EllipsisVertical size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
         {menuOpen && (
-          <div className="profile-menu-popup" role="menu">
+          <div
+            className="profile-menu-popup"
+            role="menu"
+            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <button type="button" role="menuitem" onClick={handleShareProfile}>Share Profile</button>
             {isCurrentUser ? (
               <>

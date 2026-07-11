@@ -125,6 +125,7 @@
   font-size: 22px;
   transition: background 0.2s;
   padding: 0; /* Reset for circular shape */
+  color: #1c274c;
 }
 
 .menu-btn:hover {
@@ -275,26 +276,55 @@
   position: relative;
 }
 
+.menu-container-relative.is-open {
+  z-index: 10000;
+}
+
 .profile-menu-popup {
   position: absolute;
   right: 0;
   top: 45px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
   background: white;
   border-radius: 8px;
   padding: 8px 0;
   box-shadow: 0 5px 20px rgba(0,0,0,0.2);
   width: 180px;
   z-index: 9999; /* Higher z-index to stay on top of everything */
+  overflow: hidden;
 }
 
-.profile-menu-popup div {
+.profile-menu-popup button {
+  display: block !important;
+  width: 100% !important;
+  flex: none !important;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  color: #1c274c;
+  text-align: left;
   padding: 12px 15px;
+  margin: 0 !important;
   cursor: pointer;
   font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
-.profile-menu-popup div:hover {
+.profile-menu-popup button:hover,
+.profile-menu-popup button:focus-visible {
   background: #f2f2f2;
+  outline: none;
+}
+
+.profile-menu-popup .report-item,
+.profile-menu-popup .logout-item {
+  color: #ff4d4d;
 }
 
 /* --------------------------------------------------
