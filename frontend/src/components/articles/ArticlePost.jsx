@@ -207,7 +207,7 @@ const ArticleDetail = () => {
         <div style={{ display: "flex", width: "100%", borderBottom: "1px solid #f0f0f0", flexWrap: "wrap" }}>
           <div style={{ flex: 1, padding: "40px", minWidth: "300px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Link to={`/profile/${article.author?.username}`} style={{ display: "flex", alignItems: "center", textDecoration: "none", color: "inherit" }}>
+              <Link to={`/profile/${article.author?.username || article.authorId || article.author?.id}`} style={{ display: "flex", alignItems: "center", textDecoration: "none", color: "inherit" }}>
                 <img
                   src={getFullUrl(article.author?.image) || profileDefault}
                   style={{ width: "50px", height: "50px", borderRadius: "50%", marginRight: "12px", objectFit: "cover", border: "2px solid #eee" }}

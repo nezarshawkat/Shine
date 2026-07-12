@@ -285,6 +285,39 @@ router.post("/:id/save", async (req, res) => {
 });
 
 /* =====================================================
+    GET ARTICLES BY USER ID OR USERNAME
+===================================================== */
+router.get("/user/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const author = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: identifier },
+          { username: identifier },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (!author) return res.json([]);
+
+    const articles = await prisma.article.findMany({
+      where: { authorId: author.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { id: true, username: true, name: true, image: true } },
+        media: { take: 1 },
+        _count: { select: { likes: true, saves: true, views: true } },
+      },
+    });
+    res.json(articles);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user articles" });
+  }
+});
+
+/* =====================================================
     GET SINGLE ARTICLE
 ===================================================== */
 router.get("/:id", async (req, res) => {
@@ -354,26 +387,6 @@ router.get("/:id/save-status", async (req, res) => {
   if (!userId) return res.json({ saved: false });
   const save = await prisma.save.findFirst({ where: { articleId: req.params.id, userId } });
   res.json({ saved: !!save });
-});
-
-/* =====================================================
-    GET ARTICLES BY USER
-===================================================== */
-router.get("/user/:userId", async (req, res) => {
-  try {
-    const articles = await prisma.article.findMany({
-      where: { authorId: req.params.userId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        author: { select: { id: true, username: true, name: true, image: true } },
-        media: { take: 1 },
-        _count: { select: { likes: true, saves: true, views: true } },
-      },
-    });
-    res.json(articles);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch user articles" });
-  }
 });
 
 /* =====================================================

@@ -101,8 +101,19 @@ router.post("/apply", auth, (req, res) => {
   }
 });
 
-router.get("/user/:userId", (req, res) => {
-  try { res.json(content.listArticles({ authorId: req.params.userId, limit: 100 }).articles); }
+router.get("/user/:identifier", (req, res) => {
+  try {
+    const db = local.getDb();
+    const { identifier } = req.params;
+    const author = db.prepare(`
+      SELECT id
+      FROM User
+      WHERE id = ? OR lower(username) = lower(?)
+      LIMIT 1
+    `).get(identifier, identifier);
+    if (!author) return res.json([]);
+    res.json(content.listArticles({ authorId: author.id, limit: 100 }).articles);
+  }
   catch (error) { res.status(500).json({ error: error.message }); }
 });
 

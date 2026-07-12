@@ -199,7 +199,7 @@ export default function Article() {
       boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
       marginTop: isMobile ? "40px" : "0"
     }}>
-      <Link to={`/profile/${author.id}`} style={{ display: "flex", alignItems: "center", textDecoration: "none", marginBottom: "30px" }}>
+      <Link to={`/profile/${author.username || author.id}`} style={{ display: "flex", alignItems: "center", textDecoration: "none", marginBottom: "30px" }}>
         <img src={getFullUrl(author.image) || profileDefault} style={{ width: "60px", height: "60px", borderRadius: "50%", objectFit: "cover", marginRight: "16px", border: "1px solid #F0F0F0" }} alt="" />
         <div>
           <h4 className="article-contributor-name" style={{ margin: 0, fontSize: "1.1rem", color: "#1C274C" }}>{author.name}</h4>

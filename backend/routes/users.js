@@ -236,12 +236,13 @@ router.get("/list", async (req, res) => {
   }
 });
 
-// ---------------- GET USER BY USERNAME ----------------
+// ---------------- GET USER BY USERNAME OR ID ----------------
 router.get("/:username", async (req, res) => {
   try {
     const requesterId = getRequesterId(req);
+    const identifier = req.params.username;
     if (localOnly) {
-      const user = localUsers.findByUsername(req.params.username);
+      const user = localUsers.findByUsername(identifier) || localUsers.publicUser(localUsers.findById(identifier));
       if (!user) return res.status(404).json({ error: "User not found" });
       const canViewConnections = localUsers.canViewConnections(requesterId, user.id);
       const requesterFollows = localUsers.isFollowing(requesterId, user.id);
@@ -257,8 +258,22 @@ router.get("/:username", async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { username: req.params.username },
+      where: { username: identifier },
       include: { 
+        memberships: { include: { community: true } },
+        followers: true,
+        following: true,
+        blockedUsers: {
+          include: {
+            blocked: {
+              select: { id: true, username: true, name: true, image: true },
+            },
+          },
+        },
+      },
+    }) || await prisma.user.findUnique({
+      where: { id: identifier },
+      include: {
         memberships: { include: { community: true } },
         followers: true,
         following: true,

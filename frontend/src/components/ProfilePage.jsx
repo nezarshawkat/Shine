@@ -189,11 +189,11 @@ export default function ProfilePage({
         .catch((err) => console.error("Error loading communities", err));
     }
     if (activeTab === "Articles" && userId) {
-      API.get(`/articles/user/${userId}`)
+      API.get(`/articles/user/${user?.username || userId}`)
         .then((res) => setFetchedArticles(Array.isArray(res.data) ? res.data : []))
         .catch((err) => console.error("Error loading articles", err));
     }
-  }, [activeTab, userId]);
+  }, [activeTab, userId, user?.username]);
 
   const handleSaveProfile = async () => {
     const normalizedUsername = editedUsername.trim();

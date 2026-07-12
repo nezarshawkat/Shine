@@ -98,7 +98,7 @@ const ArticleForm = () => {
         const data = await res.json();
         // Clean up preview URLs to save memory
         previewUrls.forEach(url => URL.revokeObjectURL(url));
-        navigate(`/articles/${data.id || id}`);
+        navigate(`/article/${data.id || id}`);
       } else {
         const errorData = await res.json();
         alert(`Error: ${errorData.error || "Action failed"}`);
