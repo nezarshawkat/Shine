@@ -7,6 +7,14 @@ const local = require("../db/local");
 
 const router = express.Router();
 
+function articleViewerId(req) {
+  const supplied = String(req.query.userId || req.body?.userId || "").trim();
+  if (supplied && !["anonymous", "undefined", "null"].includes(supplied.toLowerCase())) return supplied;
+  const ip = String(req.ip || req.socket?.remoteAddress || "unknown").replace(/[^a-zA-Z0-9:.-]/g, "");
+  const userAgent = Buffer.from(String(req.get("user-agent") || "browser")).toString("base64url").slice(0, 40);
+  return `guest:${ip}:${userAgent}`;
+}
+
 function parseJson(value, fallback = []) {
   if (value === undefined || value === null || value === "") return fallback;
   if (Array.isArray(value)) return value;
@@ -146,7 +154,7 @@ router.post("/:id/save", (req, res) => {
 });
 
 router.post("/:id/view", (req, res) => {
-  try { res.json(content.recordArticleView(req.params.id, req.query.userId)); }
+  try { res.json(content.recordArticleView(req.params.id, articleViewerId(req))); }
   catch (error) { res.status(500).json({ error: error.message }); }
 });
 

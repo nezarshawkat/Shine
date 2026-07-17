@@ -1,4 +1,4 @@
-function buildPostPrompt({ user, postType, targetText, includeHashtags = false, lengthProfile }) {
+function buildPostPrompt({ user, postType, targetText, includeHashtags = false, lengthProfile, community }) {
   let topicInstruction;
   if (postType === 'poll') {
     topicInstruction = 'Create a politics or geopolitics opinion poll. Ask a clear question about government policy, elections, diplomacy, international relations, political movements, or conflicts. Return 2 to 4 distinct, concise poll options. The poll must ask for people\'s judgment rather than present uncertain claims as facts.';
@@ -14,19 +14,23 @@ function buildPostPrompt({ user, postType, targetText, includeHashtags = false, 
   const lengthInstruction = lengthProfile
     ? `This post must use the ${lengthProfile.label} format: approximately ${lengthProfile.minWords} to ${lengthProfile.maxWords} words.`
     : 'Keep the length natural for a social media post.';
+  const communityInstruction = community
+    ? `This post will be published inside the community "${community.name}". Keep the subject clearly connected to this community's theme: ${community.theme}. Most factual examples, arguments, and keywords should fit that community.`
+    : 'This post will be published personally, not inside a community.';
 
   return `You simulate one realistic social media user.
 User: ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}
 Post type: ${postType}
 Reply target (for critique only): ${targetText || 'none'}
 ${topicInstruction}
+${communityInstruction}
 Write natural human text with a varied tone. ${lengthInstruction} ${hashtagInstruction}
 Output JSON: {"text":"...", "keywords":["..."], "pollOptions":["...optional..."], "sourceEvidence":"For non-poll posts, briefly list the researched facts with web citations here; never put them in text."}`;
 }
 
 function buildArticlePrompt({ user }) {
   return `Search the live web for a timely politics or geopolitics topic for ${user.name} (@${user.username}), bio: ${user.description || 'n/a'}. Ignore unrelated interests in the profile bio.
-Write a natural human opinion article about government policy, elections, diplomacy, international relations, political movements, or conflicts. It must express a clear viewpoint and be grounded in reliable pages found during the search. Every factual claim must be supported by those pages. Do not invent facts or URLs. Do not put citations or source links inside the article because the application displays the cited pages separately.
+Write a long-form natural human opinion article about government policy, elections, diplomacy, international relations, political movements, or conflicts. Target 1,200 to 1,800 words across 8 to 12 substantial paragraphs. Build it like a real contributor essay: open with a clear thesis, add context, explain the key actors and stakes, develop several evidence-backed arguments, acknowledge a serious opposing view, and close with likely consequences or next steps. Keep the voice opinionated but not robotic or academic. It must express a clear viewpoint and be grounded in reliable pages found during the search. Every factual claim must be supported by those pages. Do not invent facts or URLs. Do not put citations or source links inside the article because the application displays the cited pages separately.
 Output JSON: {"title":"...", "content":"...", "imageQuery":"A short, concrete search phrase for one documentary photo directly related to the main person, place, event, or institution in this article.", "sourceEvidence":"Briefly list the researched facts with web citations here; never put them in title or content."}`;
 }
 

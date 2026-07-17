@@ -145,13 +145,12 @@ function articleStatus(table, articleId, userId) {
 
 function recordArticleView(articleId, userId) {
   const database = db();
-  if (userId && !["anonymous", "undefined"].includes(userId)) {
-    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const recent = database.prepare("SELECT 1 FROM PostView WHERE articleId = ? AND userId = ? AND viewedAt >= ?").get(articleId, userId, cutoff);
-    if (!recent) {
-      database.prepare("INSERT INTO PostView (id, userId, articleId, viewedAt, data) VALUES (?, ?, ?, ?, '{}')")
-        .run(local.newId(), userId, articleId, local.nowIso());
-    }
+  const viewerId = String(userId || "guest:anonymous").trim();
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const recent = database.prepare("SELECT 1 FROM PostView WHERE articleId = ? AND userId = ? AND viewedAt >= ?").get(articleId, viewerId, cutoff);
+  if (!recent) {
+    database.prepare("INSERT INTO PostView (id, userId, articleId, viewedAt, data) VALUES (?, ?, ?, ?, '{}')")
+      .run(local.newId(), viewerId, articleId, local.nowIso());
   }
   const viewsCount = database.prepare("SELECT COUNT(*) AS count FROM PostView WHERE articleId = ?").get(articleId).count;
   database.prepare("UPDATE Article SET viewsCount = ? WHERE id = ?").run(viewsCount, articleId);

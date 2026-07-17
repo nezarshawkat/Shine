@@ -57,6 +57,10 @@ export default function Article() {
   const currentUserId = loggedInUser?.id || loggedInUser?._id;
   const showToast = (message, type = "success") => setToast({ message, type });
 
+  useEffect(() => {
+    setHasCountedView(false);
+  }, [id]);
+
   const getFullUrl = (url) => {
     if (!url) return null;
     return url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
