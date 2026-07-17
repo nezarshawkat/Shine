@@ -98,32 +98,29 @@ export default function Article() {
 
   useEffect(() => {
     if (!article?.id || hasCountedView) return;
-    let timer;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !hasCountedView) {
-        timer = setTimeout(async () => {
-          try {
-            const viewerId = currentUserId || "anonymous";
-            const res = await fetch(`${BACKEND_URL}/api/articles/${article.id}/view?userId=${viewerId}`, { method: "POST" });
-            if (res.ok) {
-              const data = await res.json();
-              setArticle((prev) => prev ? ({ ...prev, _count: { ...prev._count, views: data.viewsCount ?? prev._count?.views ?? 0 } }) : prev);
-              setHasCountedView(true);
-            }
-          } catch (err) {
-            console.error("Article view tracking failed", err);
-          }
-        }, 2000);
-      } else {
-        clearTimeout(timer);
-      }
-    }, { threshold: 0.5 });
 
-    if (articleRef.current) observer.observe(articleRef.current);
-    return () => {
-      observer.disconnect();
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(async () => {
+      try {
+        const viewerId = currentUserId || "anonymous";
+        const res = await fetch(`${BACKEND_URL}/api/articles/${article.id}/view?userId=${encodeURIComponent(viewerId)}`, {
+          method: "POST",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const views = data.viewsCount ?? article.viewsCount ?? article._count?.views ?? 0;
+          setArticle((prev) => prev ? ({
+            ...prev,
+            viewsCount: views,
+            _count: { ...prev._count, views },
+          }) : prev);
+          setHasCountedView(true);
+        }
+      } catch (err) {
+        console.error("Article view tracking failed", err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [article?.id, currentUserId, hasCountedView]);
 
   // Prevent scroll when image is full screen
